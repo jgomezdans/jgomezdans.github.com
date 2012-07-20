@@ -88,18 +88,12 @@ and is the idea behind Tikhonov regularisation.</p>
 <p>A first approach would assume that
 each individual measurement in contaminated by independent Gaussian noise with
 a variance $\sigma^{2}_{obs}$. Stacking the uncertainties into a
-covariance
-matrix $C_{obs}$, we can write the contribution of the observation
-mismatch
-to our problem as $J_{obs}$:
-[
+covariance matrix $C_{obs}$, we can write the contribution of the observation
+mismatch to our problem as $J_{obs}$:
+\[
 J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\mathbf{C_{H}}^{-1}) (\mathbf{y_{obs}} -H(mathbf{x} )),
-]</p>
-<p>[</p>
-<p>\left(\begin{matrix} a &amp; b \\
-c &amp; d \end{matrix}\right)</p>
-<p>]</p>
-<p>[
+\]
+\[
 \mathbf{\Delta} =
 \begin{pmatrix}
 1      &amp; -1     &amp;  0     &amp; \cdots &amp; 0\\
@@ -107,12 +101,12 @@ c &amp; d \end{matrix}\right)</p>
 \vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; 0\\
 0      &amp; 0      &amp; 0      &amp; \cdots &amp; -1\\
 \end{pmatrix}
-]</p>
+\]</p>
 <p>Stacking again the variances into a a covariance matrix, we can now define
 $J_{smooth}$ as
-[
+\[
 J_{smooth} = (1/2)  \gamma^{2} (\mathbf{\Delta x})^{T}\mathbf{C_{smooth}}^{-1}(\mathbf{\Delta x)}.
-]</p>
+\]</p>
 
         </div><!-- /.entry-content -->
         
