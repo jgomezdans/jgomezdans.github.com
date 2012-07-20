@@ -154,7 +154,7 @@ gdal_translate -of VRT -ot Float32 -scale 0 65534 -2. 45. \
 &lt;p&gt;It basically points to the original data, and has the scaling information.
 If you wanted to, you could also use the &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-projwin&lt;/span&gt;&lt;/tt&gt; or &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-srcwin&lt;/span&gt;&lt;/tt&gt;
 options to crop the data, or even reproject it with &lt;tt class="docutils literal"&gt;gdalwarp&lt;/tt&gt;.&lt;/p&gt;
-</summary><category term="GDAL"></category><category term="remote sensing"></category></entry><entry><title>EOLDAS out in the wild!</title><link href="//eoldas-out-in-the-wild.html" rel="alternate"></link><updated>2012-07-18T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>//eoldas-out-in-the-wild.html</id><summary type="html">&lt;p&gt;After quite some time, we have released the EOLDAS software. The
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>EOLDAS out in the wild!</title><link href="//eoldas-out-in-the-wild.html" rel="alternate"></link><updated>2012-07-18T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>//eoldas-out-in-the-wild.html</id><summary type="html">&lt;p&gt;After quite some time, we have released the EOLDAS software. The
 EOLDAS software is a prototype &lt;a class="reference external" href="http://en.wikipedia.org/wiki/Data_assimilation"&gt;data assimilation&lt;/a&gt; framework for the land
 surface, although it is quite generic, and can be used for typical variational
 problems, with a weak or a strong constraint.&lt;/p&gt;
