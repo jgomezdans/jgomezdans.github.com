@@ -109,7 +109,7 @@ $\mathbf{C}_{obs}$. We could include <em>structural error</em> (if we know that
 the model is imperfect) with a covariance matrix $\mathbf{C}_{H}$, but
 will usually ignore this term. $J_{obs}$ is then
 \[
-J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\mathbf{C_{H}}^{-1}) (\mathbf{y_{obs}} -H(mathbf{x} )),
+J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\mathbf{C_{H}}^{-1}) (\mathbf{y_{obs}} -H(\mathbf{x} )),
 \]</p>
 <p>The prior term is just the mismatch between the states and the prior
 value, moderated by how certain/ignorant we are about this prior
@@ -150,6 +150,32 @@ J = J_{obs} + J_{prior} + J_{model}
 and this function is minimised. Once the minimum is reached, the uncertainty
 can be calculated from the inverse of the Hessian matrix, under the assumption
 that the posterior distribution is not too far off from Gaussian.</p>
+<p>So what do you get out of this? Well, for one, you can estimate many
+parameters. Using typical optical remote sensing data, you can estimate
+6 or 7 parameters for sensors like MODIS. So not only do you get LAI,
+but you can also get a gauge on chlorophyll concentration, etc. Here's
+a reasonable example from a wheat field in Germany, where we are solving
+for 7 parameters:</p>
+<dl class="docutils">
+<dt>LAI</dt>
+<dd>Leaf Area Index</dd>
+<dt>CAB</dt>
+<dd>Chorophyll a+b concentration</dd>
+<dt>SEN</dt>
+<dd>Leaf senescent matter</dd>
+<dt>EWT</dt>
+<dd>Leaf equivalent water thickness</dd>
+<dt>DM</dt>
+<dd>Dry Matter</dd>
+<dt>N</dt>
+<dd>Leaf Layers</dd>
+<dt>S1</dt>
+<dd>First component of soil reflenctance model</dd>
+</dl>
+<div class="figure">
+<img alt="./static/images/results.png" src="static/static/images/results.png" style="width: 90%;" />
+<p class="caption">EOLDAS processing result.</p>
+</div>
 
         </div><!-- /.entry-content -->
         

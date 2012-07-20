@@ -190,7 +190,7 @@ $\mathbf{C}_{obs}$. We could include &lt;em&gt;structural error&lt;/em&gt; (if w
 the model is imperfect) with a covariance matrix $\mathbf{C}_{H}$, but
 will usually ignore this term. $J_{obs}$ is then
 \[
-J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\mathbf{C_{H}}^{-1}) (\mathbf{y_{obs}} -H(mathbf{x} )),
+J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\mathbf{C_{H}}^{-1}) (\mathbf{y_{obs}} -H(\mathbf{x} )),
 \]&lt;/p&gt;
 &lt;p&gt;The prior term is just the mismatch between the states and the prior
 value, moderated by how certain/ignorant we are about this prior
@@ -231,4 +231,30 @@ J = J_{obs} + J_{prior} + J_{model}
 and this function is minimised. Once the minimum is reached, the uncertainty
 can be calculated from the inverse of the Hessian matrix, under the assumption
 that the posterior distribution is not too far off from Gaussian.&lt;/p&gt;
+&lt;p&gt;So what do you get out of this? Well, for one, you can estimate many
+parameters. Using typical optical remote sensing data, you can estimate
+6 or 7 parameters for sensors like MODIS. So not only do you get LAI,
+but you can also get a gauge on chlorophyll concentration, etc. Here's
+a reasonable example from a wheat field in Germany, where we are solving
+for 7 parameters:&lt;/p&gt;
+&lt;dl class="docutils"&gt;
+&lt;dt&gt;LAI&lt;/dt&gt;
+&lt;dd&gt;Leaf Area Index&lt;/dd&gt;
+&lt;dt&gt;CAB&lt;/dt&gt;
+&lt;dd&gt;Chorophyll a+b concentration&lt;/dd&gt;
+&lt;dt&gt;SEN&lt;/dt&gt;
+&lt;dd&gt;Leaf senescent matter&lt;/dd&gt;
+&lt;dt&gt;EWT&lt;/dt&gt;
+&lt;dd&gt;Leaf equivalent water thickness&lt;/dd&gt;
+&lt;dt&gt;DM&lt;/dt&gt;
+&lt;dd&gt;Dry Matter&lt;/dd&gt;
+&lt;dt&gt;N&lt;/dt&gt;
+&lt;dd&gt;Leaf Layers&lt;/dd&gt;
+&lt;dt&gt;S1&lt;/dt&gt;
+&lt;dd&gt;First component of soil reflenctance model&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="./static/images/results.png" src="./static/images/results.png" style="width: 90%;" /&gt;
+&lt;p class="caption"&gt;EOLDAS processing result.&lt;/p&gt;
+&lt;/div&gt;
 </summary><category term="remote sensing"></category><category term="data assimilation"></category></entry></feed>
