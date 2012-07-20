@@ -4,7 +4,7 @@
         <title>Stitching together MODIS data</title>
         <meta charset="utf-8" />
         <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
-        <link href=".././feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Remote Sensing, DA and other ramblings ATOM Feed" />
+        <link href=".././feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA a ramblings ATOM Feed" />
         
 
         <!--[if IE]>
@@ -41,7 +41,7 @@
 </a>
 
         <header id="banner" class="body">
-                <h1><a href="../.">Remote Sensing, DA and other ramblings </a></h1>
+                <h1><a href="../.">EO & DA a ramblings </a></h1>
                 <nav><ul>
                 
                 
@@ -89,6 +89,171 @@ mosaicked/stitched together. So, this is what we want to do:</p>
 </ol>
 <p>The output data ought to be in an easy-to-use format, for example a
 multiband GeoTIFF file, where each band represents a different period.</p>
+<div class="section" id="getting-the-data">
+<h2>Getting the data</h2>
+<p>Although one can use the <a class="reference external" href="http://reverb.echo.nasa.gov/reverb/">Reverb website</a>
+to select and download data, it is also easy enough to just get what
+you need from NASA's FTP servers. You can have sophisticated download
+tools such as <a class="reference external" href="https://github.com/jgomezdans/modisficator">modisficator</a>,
+but sometimes it's just easier to have a shell script that uses wget
+to get the data. Said script is <a class="reference external" href="https://gist.github.com/3145223">grab_modis.sh</a>,
+and uses Bash and wget. Going by our example, let's say we want to download
+two tiles, for a few years. We'd just use a Bash command for this. We
+note that the GPP product for TERRA has the code <tt class="docutils literal">MOD17A2.005</tt></p>
+<div class="highlight"><pre><span class="k">for </span>tile in h17v03 h18v03;
+<span class="k">do</span>
+<span class="k">    for </span>year in <span class="o">{</span>2000..2011<span class="o">}</span>;
+    <span class="k">do</span>
+        ./grab_modis.sh MOD17A2.005 <span class="nv">$tile</span> <span class="nv">$year</span>
+    <span class="k">done</span>
+<span class="k">done</span>
+</pre></div>
+<p>The previous commands will take a while to download the data. We can
+see that we have downloaded a bunch of files like</p>
+<pre class="literal-block">
+MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+MOD17A2.A2005001.h18v03.005.2007356112231.hdf
+</pre>
+<p>We can see what's in each file using <tt class="docutils literal">gdalinfo</tt></p>
+<pre class="literal-block">
+gdalinfo MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+Driver: HDF4/Hierarchical Data Format Release 4
+Files: MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+Size is 512, 512
+Coordinate System is `'
+Metadata:
+  HDFEOSVersion=HDFEOS_V2.9
+  LOCALGRANULEID=MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+  PRODUCTIONDATETIME=2007-12-22T11:06:50.000Z
+  DAYNIGHTFLAG=Day
+  REPROCESSINGACTUAL=reprocessed
+  LOCALVERSIONID=5.2.6
+  REPROCESSINGPLANNED=further update is anticipated
+  SCIENCEQUALITYFLAG=Not Investigated
+  AUTOMATICQUALITYFLAGEXPLANATION=Passed was set as a default value. May or may not require further study
+  AUTOMATICQUALITYFLAG=Passed
+  SCIENCEQUALITYFLAGEXPLANATION=See http://landweb.nascom.nasa.gov/cgi-bin/QA_WWW/qaFlagPage.cgi?sat=terra for the product Science Quality status.
+  QAPERCENTMISSINGDATA=0
+  QAPERCENTOUTOFBOUNDSDATA=77
+  QAPERCENTCLOUDCOVER=82
+  QAPERCENTINTERPOLATEDDATA=0
+  PARAMETERNAME=MOD_PR17A2
+  VERSIONID=5
+  SHORTNAME=MOD17A2
+  INPUTPOINTER=MOD15A2.A2005001.h17v03.005.2007352013935.hdf, MOD17A1.1.A2005.h17v03.hdf, MOD12Q1.A2001001.h17v03.004.2004358134257.hdf, MOD17_ANC_RI11.hdf
+  GRINGPOINTLONGITUDE=-15.4860189105775, -19.9999999949462, 0.0325645816154951, 0.0125638874822562
+  GRINGPOINTLATITUDE=49.7394264948349, 59.9999999946118, 60.0089388384779, 49.7424953501575
+  GRINGPOINTSEQUENCENO=1, 2, 3, 4
+  EXCLUSIONGRINGFLAG=N
+  RANGEENDINGDATE=2005-01-08
+  RANGEENDINGTIME=23:59:59
+  RANGEBEGINNINGDATE=2005-01-01
+  RANGEBEGINNINGTIME=00:00:00
+  PGEVERSION=5.2.8
+  ASSOCIATEDSENSORSHORTNAME=MODIS
+  ASSOCIATEDPLATFORMSHORTNAME=Terra
+  ASSOCIATEDINSTRUMENTSHORTNAME=MODIS
+  QAPERCENTGOODQUALITY=0
+  QAPERCENTOTHERQUALITY=23
+  HORIZONTALTILENUMBER=17
+  VERTICALTILENUMBER=03
+  TileID=51017003
+  NDAYS_COMPOSITED=8
+  QAPERCENTGOODPSN=0
+  QAPERCENTGOODNPP=0
+  NORTHBOUNDINGCOORDINATE=59.9999999946118
+  SOUTHBOUNDINGCOORDINATE=49.9999999955098
+  EASTBOUNDINGCOORDINATE=0.0166666666624637
+  WESTBOUNDINGCOORDINATE=-19.9999999949462
+  ALGORITHMPACKAGEACCEPTANCEDATE=2005-02-11
+  ALGORITHMPACKAGEMATURITYCODE=Normal
+  ALGORITHMPACKAGENAME=MOD17A2
+  ALGORITHMPACKAGEVERSION=5
+  INSTRUMENTNAME=Moderate Resolution Imaging Spectroradiometer
+  PLATFORMSHORTNAME=Terra
+  PROCESSINGDATETIME=2007-12-22T11:06:50.000Z
+  LOCALINPUTGRANULEID=MOD15A2.A2005001.h17v03.005.2007352013935.hdf, MOD17A1.1.A2005.h17v03.hdf, MOD12Q1.A2001001.h17v03.004.2004358134257.hdf, MOD17_ANC_RI11.hdf
+  GEOANYABNORMAL=False
+  GEOESTMAXRMSERROR=50.0
+  LONGNAME=MODIS/Terra Gross Primary Productivity 8-Day L4 Global 1km SIN Grid
+  PROCESSINGCENTER=MODAPS
+  NUMBEROFGRANULES=1
+  GRANULEDAYNIGHTFLAG=Day
+  CHARACTERISTICBINANGULARSIZE=30.0
+  CHARACTERISTICBINSIZE=926.625433055556
+  DATACOLUMNS=1200
+  DATAROWS=1200
+  GLOBALGRIDCOLUMNS=43200
+  GLOBALGRIDROWS=21600
+  NADIRDATARESOLUTION=1km
+  MAXIMUMOBSERVATIONS=1
+  SPSOPARAMETERS=3716
+  PROCESSINGENVIRONMENT=Linux minion5282 2.6.20.3 #1 SMP Thu Mar 22 09:36:24 EST 2007 i686 IntelR XeonR CPU            5148  &#64; 2.33GHz unknown GNU/Linux
+  DESCRREVISION=5.2
+  ENGINEERING_DATA=(none-available)
+
+  UM_VERSION=U.MONTANA MODIS PGE36 Vers 5.2.6 Rev 11 Release 06.09.2006 18:36
+Subdatasets:
+  SUBDATASET_1_NAME=HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km
+  SUBDATASET_1_DESC=[1200x1200] Gpp_1km MOD_Grid_MOD17A2 (16-bit integer)
+  SUBDATASET_2_NAME=HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:PsnNet_1km
+  SUBDATASET_2_DESC=[1200x1200] PsnNet_1km MOD_Grid_MOD17A2 (16-bit integer)
+  SUBDATASET_3_NAME=HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Psn_QC_1km
+  SUBDATASET_3_DESC=[1200x1200] Psn_QC_1km MOD_Grid_MOD17A2 (8-bit unsigned integer)
+Corner Coordinates:
+Upper Left  (    0.0,    0.0)
+Lower Left  (    0.0,  512.0)
+Upper Right (  512.0,    0.0)
+Lower Right (  512.0,  512.0)
+Center      (  256.0,  256.0)
+</pre>
+<p>We immediately see that there are 3 subdatasets: GPP, PSN and a QA dataset.
+For the time being, I'll just focus on GPP, but the idea is identical
+for any other subdataset. The name of the dataset within the HDF file
+that GDAL understands is <tt class="docutils literal"><span class="pre">HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km</span></tt>.</p>
+</div>
+<div class="section" id="stitching-the-files">
+<h2>Stitching the files</h2>
+<p>So the idea is that for each date, we stitch together <tt class="docutils literal">h18v03</tt> and
+<tt class="docutils literal">h17v03</tt>, and then reproject the whole thing to some useful
+projection. To do this efficiently, we'll use GDAL VRTs. First, I'll
+demonstrate on a single date, then we'll automate for a lot of dates.</p>
+<div class="section" id="single-date">
+<h3>Single date</h3>
+<p>First, the stitching is done using <tt class="docutils literal">gdalbuildvrt</tt>. The command
+takes the output filename, the input filenames, and off it goes!</p>
+<pre class="literal-block">
+gdalbuildvrt mosaic_sinu.vrt \
+'HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km' \
+'HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h18v03.005.2007356112231.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km'
+</pre>
+<p>Note that we have escaped the GDAL filenames here. You can check
+the output file, <tt class="docutils literal">mosaic_sinu.vrt</tt>, with <tt class="docutils literal">gdalinfo</tt> and satisfiy
+yourself that it makes sense: We have just stitched two adjacent
+tiles into a single dataset. We can have a look at the result with
+Python (who can read the VRT files just fine!):</p>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdal</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span> <span class="p">(</span> <span class="s">&quot;mosaic_sinu.vrt&quot;</span> <span class="p">)</span> <span class="c"># Open file</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span> <span class="c"># Read contents</span>
+<span class="n">mdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">array</span> <span class="p">(</span> <span class="n">data</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">data</span><span class="o">&gt;</span><span class="mi">30000</span> <span class="p">)</span> <span class="c"># Mask data</span>
+<span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span> <span class="c"># Set colormap</span>
+<span class="n">cmap</span><span class="o">.</span><span class="n">set_bad</span> <span class="p">(</span> <span class="s">&#39;k&#39;</span> <span class="p">)</span> <span class="c"># Set masked values to black</span>
+<span class="c"># Next line scales the GPP data by 0.0001 to get the right units</span>
+<span class="c"># and plots it.</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span> <span class="p">(</span> <span class="n">mdata</span><span class="o">*</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;nearest&#39;</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.007</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span> <span class="p">(</span> <span class="n">orientation</span><span class="o">=</span><span class="s">&#39;horizontal&#39;</span> <span class="p">)</span>
+</pre></div>
+<div class="figure">
+<img alt="images/GPP_sinusoidal.png" src="../static/images/GPP_sinusoidal.png" style="width: 90%;" />
+</div>
+</div>
+<div class="section" id="all-dates">
+<h3>All dates</h3>
+</div>
+</div>
 
         </div><!-- /.entry-content -->
         
