@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>jgomezdans</title><link href="/" rel="alternate"></link><link href="//feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2012-07-20T13:00:00+01:00</updated><entry><title>A test post</title><link href="//a-test-post.html" rel="alternate"></link><updated>2012-07-20T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>//a-test-post.html</id><summary type="html"></summary><category term="test"></category><category term="cool"></category></entry></feed>
