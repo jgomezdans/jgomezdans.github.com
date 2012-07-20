@@ -164,4 +164,32 @@ rather than a fully-fledged dynamic vegetation model, for example. This
 dynamic model merely states that the state today is the same as yesterday,
 but with some uncertainty. This is implemented as a differential operator,
 and is the idea behind Tikhonov regularisation.&lt;/p&gt;
+&lt;p&gt;A first approach would assume that
+each individual measurement in contaminated by independent Gaussian noise with
+a variance $sigma^{2}_{obs}$. Stacking the uncertainties into a
+covariance
+matrix $C_{obs}$, we can write the contribution of the observation
+mismatch
+to our problem as $J_{obs}$:
+[
+J_{obs} = (1/2) (mathbf{y_{obs}} - H(mathbf{x}))^{T} (mathbf{C_{obs}}^{-1}+mathbf{C_{H}}^{-1}) (mathbf{y_{obs}} -H(mathbf{x} )),
+]&lt;/p&gt;
+&lt;p&gt;[
+left(begin{matrix} a &amp;amp; b \
+c &amp;amp; d end{matrix}right)
+]&lt;/p&gt;
+&lt;p&gt;[
+mathbf{Delta} =
+begin{pmatrix}
+1      &amp;amp; -1     &amp;amp;  0     &amp;amp; cdots &amp;amp; 0\
+0      &amp;amp; 1      &amp;amp; -1     &amp;amp; cdots &amp;amp; 0\
+vdots &amp;amp; vdots &amp;amp; vdots &amp;amp; ddots &amp;amp; 0\
+0      &amp;amp; 0      &amp;amp; 0      &amp;amp; cdots &amp;amp; -1\
+end{pmatrix}
+]&lt;/p&gt;
+&lt;p&gt;Stacking again the variances into a a covariance matrix, we can now define
+$J_{smooth}$ as
+[
+J_{smooth} = (1/2)  gamma^{2} (mathbf{Delta x})^{T}mathbf{C_{smooth}}^{-1}(mathbf{Delta x)}.
+]&lt;/p&gt;
 </summary><category term="remote sensing"></category><category term="data assimilation"></category></entry></feed>
