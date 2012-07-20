@@ -154,24 +154,55 @@ gdal_translate -of VRT -ot Float32 -scale 0 65534 -2. 45. \
 &lt;p&gt;It basically points to the original data, and has the scaling information.
 If you wanted to, you could also use the &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-projwin&lt;/span&gt;&lt;/tt&gt; or &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-srcwin&lt;/span&gt;&lt;/tt&gt;
 options to crop the data, or even reproject it with &lt;tt class="docutils literal"&gt;gdalwarp&lt;/tt&gt;.&lt;/p&gt;
-</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>EOLDAS out in the wild!</title><link href="//eoldas-out-in-the-wild.html" rel="alternate"></link><updated>2012-07-18T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>//eoldas-out-in-the-wild.html</id><summary type="html">&lt;p&gt;After quite some time, we have released the EOLDAS software. The
-EOLDAS software is a prototype &lt;a class="reference external" href="http://en.wikipedia.org/wiki/Data_assimilation"&gt;data assimilation&lt;/a&gt; framework for the land
-surface, although it is quite generic, and can be used for typical variational
-problems, with a weak or a strong constraint.&lt;/p&gt;
-&lt;p&gt;Currently, we are using a radiative transfer code as an observation
-operator, and imposing weak constraints in land surface state components,
-rather than a fully-fledged dynamic vegetation model, for example. This
-dynamic model merely states that the state today is the same as yesterday,
-but with some uncertainty. This is implemented as a differential operator,
-and is the idea behind Tikhonov regularisation.&lt;/p&gt;
-&lt;p&gt;A first approach would assume that
-each individual measurement in contaminated by independent Gaussian noise with
-a variance $\sigma^{2}_{obs}$. Stacking the uncertainties into a
-covariance matrix $C_{obs}$, we can write the contribution of the observation
-mismatch to our problem as $J_{obs}$:
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>EOLDAS out in the wild!</title><link href="//eoldas-out-in-the-wild.html" rel="alternate"></link><updated>2012-07-18T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>//eoldas-out-in-the-wild.html</id><summary type="html">&lt;p&gt;After quite some time, we have released the &lt;a class="reference external" href="http://jgomezdans.github.com/eoldas_release"&gt;EOLDAS software&lt;/a&gt;.
+The &lt;a class="reference external" href="http://jgomezdans.github.com/eoldas_release"&gt;EOLDAS software&lt;/a&gt;
+is a prototype &lt;a class="reference external" href="http://en.wikipedia.org/wiki/Data_assimilation"&gt;data assimilation&lt;/a&gt;
+framework for the land surface, although it is quite generic, and can
+be used for typical variational problems, with a weak or a strong
+constraint. In essence, data assimilation is the probabilistically
+sound way of merging prior information about processes (such as
+mechanistic models, &lt;em&gt;à la DGVM&lt;/em&gt;, but also prior information about
+things, maybe derived from previous studies) and observations (which
+will have noise). It's a solution to Bayes' Theorem, and what's really
+important is that you also get full uncertainties.&lt;/p&gt;
+&lt;p&gt;The way EOLDAS works is by specifying a cost function that will be
+minimised using a gradient descent method. This naturally requires
+information on the derivatives of such cost function. If you have an
+adjoint code, then you can use that, and that's what we do. But you
+need adjoints for your dynamic model terms, observation operators, etc.
+These codes are often complicated and getting the adjoints will be even
+more complicated. You could use numerical approximations to the derivatives,
+but that's a bit clunky, and requires running often computationally
+expensive models many times.&lt;/p&gt;
+&lt;p&gt;The main assumption in EOLDAS is that the cost function is Gaussian.
+We can build up quite complex cost functions by adding individual terms.
+Typically, these terms could be&lt;/p&gt;
+&lt;p&gt;# A observation mismatch term, $J_{obs}$.
+# A prior term, $J_{prior}$.
+# A dynamic model mismatch term, $J_{model}$.&lt;/p&gt;
+&lt;p&gt;For example, $J_{obs}$ can be written under the assumption that the
+state is $\mathbf{x}$$, the observations are $\mathbf{y}_{obs}$,
+the observation operator (that transforms the state into observations)
+is $H$, and the observational uncertainty covariance matrix is given by
+$\mathbf{C}_{obs}$. We could include &lt;em&gt;structural error&lt;/em&gt; (if we know that
+the model is imperfect) with a covariance matrix $\mathbf{C}_{H}$, but
+will usually ignore this term. $J_{obs}$ is then
 \[
 J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\mathbf{C_{H}}^{-1}) (\mathbf{y_{obs}} -H(mathbf{x} )),
-\]
+\]&lt;/p&gt;
+&lt;p&gt;The prior term is just the mismatch between the states and the prior
+value, moderated by how certain/ignorant we are about this prior
+value:
+\[
+J_{prior} = (1/2) (\mathbf{x} - H(\mathbf{x}_{prior}))^{T} \mathbf{C}_{prior}^{-1} (\mathbf{x} - H(\mathbf{x}_{prior})),
+\]&lt;/p&gt;
+&lt;p&gt;The dynamic model term is similarly calculated as the mismatch between
+a prediction of the state from a previous value and the inferred state.
+A simple linear model $\mathbf{A}\mathbf{x} + \mathbf{B}$ can be
+used. The easiest useful model is a differential operator model, which
+implies that the first (second...) derivative of the state is minimised
+resulting in a penalisaiton to unsmooth state trajectories. The
+first order differential operator is
 \[
 \mathbf{\Delta} =
 \begin{pmatrix}
@@ -180,10 +211,22 @@ J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\m
 \vdots &amp;amp; \vdots &amp;amp; \vdots &amp;amp; \ddots &amp;amp; 0\\
 0      &amp;amp; 0      &amp;amp; 0      &amp;amp; \cdots &amp;amp; -1\\
 \end{pmatrix}
-\]&lt;/p&gt;
-&lt;p&gt;Stacking again the variances into a a covariance matrix, we can now define
-$J_{smooth}$ as
+\]
+and the associated cost function is $J_{model}$. We may want to have
+a diagonal $\mathbf{C}_{smooth}$ &amp;quot;model uncertainty&amp;quot; matrix, which is
+in fact the identity, and we can control its magnitude by multiplying it
+by some $\gamma$$ scalar. This terms basically scales how much we allow
+the inferred state to depart from the model, and is in essence, the weak
+constraint. A strong constraint system will make the inferred solution
+lie in the space of the model:
 \[
-J_{smooth} = (1/2)  \gamma^{2} (\mathbf{\Delta x})^{T}\mathbf{C_{smooth}}^{-1}(\mathbf{\Delta x)}.
+J_{model} = (1/2)  \gamma^{2} (\mathbf{\Delta x})^{T}\mathbf{C}_{smooth}^{-1}(\mathbf{\Delta x)}.
 \]&lt;/p&gt;
+&lt;p&gt;So the total cost function is $J$:
+\[
+J = J_{obs} + J_{prior} + J_{model}
+\]
+and this function is minimised. Once the minimum is reached, the uncertainty
+can be calculated from the inverse of the Hessian matrix, under the assumption
+that the posterior distribution is not too far off from Gaussian.&lt;/p&gt;
 </summary><category term="remote sensing"></category><category term="data assimilation"></category></entry></feed>

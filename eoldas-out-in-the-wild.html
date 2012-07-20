@@ -73,24 +73,55 @@
 
 
 </footer><!-- /.post-info -->
-        <p>After quite some time, we have released the EOLDAS software. The
-EOLDAS software is a prototype <a class="reference external" href="http://en.wikipedia.org/wiki/Data_assimilation">data assimilation</a> framework for the land
-surface, although it is quite generic, and can be used for typical variational
-problems, with a weak or a strong constraint.</p>
-<p>Currently, we are using a radiative transfer code as an observation
-operator, and imposing weak constraints in land surface state components,
-rather than a fully-fledged dynamic vegetation model, for example. This
-dynamic model merely states that the state today is the same as yesterday,
-but with some uncertainty. This is implemented as a differential operator,
-and is the idea behind Tikhonov regularisation.</p>
-<p>A first approach would assume that
-each individual measurement in contaminated by independent Gaussian noise with
-a variance $\sigma^{2}_{obs}$. Stacking the uncertainties into a
-covariance matrix $C_{obs}$, we can write the contribution of the observation
-mismatch to our problem as $J_{obs}$:
+        <p>After quite some time, we have released the <a class="reference external" href="http://jgomezdans.github.com/eoldas_release">EOLDAS software</a>.
+The <a class="reference external" href="http://jgomezdans.github.com/eoldas_release">EOLDAS software</a>
+is a prototype <a class="reference external" href="http://en.wikipedia.org/wiki/Data_assimilation">data assimilation</a>
+framework for the land surface, although it is quite generic, and can
+be used for typical variational problems, with a weak or a strong
+constraint. In essence, data assimilation is the probabilistically
+sound way of merging prior information about processes (such as
+mechanistic models, <em>à la DGVM</em>, but also prior information about
+things, maybe derived from previous studies) and observations (which
+will have noise). It's a solution to Bayes' Theorem, and what's really
+important is that you also get full uncertainties.</p>
+<p>The way EOLDAS works is by specifying a cost function that will be
+minimised using a gradient descent method. This naturally requires
+information on the derivatives of such cost function. If you have an
+adjoint code, then you can use that, and that's what we do. But you
+need adjoints for your dynamic model terms, observation operators, etc.
+These codes are often complicated and getting the adjoints will be even
+more complicated. You could use numerical approximations to the derivatives,
+but that's a bit clunky, and requires running often computationally
+expensive models many times.</p>
+<p>The main assumption in EOLDAS is that the cost function is Gaussian.
+We can build up quite complex cost functions by adding individual terms.
+Typically, these terms could be</p>
+<p># A observation mismatch term, $J_{obs}$.
+# A prior term, $J_{prior}$.
+# A dynamic model mismatch term, $J_{model}$.</p>
+<p>For example, $J_{obs}$ can be written under the assumption that the
+state is $\mathbf{x}$$, the observations are $\mathbf{y}_{obs}$,
+the observation operator (that transforms the state into observations)
+is $H$, and the observational uncertainty covariance matrix is given by
+$\mathbf{C}_{obs}$. We could include <em>structural error</em> (if we know that
+the model is imperfect) with a covariance matrix $\mathbf{C}_{H}$, but
+will usually ignore this term. $J_{obs}$ is then
 \[
 J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\mathbf{C_{H}}^{-1}) (\mathbf{y_{obs}} -H(mathbf{x} )),
-\]
+\]</p>
+<p>The prior term is just the mismatch between the states and the prior
+value, moderated by how certain/ignorant we are about this prior
+value:
+\[
+J_{prior} = (1/2) (\mathbf{x} - H(\mathbf{x}_{prior}))^{T} \mathbf{C}_{prior}^{-1} (\mathbf{x} - H(\mathbf{x}_{prior})),
+\]</p>
+<p>The dynamic model term is similarly calculated as the mismatch between
+a prediction of the state from a previous value and the inferred state.
+A simple linear model $\mathbf{A}\mathbf{x} + \mathbf{B}$ can be
+used. The easiest useful model is a differential operator model, which
+implies that the first (second...) derivative of the state is minimised
+resulting in a penalisaiton to unsmooth state trajectories. The
+first order differential operator is
 \[
 \mathbf{\Delta} =
 \begin{pmatrix}
@@ -99,12 +130,24 @@ J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\m
 \vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; 0\\
 0      &amp; 0      &amp; 0      &amp; \cdots &amp; -1\\
 \end{pmatrix}
-\]</p>
-<p>Stacking again the variances into a a covariance matrix, we can now define
-$J_{smooth}$ as
+\]
+and the associated cost function is $J_{model}$. We may want to have
+a diagonal $\mathbf{C}_{smooth}$ &quot;model uncertainty&quot; matrix, which is
+in fact the identity, and we can control its magnitude by multiplying it
+by some $\gamma$$ scalar. This terms basically scales how much we allow
+the inferred state to depart from the model, and is in essence, the weak
+constraint. A strong constraint system will make the inferred solution
+lie in the space of the model:
 \[
-J_{smooth} = (1/2)  \gamma^{2} (\mathbf{\Delta x})^{T}\mathbf{C_{smooth}}^{-1}(\mathbf{\Delta x)}.
+J_{model} = (1/2)  \gamma^{2} (\mathbf{\Delta x})^{T}\mathbf{C}_{smooth}^{-1}(\mathbf{\Delta x)}.
 \]</p>
+<p>So the total cost function is $J$:
+\[
+J = J_{obs} + J_{prior} + J_{model}
+\]
+and this function is minimised. Once the minimum is reached, the uncertainty
+can be calculated from the inverse of the Hessian matrix, under the assumption
+that the posterior distribution is not too far off from Gaussian.</p>
 
         </div><!-- /.entry-content -->
         
