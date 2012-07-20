@@ -29,7 +29,7 @@
                 
                 
                 
-                    <li ><a href="./category/test.html">test</a></li>
+                    <li ><a href="./category/tips.html">tips</a></li>
                 
                 </ul></nav>
         </header><!-- /#banner -->
@@ -41,7 +41,7 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="./a-test-post.html">A test post</a></h1> 
+                    <h1 class="entry-title"><a href="./linearly-scaling-raster-data-with-gdal.html">Linearly scaling raster data with GDAL</a></h1> 
                     <footer class="post-info">
         <abbr class="published" title="2012-07-20T13:00:00">
                 Fri 20 July 2012
@@ -52,11 +52,23 @@
                 By <a class="url fn" href="./author/J Gómez-Dans.html">J Gómez-Dans</a>
         </address>
         
-<p>In <a href="./category/test.html">test</a>. </p>
-<p>tags: <a href="./tag/test.html">test</a><a href="./tag/cool.html">cool</a></p>
+<p>In <a href="./category/tips.html">tips</a>. </p>
+<p>tags: <a href="./tag/GDAL.html">GDAL</a><a href="./tag/remote sensing.html">remote sensing</a></p>
 
 
-</footer><!-- /.post-info -->
+</footer><!-- /.post-info --><p>So, it's quite tricky to play around with these geospatial datasets: they
+have a myriad formats, these keep changing, and you can never know what
+metadata will be available in them. A clever way around this situation
+is to use tools that allow you to read most of the data, most of the
+associated metadata, and that let you do the usual minor tweaks that
+you'll require to get things working. And this means GDAL (for rasters)
+and OGR (for vectors).</p>
+<p>Typical problem: you get some data you've never seen before, and it is
+linearly scaled (so they put it in as a 16bit integer and you need to
+apply a linear mapping to get the units right as floating point numbers).
+In the GDAL mailing list <a class="reference external" href="http://lists.osgeo.org/pipermail/gdal-dev/2012-July/033504.html">there's a thread on this</a>
+using the MODIS SST product.</p>
+
                 </article>
                 
                     
