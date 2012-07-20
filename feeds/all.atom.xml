@@ -19,17 +19,17 @@ change the data type to a floating point number, as otherwise results
 will be quantised. From the post above, we know what the linear scaling
 is, but we need to convert it&lt;/p&gt;
 &lt;p&gt;A bash script that loops over these files could be&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;for file in A*L3m_8D_NSST_4 ;
-do
-  echo &amp;quot;map: $file&amp;quot;
-  gdal_translate -of GTiff -ot Float32 \
-                      -scale 0 65535 -2. 45. \
-                      -a_srs &amp;quot;EPSG:4326&amp;quot; \
-                      -a_nodata 65535  \
-                      -a_ullr -180 90 180 -90 \
-                      -co &amp;quot;COMPRESS=PACKBITS&amp;quot; \
-                      &amp;#39;HDF4_SDS:UNKNOWN:&amp;quot;A20030012003008.L3m_8D_NSST_4&amp;quot;:0&amp;#39;\
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;for &lt;/span&gt;file in A*L3m_8D_NSST_4 ;
+&lt;span class="k"&gt;do&lt;/span&gt;
+&lt;span class="k"&gt;  &lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;map: $file&amp;quot;&lt;/span&gt;
+  gdal_translate -of GTiff -ot Float32 &lt;span class="se"&gt;\&lt;/span&gt;
+                      -scale 0 65535 -2. 45. &lt;span class="se"&gt;\&lt;/span&gt;
+                      -a_srs &lt;span class="s2"&gt;&amp;quot;EPSG:4326&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+                      -a_nodata 65535  &lt;span class="se"&gt;\&lt;/span&gt;
+                      -a_ullr -180 90 180 -90 &lt;span class="se"&gt;\&lt;/span&gt;
+                      -co &lt;span class="s2"&gt;&amp;quot;COMPRESS=PACKBITS&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+                      &lt;span class="s1"&gt;&amp;#39;HDF4_SDS:UNKNOWN:&amp;quot;A20030012003008.L3m_8D_NSST_4&amp;quot;:0&amp;#39;&lt;/span&gt;&lt;span class="se"&gt;\&lt;/span&gt;
                       A20030012003008.L3m_8D_NSST_4.tif
-done
+&lt;span class="k"&gt;done&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 </summary><category term="GDAL"></category><category term="remote sensing"></category></entry></feed>

@@ -76,18 +76,18 @@ change the data type to a floating point number, as otherwise results
 will be quantised. From the post above, we know what the linear scaling
 is, but we need to convert it</p>
 <p>A bash script that loops over these files could be</p>
-<div class="highlight"><pre>for file in A*L3m_8D_NSST_4 ;
-do
-  echo &quot;map: $file&quot;
-  gdal_translate -of GTiff -ot Float32 \
-                      -scale 0 65535 -2. 45. \
-                      -a_srs &quot;EPSG:4326&quot; \
-                      -a_nodata 65535  \
-                      -a_ullr -180 90 180 -90 \
-                      -co &quot;COMPRESS=PACKBITS&quot; \
-                      &#39;HDF4_SDS:UNKNOWN:&quot;A20030012003008.L3m_8D_NSST_4&quot;:0&#39;\
+<div class="highlight"><pre><span class="k">for </span>file in A*L3m_8D_NSST_4 ;
+<span class="k">do</span>
+<span class="k">  </span><span class="nb">echo</span> <span class="s2">&quot;map: $file&quot;</span>
+  gdal_translate -of GTiff -ot Float32 <span class="se">\</span>
+                      -scale 0 65535 -2. 45. <span class="se">\</span>
+                      -a_srs <span class="s2">&quot;EPSG:4326&quot;</span> <span class="se">\</span>
+                      -a_nodata 65535  <span class="se">\</span>
+                      -a_ullr -180 90 180 -90 <span class="se">\</span>
+                      -co <span class="s2">&quot;COMPRESS=PACKBITS&quot;</span> <span class="se">\</span>
+                      <span class="s1">&#39;HDF4_SDS:UNKNOWN:&quot;A20030012003008.L3m_8D_NSST_4&quot;:0&#39;</span><span class="se">\</span>
                       A20030012003008.L3m_8D_NSST_4.tif
-done
+<span class="k">done</span>
 </pre></div>
 
                 </article>
