@@ -249,10 +249,87 @@ Python (who can read the VRT files just fine!):</p>
 <div class="figure">
 <img alt="images/GPP_sinusoidal.png" src="../static/images/GPP_sinusoidal.png" style="width: 90%;" />
 </div>
+<p>Let's say we want to use the Ordnance Survey Projection for the UK. In
+<a class="reference external" href="http://jgomezdans.github.com/gdal_notes/reprojection.html">this webpage</a>,
+the reader is pointed to a <a class="reference external" href="http://spatialreference.org/ref/epsg/27700/">projection definition</a>
+that GDAL will understand, <tt class="docutils literal">EPSG:27700</tt>. We can now feed this to
+<tt class="docutils literal">gdalwarp</tt> and have virtually projected dataset!</p>
+<pre class="literal-block">
+gdalwarp -of VRT -t_srs &quot;EPSG:27700&quot; mosaic_sinu.vrt mosaic.vrt
+</pre>
+<p>This is nice, but it applies the projection to most of the Netherlands,
+and southern Scandinavia. If we just want to crop the UK and Ireland,
+we can do that as well. Say we want to cut out the box that extends
+from longitudes -14 to 5 and latitudes 50 to 61. Using <tt class="docutils literal">gdaltransform</tt></p>
+<pre class="literal-block">
+.. code-block: bash
+</pre>
+<blockquote>
+# Upper left corner
+echo -14 61 | gdaltransform -s_srs &quot;EPSG:4326&quot; -t_srs &quot;EPSG:27700&quot;
+-246410.748854375 1294822.36205397 -54.5953653845936
+# Lower right corner
+echo 5 50 | gdaltransform -s_srs &quot;EPSG:4326&quot; -t_srs &quot;EPSG:27700&quot;
+901561.991813587 34610.1630877961 -35.8900839695707</blockquote>
+<p>We use <tt class="docutils literal">gdal_translate</tt> to crop the region of interest</p>
+<pre class="literal-block">
+gdal_translate -of VRT -projwin -246410.748854375 1294822.36205397 901561.991813587 34610.1630877961 mosaic.vrt mosaic_cropped.vrt
+</pre>
+<div class="figure">
+<img alt="images/GPP__OSNG_cropped.png" src="../static/images/GPP__OSNG_cropped.png" style="width: 90%;" />
+</div>
+<p>At this stage, we have the output that we want for a given date. Let's
+put this together for a whole year.</p>
 </div>
 <div class="section" id="all-dates">
 <h3>All dates</h3>
+<p>We need a script that automates the previous task. <a class="reference external" href="https://gist.github.com/3152468">Here</a>:</p>
+<div class="highlight"><pre><span class="c">#!/bin/bash</span>
+
+<span class="nv">tile1</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">tile2</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">year</span><span class="o">=</span><span class="nv">$3</span>
+
+<span class="c"># First grab the available dates for one tile</span>
+<span class="nv">hdf_tile1</span><span class="o">=(</span><span class="sb">`</span>ls MOD17A2.A<span class="k">${</span><span class="nv">year</span><span class="k">}</span>*<span class="k">${</span><span class="nv">tile1</span><span class="k">}</span>*.hdf<span class="sb">`</span><span class="o">)</span>
+<span class="se">\r</span>m -rf file_list.txt
+<span class="c"># Loop through datasets in time...</span>
+<span class="k">for </span>t1 in <span class="s2">&quot;${hdf_tile1[@]}&quot;</span>
+<span class="k">do</span>
+
+<span class="k">     </span><span class="nv">t2</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$t1</span>| awk -F<span class="s2">&quot;.&quot;</span>  -v <span class="nv">other_tile</span><span class="o">=</span><span class="nv">$tile2</span> <span class="se">\</span>
+         <span class="s1">&#39;{printf( &quot;%s.%s.%s.*\n&quot;,  $1,$2,other_tile)}&#39;</span><span class="sb">`</span>
+     <span class="nv">t2</span><span class="o">=</span><span class="sb">`</span>ls <span class="nv">$t2</span><span class="sb">`</span>
+     <span class="nv">output_fname</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$t1</span>| awk -F<span class="s2">&quot;.&quot;</span>  <span class="s1">&#39;{printf( &quot;%s.%s\n&quot;,  $1,$2)}&#39;</span><span class="sb">`</span>
+     <span class="nb">echo</span> <span class="k">${</span><span class="nv">t1</span><span class="k">}</span> <span class="k">${</span><span class="nv">t2</span><span class="k">}</span> <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>
+     gdalbuildvrt <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic_sinu.vrt <span class="se">\</span>
+         <span class="s1">&#39;HDF4_EOS:EOS_GRID:&quot;&#39;</span><span class="k">${</span><span class="nv">t1</span><span class="k">}</span><span class="s1">&#39;&quot;:MOD_Grid_MOD17A2:Gpp_1km&#39;</span> <span class="se">\</span>
+         <span class="s1">&#39;HDF4_EOS:EOS_GRID:&quot;&#39;</span><span class="k">${</span><span class="nv">t2</span><span class="k">}</span><span class="s1">&#39;&quot;:MOD_Grid_MOD17A2:Gpp_1km&#39;</span>
+      gdalwarp -of VRT -t_srs <span class="s2">&quot;EPSG:27700&quot;</span> <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic_sinu.vrt <span class="se">\</span>
+               <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic.vrt
+      gdal_translate -of VRT <span class="se">\</span>
+          -projwin -246410.748854375 1294822.36205397 901561.991813587 34610.1630877961 <span class="se">\</span>
+          <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic.vrt <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>.vrt
+      <span class="nb">echo</span> <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>.vrt &gt;&gt; file_list.txt
+
+<span class="k">done</span>
+</pre></div>
+<p>We run the script for each year as</p>
+<pre class="literal-block">
+stitch_files.sh h18v03 h17v03 2004
+</pre>
 </div>
+</div>
+<div class="section" id="putting-all-that-together">
+<h2>Putting all that together</h2>
+<p>In the previous script, a file called <tt class="docutils literal">file_list.txt</tt> holds the name
+of all the output VRT files. We will now create a multiband VRT file
+using all the reprojected and cropped files, and then convert the VRT
+file to a GeoTIFF file:</p>
+<pre class="literal-block">
+gdalbuildvrt -separate -input_file_list file_list.txt MOD17A2.2004.vrt
+gdal_translate -of GTiff -co &quot;COMPRESS=LZW&quot; -co &quot;TILED=YES&quot; MOD17A2.2004.vrt MOD17A2.2004.tif
+</pre>
 </div>
 
         </div><!-- /.entry-content -->
