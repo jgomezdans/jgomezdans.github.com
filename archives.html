@@ -16,7 +16,20 @@
 
         <!--[if lt IE 7]>
                 <link rel="stylesheet" type="text/css" media="all" href="./css/ie6.css"/><![endif]-->
-
+	<!-- Using MathJax, with the delimiters $ -->
+	<!-- Conflict with pygments for the .mo and .mi -->
+	<script type="text/x-mathjax-config">
+	  MathJax.Hub.Config({
+	  "HTML-CSS": {
+	  styles: {
+	  ".MathJax .mo, .MathJax .mi": {color: "black ! important"}}
+	  },
+	  tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],processEscapes: true}
+	  });
+	</script>
+	
+	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+	
 </head>
 
 <body id="index" class="home">
@@ -37,6 +50,8 @@
                 
                     <li ><a href="./category/tips.html">tips</a></li>
                 
+                    <li ><a href="./category/work.html">work</a></li>
+                
                 </ul></nav>
         </header><!-- /#banner -->
         
@@ -44,6 +59,9 @@
 <h1>Archives for jgomezdans</h1>
 
 <dl>
+
+    <dt>Wed 18 July 2012</dt>
+    <dd><a href='eoldas-out-in-the-wild.html'>EOLDAS out in the wild!</a></dd>
 
     <dt>Fri 20 July 2012</dt>
     <dd><a href='linearly-scaling-raster-data-with-gdal.html'>Linearly scaling raster data with GDAL</a></dd>
