@@ -96,11 +96,13 @@ expensive models many times.</p>
 <p>The main assumption in EOLDAS is that the cost function is Gaussian.
 We can build up quite complex cost functions by adding individual terms.
 Typically, these terms could be</p>
-<p># A observation mismatch term, $J_{obs}$.
-# A prior term, $J_{prior}$.
-# A dynamic model mismatch term, $J_{model}$.</p>
+<ol class="arabic simple">
+<li>A observation mismatch term, $J_{obs}$.</li>
+<li>A prior term, $J_{prior}$.</li>
+<li>A dynamic model mismatch term, $J_{model}$.</li>
+</ol>
 <p>For example, $J_{obs}$ can be written under the assumption that the
-state is $\mathbf{x}$$, the observations are $\mathbf{y}_{obs}$,
+state is $\mathbf{x}$, the observations are $\mathbf{y}_{obs}$,
 the observation operator (that transforms the state into observations)
 is $H$, and the observational uncertainty covariance matrix is given by
 $\mathbf{C}_{obs}$. We could include <em>structural error</em> (if we know that
