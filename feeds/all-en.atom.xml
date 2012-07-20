@@ -10,5 +10,26 @@ and OGR (for vectors).&lt;/p&gt;
 linearly scaled (so they put it in as a 16bit integer and you need to
 apply a linear mapping to get the units right as floating point numbers).
 In the GDAL mailing list &lt;a class="reference external" href="http://lists.osgeo.org/pipermail/gdal-dev/2012-July/033504.html"&gt;there's a thread on this&lt;/a&gt;
-using the MODIS SST product.&lt;/p&gt;
+using the MODIS SST product. Obviously, you need a reasonable file format
+that is read easily (this mean GeoTIFF), and you need it in the right
+units, as you don't want to remember these things. The easiest way to
+accomplish this is to use &lt;tt class="docutils literal"&gt;gdal_translate&lt;/tt&gt;, with its rather handy
+&lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-scale&lt;/span&gt; option&lt;/tt&gt;, which performs a linear scaling. We'll also want to
+change the data type to a floating point number, as otherwise results
+will be quantised. From the post above, we know what the linear scaling
+is, but we need to convert it&lt;/p&gt;
+&lt;p&gt;A bash script that loops over these files could be&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;for file in A*L3m_8D_NSST_4 ;
+do
+  echo &amp;quot;map: $file&amp;quot;
+  gdal_translate -of GTiff -ot Float32 \
+                      -scale 0 65535 -2. 45. \
+                      -a_srs &amp;quot;EPSG:4326&amp;quot; \
+                      -a_nodata 65535  \
+                      -a_ullr -180 90 180 -90 \
+                      -co &amp;quot;COMPRESS=PACKBITS&amp;quot; \
+                      &amp;#39;HDF4_SDS:UNKNOWN:&amp;quot;A20030012003008.L3m_8D_NSST_4&amp;quot;:0&amp;#39;\
+                      A20030012003008.L3m_8D_NSST_4.tif
+done
+&lt;/pre&gt;&lt;/div&gt;
 </summary><category term="GDAL"></category><category term="remote sensing"></category></entry></feed>
