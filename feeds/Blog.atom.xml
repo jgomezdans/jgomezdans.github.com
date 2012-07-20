@@ -165,6 +165,8 @@ mechanistic models, &lt;em&gt;à la DGVM&lt;/em&gt;, but also prior information 
 things, maybe derived from previous studies) and observations (which
 will have noise). It's a solution to Bayes' Theorem, and what's really
 important is that you also get full uncertainties.&lt;/p&gt;
+&lt;div class="section" id="how-it-works"&gt;
+&lt;h2&gt;How it works&lt;/h2&gt;
 &lt;p&gt;The way EOLDAS works is by specifying a cost function that will be
 minimised using a gradient descent method. This naturally requires
 information on the derivatives of such cost function. If you have an
@@ -231,6 +233,9 @@ J = J_{obs} + J_{prior} + J_{model}
 and this function is minimised. Once the minimum is reached, the uncertainty
 can be calculated from the inverse of the Hessian matrix, under the assumption
 that the posterior distribution is not too far off from Gaussian.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="section" id="an-example"&gt;
+&lt;h2&gt;An example&lt;/h2&gt;
 &lt;p&gt;So what do you get out of this? Well, for one, you can estimate many
 parameters. Using typical optical remote sensing data, you can estimate
 6 or 7 parameters for sensors like MODIS. So not only do you get LAI,
@@ -256,5 +261,21 @@ for 7 parameters:&lt;/p&gt;
 &lt;div class="figure"&gt;
 &lt;img alt="images/results.png" src="images/results.png" style="width: 90%;" /&gt;
 &lt;p class="caption"&gt;EOLDAS processing result.&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The details of this experiment can be found &lt;a class="reference external" href="http://jgomezdans.github.com/eoldas_release/example_field.html"&gt;here&lt;/a&gt;
+but we can see that the inversion provides reasonable results (I can't
+access the ground truth measurements of LAI to compare against, this is
+from a nearby site but bear with me!). The maximum of LAI is coincidental
+to the ground measured data (which have an standard deviation of ~2).
+Note that the grey area is the posterior 95% CI. It is interesting to
+see that the leaf related parameters are quite large at the beginning
+and end of the year, where there is little vegetation (although this
+is also compounded by the fact that there are very few observations). Note
+how the soil uncertainty increases when the LAI peaks (the LAI uncertainty
+is also quite high due to saturation). Senescence is low at peak LAI,
+indicating a green crop. Chlorphyll, DM and EWT have similar peaks. N
+moves around quite a lot, possibly compensating for the other parameters.
+Maybe a better way to solve this problem would be to prescribe N to
+a known value.&lt;/p&gt;
 &lt;/div&gt;
 </summary><category term="remote sensing"></category><category term="data assimilation"></category></entry></feed>
