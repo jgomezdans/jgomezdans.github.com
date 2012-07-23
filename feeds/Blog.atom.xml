@@ -543,7 +543,7 @@ sound way of merging prior information about processes (such as
 mechanistic models, &lt;em&gt;à la DGVM&lt;/em&gt;, but also prior information about
 things, maybe derived from previous studies) and observations (which
 will have noise). It's a solution to Bayes' Theorem, and what's really
-important is that you also get full uncertainties. There's &lt;a class="reference external" href="http://jgomezdans.github.com/images/Lewis_et_al.pdf"&gt;a paper on this&lt;/a&gt;&lt;/p&gt;
+important is that you also get full uncertainties. There's &lt;a class="reference external" href="http://jgomezdans.github.com/static/images/Lewis_et_al.pdf"&gt;a paper on this&lt;/a&gt;&lt;/p&gt;
 &lt;div class="section" id="how-it-works"&gt;
 &lt;h2&gt;How it works&lt;/h2&gt;
 &lt;p&gt;The way EOLDAS works is by specifying a cost function that will be
