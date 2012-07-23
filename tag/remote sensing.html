@@ -60,10 +60,10 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././stitching-together-modis-data.html">Stitching together MODIS data</a></h1> 
+                    <h1 class="entry-title"><a href=".././simple-time-series-modis-data-analysis.html">Simple time series MODIS data analysis</a></h1> 
                     <footer class="post-info">
-        <abbr class="published" title="2012-07-20T15:00:00">
-                Fri 20 July 2012
+        <abbr class="published" title="2012-07-23T15:00:00">
+                Mon 23 July 2012
         </abbr>
 
         
@@ -72,281 +72,130 @@
         </address>
         
 <p>In <a href=".././category/Blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/GDAL.html">GDAL</a><a href=".././tag/remote sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a></p>
+<p>tags: <a href=".././tag/GDAL.html">GDAL</a><a href=".././tag/remote sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a><a href=".././tag/python.html">python</a></p>
 
 
-</footer><!-- /.post-info --><p>MODIS has been around for some 12 years. There are many products that
-have large time series over the whole globe which one can use to study
-things. So I might want to produce a a timeseries of the <a class="reference external" href="https://lpdaac.usgs.gov/products/modis_products_table/gross_primary_productivity/8_day_l4_global_1km/mod17a2">8-day Gross Primary Productivity (GPP) product</a>
-over say the UK. Moreover, I might want to change the projection to
-something more appropriate to the UK. The first thing to note is that
-the UK (OK, and Ireland, and I'm ignoring Gibraltar, the Falklands and
-the like!;-D) is spread over two tiles, <tt class="docutils literal">h17v03</tt> and <tt class="docutils literal">h18v03</tt>.
-The MODIS product needs to be downloaded for both tiles, and then
-mosaicked/stitched together. So, this is what we want to do:</p>
+</footer><!-- /.post-info --><p>In a <a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html">previous post</a>,
+I demonstrated how to stitch and put together a number of MODIS data
+files. This is useful and interesting, but in the end, we are interested
+in analysing the data we get out of the satellite. One first way around
+this might be to extract time series from pixels in the region of interest
+that share some common feature (such as common landcover, or where we
+just happen to have some ground data). In this post, I will demonstrate
+how to extract data for common landcover pixels. To do this, I will
+use the MODIS landcover product, as that's the only one I have lying
+around. Note that in reality, one would just stay in the MODIS projection
+for this, rather than waste time reprojecting and clipping things.
+However, one could think that the landcover map is in a different
+projection.</p>
+<p>The procedure for this is quite straightforward:</p>
 <ol class="arabic simple">
-<li>Download the complete time series for the relevant tiles</li>
-<li>Stitch together the tiles</li>
-<li>Reproject to some useful projection</li>
+<li>Open and read in the reference dataset (landcover in our case)</li>
+<li>Loop over time, grabbing all the individual rasters for each period</li>
+<li>Loop over the features we are interested in in the reference dataset</li>
+<li>Calculate some descriptive stats for the given time period &amp; feature</li>
+<li>Do some plotting</li>
 </ol>
-<p>The output data ought to be in an easy-to-use format, for example a
-multiband GeoTIFF file, where each band represents a different period.</p>
-<p>It is important to note that I shall be using the GDAL VRT format a lot,
-and this requires in this case, opening many HDF files simultaneously.
-For this to work, you need to have the installed HDF libraries correctly
-configured. See the section <a class="reference external" href="http://www.gdal.org/frmt_hdf4.html">Driver Building</a>
-on the <a class="reference external" href="http://www.gdal.org/">GDAL website</a>.</p>
-<div class="section" id="getting-the-data">
-<h2>Getting the data</h2>
-<p>Although one can use the <a class="reference external" href="http://reverb.echo.nasa.gov/reverb/">Reverb website</a>
-to select and download data, it is also easy enough to just get what
-you need from NASA's FTP servers. You can have sophisticated download
-tools such as <a class="reference external" href="https://github.com/jgomezdans/modisficator">modisficator</a>,
-but sometimes it's just easier to have a shell script that uses wget
-to get the data. Said script is <a class="reference external" href="https://gist.github.com/3145223">grab_modis.sh</a>,
-and uses Bash and wget. Going by our example, let's say we want to download
-two tiles, for a few years. We'd just use a Bash command for this. We
-note that the GPP product for TERRA has the code <tt class="docutils literal">MOD17A2.005</tt></p>
-<div class="highlight"><pre><span class="k">for </span>tile in h17v03 h18v03;
-<span class="k">do</span>
-<span class="k">    for </span>year in <span class="o">{</span>2000..2011<span class="o">}</span>;
-    <span class="k">do</span>
-        ./grab_modis.sh MOD17A2.005 <span class="nv">$tile</span> <span class="nv">$year</span>
-    <span class="k">done</span>
-<span class="k">done</span>
-</pre></div>
-<p>The previous commands will take a while to download the data. We can
-see that we have downloaded a bunch of files like</p>
-<pre class="literal-block">
-MOD17A2.A2005001.h17v03.005.2007356110650.hdf
-MOD17A2.A2005001.h18v03.005.2007356112231.hdf
-</pre>
-<p>We can see what's in each file using <tt class="docutils literal">gdalinfo</tt></p>
-<pre class="literal-block">
-gdalinfo MOD17A2.A2005001.h17v03.005.2007356110650.hdf
-Driver: HDF4/Hierarchical Data Format Release 4
-Files: MOD17A2.A2005001.h17v03.005.2007356110650.hdf
-Size is 512, 512
-Coordinate System is `'
-Metadata:
-  HDFEOSVersion=HDFEOS_V2.9
-  LOCALGRANULEID=MOD17A2.A2005001.h17v03.005.2007356110650.hdf
-  PRODUCTIONDATETIME=2007-12-22T11:06:50.000Z
-  DAYNIGHTFLAG=Day
-  REPROCESSINGACTUAL=reprocessed
-  LOCALVERSIONID=5.2.6
-  REPROCESSINGPLANNED=further update is anticipated
-  SCIENCEQUALITYFLAG=Not Investigated
-  AUTOMATICQUALITYFLAGEXPLANATION=Passed was set as a default value. May or may not require further study
-  AUTOMATICQUALITYFLAG=Passed
-  SCIENCEQUALITYFLAGEXPLANATION=See http://landweb.nascom.nasa.gov/cgi-bin/QA_WWW/qaFlagPage.cgi?sat=terra for the product Science Quality status.
-  QAPERCENTMISSINGDATA=0
-  QAPERCENTOUTOFBOUNDSDATA=77
-  QAPERCENTCLOUDCOVER=82
-  QAPERCENTINTERPOLATEDDATA=0
-  PARAMETERNAME=MOD_PR17A2
-  VERSIONID=5
-  SHORTNAME=MOD17A2
-  INPUTPOINTER=MOD15A2.A2005001.h17v03.005.2007352013935.hdf, MOD17A1.1.A2005.h17v03.hdf, MOD12Q1.A2001001.h17v03.004.2004358134257.hdf, MOD17_ANC_RI11.hdf
-  GRINGPOINTLONGITUDE=-15.4860189105775, -19.9999999949462, 0.0325645816154951, 0.0125638874822562
-  GRINGPOINTLATITUDE=49.7394264948349, 59.9999999946118, 60.0089388384779, 49.7424953501575
-  GRINGPOINTSEQUENCENO=1, 2, 3, 4
-  EXCLUSIONGRINGFLAG=N
-  RANGEENDINGDATE=2005-01-08
-  RANGEENDINGTIME=23:59:59
-  RANGEBEGINNINGDATE=2005-01-01
-  RANGEBEGINNINGTIME=00:00:00
-  PGEVERSION=5.2.8
-  ASSOCIATEDSENSORSHORTNAME=MODIS
-  ASSOCIATEDPLATFORMSHORTNAME=Terra
-  ASSOCIATEDINSTRUMENTSHORTNAME=MODIS
-  QAPERCENTGOODQUALITY=0
-  QAPERCENTOTHERQUALITY=23
-  HORIZONTALTILENUMBER=17
-  VERTICALTILENUMBER=03
-  TileID=51017003
-  NDAYS_COMPOSITED=8
-  QAPERCENTGOODPSN=0
-  QAPERCENTGOODNPP=0
-  NORTHBOUNDINGCOORDINATE=59.9999999946118
-  SOUTHBOUNDINGCOORDINATE=49.9999999955098
-  EASTBOUNDINGCOORDINATE=0.0166666666624637
-  WESTBOUNDINGCOORDINATE=-19.9999999949462
-  ALGORITHMPACKAGEACCEPTANCEDATE=2005-02-11
-  ALGORITHMPACKAGEMATURITYCODE=Normal
-  ALGORITHMPACKAGENAME=MOD17A2
-  ALGORITHMPACKAGEVERSION=5
-  INSTRUMENTNAME=Moderate Resolution Imaging Spectroradiometer
-  PLATFORMSHORTNAME=Terra
-  PROCESSINGDATETIME=2007-12-22T11:06:50.000Z
-  LOCALINPUTGRANULEID=MOD15A2.A2005001.h17v03.005.2007352013935.hdf, MOD17A1.1.A2005.h17v03.hdf, MOD12Q1.A2001001.h17v03.004.2004358134257.hdf, MOD17_ANC_RI11.hdf
-  GEOANYABNORMAL=False
-  GEOESTMAXRMSERROR=50.0
-  LONGNAME=MODIS/Terra Gross Primary Productivity 8-Day L4 Global 1km SIN Grid
-  PROCESSINGCENTER=MODAPS
-  NUMBEROFGRANULES=1
-  GRANULEDAYNIGHTFLAG=Day
-  CHARACTERISTICBINANGULARSIZE=30.0
-  CHARACTERISTICBINSIZE=926.625433055556
-  DATACOLUMNS=1200
-  DATAROWS=1200
-  GLOBALGRIDCOLUMNS=43200
-  GLOBALGRIDROWS=21600
-  NADIRDATARESOLUTION=1km
-  MAXIMUMOBSERVATIONS=1
-  SPSOPARAMETERS=3716
-  PROCESSINGENVIRONMENT=Linux minion5282 2.6.20.3 #1 SMP Thu Mar 22 09:36:24 EST 2007 i686 IntelR XeonR CPU            5148  &#64; 2.33GHz unknown GNU/Linux
-  DESCRREVISION=5.2
-  ENGINEERING_DATA=(none-available)
+<p>Here, we shall loop over the different landcover types, and for each
+timestep, we will calculate the mean and standard deviation of GPP.
+<a class="reference external" href="https://gist.github.com/3163682">A script</a>:</p>
+<div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A script to grab timeseries from MODIS data using GDAL and python</span>
+<span class="sd">Author: J Gomez-Dans/NCEO &amp; UCL</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span><span class="p">:</span> <span class="n">J</span> <span class="n">G</span><span class="err">ó</span><span class="n">mez</span><span class="o">-</span><span class="n">Dans</span>
 
-  UM_VERSION=U.MONTANA MODIS PGE36 Vers 5.2.6 Rev 11 Release 06.09.2006 18:36
-Subdatasets:
-  SUBDATASET_1_NAME=HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km
-  SUBDATASET_1_DESC=[1200x1200] Gpp_1km MOD_Grid_MOD17A2 (16-bit integer)
-  SUBDATASET_2_NAME=HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:PsnNet_1km
-  SUBDATASET_2_DESC=[1200x1200] PsnNet_1km MOD_Grid_MOD17A2 (16-bit integer)
-  SUBDATASET_3_NAME=HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Psn_QC_1km
-  SUBDATASET_3_DESC=[1200x1200] Psn_QC_1km MOD_Grid_MOD17A2 (8-bit unsigned integer)
-Corner Coordinates:
-Upper Left  (    0.0,    0.0)
-Lower Left  (    0.0,  512.0)
-Upper Right (  512.0,    0.0)
-Lower Right (  512.0,  512.0)
-Center      (  256.0,  256.0)
-</pre>
-<p>We immediately see that there are 3 subdatasets: GPP, PSN and a QA dataset.
-For the time being, I'll just focus on GPP, but the idea is identical
-for any other subdataset. The name of the dataset within the HDF file
-that GDAL understands is <tt class="docutils literal"><span class="pre">HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km</span></tt>.</p>
-</div>
-<div class="section" id="stitching-the-files">
-<h2>Stitching the files</h2>
-<p>So the idea is that for each date, we stitch together <tt class="docutils literal">h18v03</tt> and
-<tt class="docutils literal">h17v03</tt>, and then reproject the whole thing to some useful
-projection. To do this efficiently, we'll use GDAL VRTs. First, I'll
-demonstrate on a single date, then we'll automate for a lot of dates.</p>
-<div class="section" id="single-date">
-<h3>Single date</h3>
-<p>First, the stitching is done using <tt class="docutils literal">gdalbuildvrt</tt>. The command
-takes the output filename, the input filenames, and off it goes!</p>
-<pre class="literal-block">
-gdalbuildvrt mosaic_sinu.vrt \
-'HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km' \
-'HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h18v03.005.2007356112231.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km'
-</pre>
-<p>Note that we have escaped the GDAL filenames here. You can check
-the output file, <tt class="docutils literal">mosaic_sinu.vrt</tt>, with <tt class="docutils literal">gdalinfo</tt> and satisfiy
-yourself that it makes sense: We have just stitched two adjacent
-tiles into a single dataset. We can have a look at the result with
-Python (who can read the VRT files just fine!):</p>
-<div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 <span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdal</span>
 
-<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span> <span class="p">(</span> <span class="s">&quot;mosaic_sinu.vrt&quot;</span> <span class="p">)</span> <span class="c"># Open file</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span> <span class="c"># Read contents</span>
-<span class="n">mdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">array</span> <span class="p">(</span> <span class="n">data</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">data</span><span class="o">&gt;</span><span class="mi">30000</span> <span class="p">)</span> <span class="c"># Mask data</span>
-<span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span> <span class="c"># Set colormap</span>
-<span class="n">cmap</span><span class="o">.</span><span class="n">set_bad</span> <span class="p">(</span> <span class="s">&#39;k&#39;</span> <span class="p">)</span> <span class="c"># Set masked values to black</span>
-<span class="c"># Next line scales the GPP data by 0.0001 to get the right units</span>
-<span class="c"># and plots it.</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span> <span class="p">(</span> <span class="n">mdata</span><span class="o">*</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;nearest&#39;</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.007</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span> <span class="p">(</span> <span class="n">orientation</span><span class="o">=</span><span class="s">&#39;horizontal&#39;</span> <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ion</span><span class="p">()</span>
+<span class="c"># Read in the landcover data</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span> <span class="s">&quot;modis_lc1.tif&quot;</span> <span class="p">)</span>
+<span class="n">lc</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span>
+<span class="c"># The different landcover types we are interested in</span>
+<span class="n">lc_labels</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s">&quot;Evergreen Needleleaf forest&quot;</span><span class="p">,</span>
+<span class="mi">2</span><span class="p">:</span>    <span class="s">&quot;Evergreen Broadleaf forest&quot;</span><span class="p">,</span>
+<span class="mi">3</span><span class="p">:</span>    <span class="s">&quot;Deciduous Needleleaf forest&quot;</span><span class="p">,</span>
+<span class="mi">4</span><span class="p">:</span>    <span class="s">&quot;Decidious Broadleaf forst&quot;</span><span class="p">,</span>
+<span class="mi">5</span><span class="p">:</span>    <span class="s">&quot;Mixed forest&quot;</span><span class="p">,</span>
+<span class="mi">6</span><span class="p">:</span>    <span class="s">&quot;Closed shrublands&quot;</span><span class="p">,</span>
+<span class="mi">7</span><span class="p">:</span>    <span class="s">&quot;Open shrublands&quot;</span><span class="p">,</span>
+<span class="mi">8</span><span class="p">:</span>    <span class="s">&quot;Woody savannas&quot;</span><span class="p">,</span>
+<span class="mi">9</span><span class="p">:</span>    <span class="s">&quot;Savannas&quot;</span><span class="p">,</span>
+<span class="mi">10</span><span class="p">:</span>   <span class="s">&quot;Grasslands&quot;</span><span class="p">,</span>
+<span class="mi">11</span><span class="p">:</span>   <span class="s">&quot;Permanent wetlands&quot;</span><span class="p">,</span>
+<span class="mi">12</span><span class="p">:</span>   <span class="s">&quot;Croplands&quot;</span><span class="p">,</span>
+<span class="mi">14</span><span class="p">:</span>   <span class="s">&quot;Cropland/Natural vegetation mosaic&quot;</span><span class="p">}</span>
+<span class="c"># Time axis</span>
+<span class="n">doys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span> <span class="p">(</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">365</span><span class="p">,</span> <span class="mi">8</span> <span class="p">)</span>
+
+<span class="n">t_axis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="p">[</span> <span class="mf">730486.</span> <span class="o">+</span> <span class="n">doys</span> <span class="o">+</span> <span class="mi">365</span><span class="o">*</span><span class="n">i</span> \
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span> <span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+<span class="n">iplot</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="c"># Loop over landcover types</span>
+<span class="k">for</span> <span class="p">(</span> <span class="n">class_no</span><span class="p">,</span> <span class="n">class_label</span> <span class="p">)</span> <span class="ow">in</span> <span class="n">lc_labels</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+<span class="c"># The landcover filter for this class is calculated now.</span>
+<span class="n">passer_lc</span> <span class="o">=</span> <span class="p">(</span> <span class="n">lc</span><span class="o">==</span><span class="n">class_no</span> <span class="p">)</span>
+<span class="k">print</span> <span class="n">class_label</span>
+<span class="n">n_years</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+<span class="c"># Remember to clear the screen</span>
+<span class="n">mean_gpp</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">std_gpp</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c"># The lists above will hold the time series</span>
+<span class="c"># Now loop over years</span>
+<span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">xrange</span> <span class="p">(</span> <span class="mi">2002</span><span class="p">,</span> <span class="mi">2012</span> <span class="p">):</span>
+    <span class="k">print</span> <span class="n">year</span>
+    <span class="c"># Open the relevant file</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span> <span class="p">(</span> <span class="s">&quot;MOD17A2.</span><span class="si">%04d</span><span class="s">.tif&quot;</span> <span class="o">%</span> <span class="n">year</span> <span class="p">)</span>
+    <span class="c"># For eacth time step (ie band)...</span>
+    <span class="k">for</span> <span class="n">tstep</span> <span class="ow">in</span> <span class="nb">xrange</span> <span class="p">(</span> <span class="n">g</span><span class="o">.</span><span class="n">RasterCount</span> <span class="p">):</span>
+        <span class="c"># Read the data. Note bands start @ 1 in GDAL, not 0</span>
+        <span class="n">gpp</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">GetRasterBand</span> <span class="p">(</span> <span class="n">tstep</span><span class="o">+</span><span class="mi">1</span> <span class="p">)</span><span class="o">.</span> <span class="n">ReadAsArray</span> <span class="p">()</span>
+        <span class="c"># Scale and filter wrong values</span>
+        <span class="n">gpp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span> <span class="p">(</span> <span class="n">gpp</span> <span class="o">&gt;=</span> <span class="mi">30000</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">gpp</span><span class="o">*</span><span class="mf">0.0001</span> <span class="p">)</span>
+        <span class="c"># Filter, where the data are OK, and the landcover is</span>
+        <span class="c"># the one we stipulated above</span>
+        <span class="n">passer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span> <span class="n">gpp</span> <span class="p">),</span> \
+                <span class="n">passer_lc</span><span class="p">)</span>
+        <span class="c"># The pixels that get selected from this date.</span>
+        <span class="n">work</span> <span class="o">=</span> <span class="n">gpp</span><span class="p">[</span> <span class="n">passer</span><span class="p">]</span>
+        <span class="c"># Calculate means and standard deviations</span>
+        <span class="n">mean_gpp</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span> <span class="n">work</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">std_gpp</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span> <span class="n">work</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="p">)</span>
+<span class="c"># At the end of all years, do some plotting</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span> <span class="p">(</span> <span class="n">t_axis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mean_gpp</span><span class="p">)</span> <span class="o">-</span>  \
+    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">std_gpp</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mean_gpp</span><span class="p">)</span><span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">std_gpp</span><span class="p">),</span> \
+    <span class="n">facecolor</span><span class="o">=</span><span class="s">&quot;0.8&quot;</span> <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span> <span class="p">(</span> <span class="n">t_axis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">mean_gpp</span> <span class="p">),</span> <span class="s">&#39;-r&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.2</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">xaxis_date</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span> <span class="p">(</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">class_label</span> <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span> <span class="p">(</span> <span class="bp">True</span> <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span> <span class="p">(</span><span class="s">&quot;Time&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span> <span class="p">(</span><span class="s">r&#39;GPP $[\frac{kg C}{m^2}]$&#39;</span> <span class="p">)</span>
+<span class="n">iplot</span> <span class="o">=</span> <span class="n">iplot</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="k">print</span> <span class="s">&quot;Saving&quot;</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span> <span class="p">(</span> <span class="s">&quot;lc_</span><span class="si">%02d</span><span class="s">.png&quot;</span> <span class="o">%</span> <span class="n">class_no</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span> <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span> <span class="p">(</span> <span class="s">&quot;lc_</span><span class="si">%02d</span><span class="s">.pdf&quot;</span> <span class="o">%</span> <span class="n">class_no</span> <span class="p">)</span>
+<span class="k">print</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">Saved...&quot;</span>
 </pre></div>
 <div class="figure">
-<img alt="images/GPP_sinusoidal.png" src="../static/images/GPP_sinusoidal.png" style="width: 90%;" />
+<img alt="A time series (2002-2011) of GPP over the UK (&amp; Ireland, and bits of France, Belgium, etc!) for what the MODIS landcover products claims to be             &quot;Croplands&quot; )" src="../static/images/lc_12.png" style="width: 90%;" />
+<p class="caption">A time series of GPP over the UK (&amp; Ireland, and bits of France,
+Belgium, etc!) for what the MODIS landcover products claims to be
+&quot;Croplands&quot; )</p>
 </div>
-<p>Let's say we want to use the Ordnance Survey Projection for the UK. In
-<a class="reference external" href="http://jgomezdans.github.com/gdal_notes/reprojection.html">this webpage</a>,
-the reader is pointed to a <a class="reference external" href="http://spatialreference.org/ref/epsg/27700/">projection definition</a>
-that GDAL will understand, <tt class="docutils literal">EPSG:27700</tt>. We can now feed this to
-<tt class="docutils literal">gdalwarp</tt> and have virtually projected dataset!</p>
-<pre class="literal-block">
-gdalwarp -of VRT -t_srs &quot;EPSG:27700&quot; mosaic_sinu.vrt mosaic.vrt
-</pre>
-<p>This is nice, but it applies the projection to most of the Netherlands,
-and southern Scandinavia. If we just want to crop the UK and Ireland,
-we can do that as well. Say we want to cut out the box that extends
-from longitudes -14 to 5 and latitudes 50 to 61. Using <tt class="docutils literal">gdaltransform</tt></p>
-<pre class="literal-block">
-.. code-block: bash
-</pre>
-<blockquote>
-# Upper left corner
-echo -14 61 | gdaltransform -s_srs &quot;EPSG:4326&quot; -t_srs &quot;EPSG:27700&quot;
--246410.748854375 1294822.36205397 -54.5953653845936
-# Lower right corner
-echo 5 50 | gdaltransform -s_srs &quot;EPSG:4326&quot; -t_srs &quot;EPSG:27700&quot;
-901561.991813587 34610.1630877961 -35.8900839695707</blockquote>
-<p>We use <tt class="docutils literal">gdal_translate</tt> to crop the region of interest</p>
-<pre class="literal-block">
-gdal_translate -of VRT -projwin -246410.748854375 1294822.36205397 901561.991813587 34610.1630877961 mosaic.vrt mosaic_cropped.vrt
-</pre>
-<div class="figure">
-<img alt="images/GPP_OSNG_cropped.png" src="../static/images/GPP_OSNG_cropped.png" style="width: 90%;" />
-</div>
-<p>At this stage, we have the output that we want for a given date. Let's
-put this together for a whole year.</p>
-</div>
-<div class="section" id="all-dates">
-<h3>All dates</h3>
-<p>We need a script that automates the previous task. <a class="reference external" href="https://gist.github.com/3152468">Here</a>:</p>
-<div class="highlight"><pre><span class="c">#!/bin/bash</span>
-
-<span class="nv">tile1</span><span class="o">=</span><span class="nv">$1</span>
-<span class="nv">tile2</span><span class="o">=</span><span class="nv">$2</span>
-<span class="nv">year</span><span class="o">=</span><span class="nv">$3</span>
-
-<span class="c"># First grab the available dates for one tile</span>
-<span class="nv">hdf_tile1</span><span class="o">=(</span><span class="sb">`</span>ls MOD17A2.A<span class="k">${</span><span class="nv">year</span><span class="k">}</span>*<span class="k">${</span><span class="nv">tile1</span><span class="k">}</span>*.hdf<span class="sb">`</span><span class="o">)</span>
-<span class="se">\r</span>m -rf file_list.txt
-<span class="c"># Loop through datasets in time...</span>
-<span class="k">for </span>t1 in <span class="s2">&quot;${hdf_tile1[@]}&quot;</span>
-<span class="k">do</span>
-
-<span class="k">     </span><span class="nv">t2</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$t1</span>| awk -F<span class="s2">&quot;.&quot;</span>  -v <span class="nv">other_tile</span><span class="o">=</span><span class="nv">$tile2</span> <span class="se">\</span>
-         <span class="s1">&#39;{printf( &quot;%s.%s.%s.*\n&quot;,  $1,$2,other_tile)}&#39;</span><span class="sb">`</span>
-     <span class="nv">t2</span><span class="o">=</span><span class="sb">`</span>ls <span class="nv">$t2</span><span class="sb">`</span>
-     <span class="nv">output_fname</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$t1</span>| awk -F<span class="s2">&quot;.&quot;</span>  <span class="s1">&#39;{printf( &quot;%s.%s\n&quot;,  $1,$2)}&#39;</span><span class="sb">`</span>
-     <span class="nb">echo</span> <span class="k">${</span><span class="nv">t1</span><span class="k">}</span> <span class="k">${</span><span class="nv">t2</span><span class="k">}</span> <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>
-     gdalbuildvrt <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic_sinu.vrt <span class="se">\</span>
-         <span class="s1">&#39;HDF4_EOS:EOS_GRID:&quot;&#39;</span><span class="k">${</span><span class="nv">t1</span><span class="k">}</span><span class="s1">&#39;&quot;:MOD_Grid_MOD17A2:Gpp_1km&#39;</span> <span class="se">\</span>
-         <span class="s1">&#39;HDF4_EOS:EOS_GRID:&quot;&#39;</span><span class="k">${</span><span class="nv">t2</span><span class="k">}</span><span class="s1">&#39;&quot;:MOD_Grid_MOD17A2:Gpp_1km&#39;</span>
-      gdalwarp -of VRT -t_srs <span class="s2">&quot;EPSG:27700&quot;</span> <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic_sinu.vrt <span class="se">\</span>
-               <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic.vrt
-      gdal_translate -of VRT <span class="se">\</span>
-          -projwin -246410.748854375 1294822.36205397 901561.991813587 34610.1630877961 <span class="se">\</span>
-          <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic.vrt <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>.vrt
-      <span class="nb">echo</span> <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>.vrt &gt;&gt; file_list.txt
-
-<span class="k">done</span>
-</pre></div>
-<p>We run the script for each year as</p>
-<pre class="literal-block">
-stitch_files.sh h18v03 h17v03 2004
-</pre>
-</div>
-</div>
-<div class="section" id="putting-all-that-together">
-<h2>Putting all that together</h2>
-<p>In the previous script, a file called <tt class="docutils literal">file_list.txt</tt> holds the name
-of all the output VRT files. We will now create a multiband VRT file
-using all the reprojected and cropped files, and then convert the VRT
-file to a GeoTIFF file:</p>
-<pre class="literal-block">
-gdalbuildvrt -separate -input_file_list file_list.txt MOD17A2.2004.vrt
-gdal_translate -of GTiff -co &quot;COMPRESS=LZW&quot; -co &quot;TILED=YES&quot; MOD17A2.2004.vrt MOD17A2.2004.tif
-</pre>
-<p>At this stage, we can have a look at <tt class="docutils literal">MOD17A2.2004.tif</tt> with e.g.
-<tt class="docutils literal">gdalinfo</tt> or something.</p>
-</div>
+<p>Cool, hey? ;-)</p>
 
                 </article>
                 
                     
 <p class="paginator">
     
-    Page 1 / 3
+    Page 1 / 4
     
         <a href=".././tag/remote sensing2.html">&raquo;</a>
     

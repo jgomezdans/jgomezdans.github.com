@@ -1,5 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA a ramblings</title><link href="/" rel="alternate"></link><link href="//feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2012-07-20T15:00:00+01:00</updated><entry><title>Stitching together MODIS data</title><link href="//stitching-together-modis-data.html" rel="alternate"></link><updated>2012-07-20T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>//stitching-together-modis-data.html</id><summary type="html">&lt;p&gt;MODIS has been around for some 12 years. There are many products that
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA a ramblings</title><link href="/" rel="alternate"></link><link href="//feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2012-07-23T15:00:00+01:00</updated><entry><title>Simple time series MODIS data analysis</title><link href="//simple-time-series-modis-data-analysis.html" rel="alternate"></link><updated>2012-07-23T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>//simple-time-series-modis-data-analysis.html</id><summary type="html">&lt;p&gt;In a &lt;a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html"&gt;previous post&lt;/a&gt;,
+I demonstrated how to stitch and put together a number of MODIS data
+files. This is useful and interesting, but in the end, we are interested
+in analysing the data we get out of the satellite. One first way around
+this might be to extract time series from pixels in the region of interest
+that share some common feature (such as common landcover, or where we
+just happen to have some ground data). In this post, I will demonstrate
+how to extract data for common landcover pixels. To do this, I will
+use the MODIS landcover product, as that's the only one I have lying
+around. Note that in reality, one would just stay in the MODIS projection
+for this, rather than waste time reprojecting and clipping things.
+However, one could think that the landcover map is in a different
+projection.&lt;/p&gt;
+&lt;p&gt;The procedure for this is quite straightforward:&lt;/p&gt;
+&lt;ol class="arabic simple"&gt;
+&lt;li&gt;Open and read in the reference dataset (landcover in our case)&lt;/li&gt;
+&lt;li&gt;Loop over time, grabbing all the individual rasters for each period&lt;/li&gt;
+&lt;li&gt;Loop over the features we are interested in in the reference dataset&lt;/li&gt;
+&lt;li&gt;Calculate some descriptive stats for the given time period &amp;amp; feature&lt;/li&gt;
+&lt;li&gt;Do some plotting&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Here, we shall loop over the different landcover types, and for each
+timestep, we will calculate the mean and standard deviation of GPP.
+&lt;a class="reference external" href="https://gist.github.com/3163682"&gt;A script&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;A script to grab timeseries from MODIS data using GDAL and python&lt;/span&gt;
+&lt;span class="sd"&gt;Author: J Gomez-Dans/NCEO &amp;amp; UCL&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="n"&gt;__author__&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;J&lt;/span&gt; &lt;span class="n"&gt;G&lt;/span&gt;&lt;span class="err"&gt;ó&lt;/span&gt;&lt;span class="n"&gt;mez&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;Dans&lt;/span&gt;
+
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;matplotlib.pyplot&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;plt&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;osgeo&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;
+
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ion&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="c"&gt;# Read in the landcover data&lt;/span&gt;
+&lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;modis_lc1.tif&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;lc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ReadAsArray&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="c"&gt;# The different landcover types we are interested in&lt;/span&gt;
+&lt;span class="n"&gt;lc_labels&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Evergreen Needleleaf forest&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Evergreen Broadleaf forest&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Deciduous Needleleaf forest&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Decidious Broadleaf forst&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Mixed forest&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;6&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Closed shrublands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Open shrublands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Woody savannas&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Savannas&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;   &lt;span class="s"&gt;&amp;quot;Grasslands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;11&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;   &lt;span class="s"&gt;&amp;quot;Permanent wetlands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;12&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;   &lt;span class="s"&gt;&amp;quot;Croplands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;   &lt;span class="s"&gt;&amp;quot;Cropland/Natural vegetation mosaic&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="c"&gt;# Time axis&lt;/span&gt;
+&lt;span class="n"&gt;doys&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;arange&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;365&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;t_axis&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="mf"&gt;730486.&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;doys&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;365&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt; \
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;flatten&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;iplot&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+&lt;span class="c"&gt;# Loop over landcover types&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;class_no&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;class_label&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;lc_labels&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;iteritems&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+&lt;span class="c"&gt;# The landcover filter for this class is calculated now.&lt;/span&gt;
+&lt;span class="n"&gt;passer_lc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;lc&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="n"&gt;class_no&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;class_label&lt;/span&gt;
+&lt;span class="n"&gt;n_years&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;clf&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="c"&gt;# Remember to clear the screen&lt;/span&gt;
+&lt;span class="n"&gt;mean_gpp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+&lt;span class="n"&gt;std_gpp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+&lt;span class="c"&gt;# The lists above will hold the time series&lt;/span&gt;
+&lt;span class="c"&gt;# Now loop over years&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="mi"&gt;2002&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2012&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt;
+    &lt;span class="c"&gt;# Open the relevant file&lt;/span&gt;
+    &lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;MOD17A2.&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;.tif&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="c"&gt;# For eacth time step (ie band)...&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;tstep&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RasterCount&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="c"&gt;# Read the data. Note bands start @ 1 in GDAL, not 0&lt;/span&gt;
+        &lt;span class="n"&gt;gpp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetRasterBand&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;tstep&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="n"&gt;ReadAsArray&lt;/span&gt; &lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="c"&gt;# Scale and filter wrong values&lt;/span&gt;
+        &lt;span class="n"&gt;gpp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;where&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;gpp&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;30000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;nan&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;gpp&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="mf"&gt;0.0001&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c"&gt;# Filter, where the data are OK, and the landcover is&lt;/span&gt;
+        &lt;span class="c"&gt;# the one we stipulated above&lt;/span&gt;
+        &lt;span class="n"&gt;passer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;logical_and&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isfinite&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;gpp&lt;/span&gt; &lt;span class="p"&gt;),&lt;/span&gt; \
+                &lt;span class="n"&gt;passer_lc&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c"&gt;# The pixels that get selected from this date.&lt;/span&gt;
+        &lt;span class="n"&gt;work&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gpp&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="n"&gt;passer&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+        &lt;span class="c"&gt;# Calculate means and standard deviations&lt;/span&gt;
+        &lt;span class="n"&gt;mean_gpp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;work&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;mean&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;std_gpp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;work&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;std&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="c"&gt;# At the end of all years, do some plotting&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fill_between&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;t_axis&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;mean_gpp&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;  \
+    &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;std_gpp&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;mean_gpp&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;std_gpp&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; \
+    &lt;span class="n"&gt;facecolor&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;0.8&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;plot&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;t_axis&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;mean_gpp&lt;/span&gt; &lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;-r&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lw&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mf"&gt;1.2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;ax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;gca&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;ax&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xaxis_date&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;title&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;class_label&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;grid&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xlabel&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Time&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ylabel&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;r&amp;#39;GPP $[\frac{kg C}{m^2}]$&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;iplot&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;iplot&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Saving&amp;quot;&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;savefig&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;lc_&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;.png&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;class_no&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;dpi&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;150&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;savefig&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;lc_&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;.pdf&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;class_no&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\t&lt;/span&gt;&lt;span class="s"&gt;Saved...&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="A time series (2002-2011) of GPP over the UK (&amp;amp; Ireland, and bits of France, Belgium, etc!) for what the MODIS landcover products claims to be             &amp;quot;Croplands&amp;quot; )" src="images/lc_12.png" style="width: 90%;" /&gt;
+&lt;p class="caption"&gt;A time series of GPP over the UK (&amp;amp; Ireland, and bits of France,
+Belgium, etc!) for what the MODIS landcover products claims to be
+&amp;quot;Croplands&amp;quot; )&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Cool, hey? ;-)&lt;/p&gt;
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category><category term="python"></category></entry><entry><title>Stitching together MODIS data</title><link href="//stitching-together-modis-data.html" rel="alternate"></link><updated>2012-07-20T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>//stitching-together-modis-data.html</id><summary type="html">&lt;p&gt;MODIS has been around for some 12 years. There are many products that
 have large time series over the whole globe which one can use to study
 things. So I might want to produce a a timeseries of the &lt;a class="reference external" href="https://lpdaac.usgs.gov/products/modis_products_table/gross_primary_productivity/8_day_l4_global_1km/mod17a2"&gt;8-day Gross Primary Productivity (GPP) product&lt;/a&gt;
 over say the UK. Moreover, I might want to change the projection to
@@ -543,4 +657,4 @@ moves around quite a lot, possibly compensating for the other parameters.
 Maybe a better way to solve this problem would be to prescribe N to
 a known value.&lt;/p&gt;
 &lt;/div&gt;
-</summary><category term="remote sensing"></category><category term="data assimilation"></category></entry></feed>
+</summary><category term="remote sensing"></category><category term="data assimilation"></category><category term="python"></category></entry></feed>
