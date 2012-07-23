@@ -60,9 +60,9 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././linearly-scaling-raster-data-with-gdal.html">Linearly scaling raster data with GDAL</a></h1> 
+                    <h1 class="entry-title"><a href=".././stitching-together-modis-data.html">Stitching together MODIS data</a></h1> 
                     <footer class="post-info">
-        <abbr class="published" title="2012-07-20T13:00:00">
+        <abbr class="published" title="2012-07-20T15:00:00">
                 Fri 20 July 2012
         </abbr>
 
@@ -75,168 +75,278 @@
 <p>tags: <a href=".././tag/GDAL.html">GDAL</a><a href=".././tag/remote sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a></p>
 
 
-</footer><!-- /.post-info --><p>So, it's quite tricky to play around with these geospatial datasets: they
-have a myriad formats, these keep changing, and you can never know what
-metadata will be available in them. A clever way around this situation
-is to use tools that allow you to read most of the data, most of the
-associated metadata, and that let you do the usual minor tweaks that
-you'll require to get things working. And this means GDAL (for rasters)
-and OGR (for vectors).</p>
-<p>Typical problem: you get some data you've never seen before, and it is
-linearly scaled (so they put it in as a 16bit integer and you need to
-apply a linear mapping to get the units right as floating point numbers).
-In the GDAL mailing list <a class="reference external" href="http://lists.osgeo.org/pipermail/gdal-dev/2012-July/033504.html">there's a thread on this</a>
-using the MODIS SST product. Obviously, you need a reasonable file format
-that is read easily (this mean GeoTIFF), and you need it in the right
-units, as you don't want to remember these things. The easiest way to
-accomplish this is to use <tt class="docutils literal">gdal_translate</tt>, with its rather handy
-<tt class="docutils literal"><span class="pre">-scale</span> option</tt>, which performs a linear scaling. We'll also want to
-change the data type to a floating point number, as otherwise results
-will be quantised. From the post above, we know what the linear scaling
-is, but we need to convert it to GDAL, which requires a mapping from
-source minimum and maximum values to destimation min/max. One way to
-do this is to assume that the data span the complete range between
-0 and 65534 (maximum possible number) and calculate the two extrema
-in the destination space if you know the slope and intercept. Another
-way is to fish those two destination numbers from the metadata. Using</p>
-<pre class="literal-block">
-gdalinfo A20030012003008.L3m_8D_NSST_4
-[...]
-Scaling=linear
-Scaling Equation=(Slope*l3m_data) + Intercept = Parameter value
-Slope=0.000717185
-Intercept=-2
-Scaled Data Minimum=-2
-Scaled Data Maximum=45
-Data Minimum=-1.999999
-Data Maximum=35.785
-[...]
-</pre>
-<dl class="docutils">
-<dt>we see that the total scaling is between -2 and 45. A bash script that</dt>
-<dd>loops over a set of files could be</dd>
-</dl>
-<div class="highlight"><pre><span class="k">for </span>file in A*L3m_8D_NSST_4 ;
+</footer><!-- /.post-info --><p>MODIS has been around for some 12 years. There are many products that
+have large time series over the whole globe which one can use to study
+things. So I might want to produce a a timeseries of the <a class="reference external" href="https://lpdaac.usgs.gov/products/modis_products_table/gross_primary_productivity/8_day_l4_global_1km/mod17a2">8-day Gross Primary Productivity (GPP) product</a>
+over say the UK. Moreover, I might want to change the projection to
+something more appropriate to the UK. The first thing to note is that
+the UK (OK, and Ireland, and I'm ignoring Gibraltar, the Falklands and
+the like!;-D) is spread over two tiles, <tt class="docutils literal">h17v03</tt> and <tt class="docutils literal">h18v03</tt>.
+The MODIS product needs to be downloaded for both tiles, and then
+mosaicked/stitched together. So, this is what we want to do:</p>
+<ol class="arabic simple">
+<li>Download the complete time series for the relevant tiles</li>
+<li>Stitch together the tiles</li>
+<li>Reproject to some useful projection</li>
+</ol>
+<p>The output data ought to be in an easy-to-use format, for example a
+multiband GeoTIFF file, where each band represents a different period.</p>
+<p>It is important to note that I shall be using the GDAL VRT format a lot,
+and this requires in this case, opening many HDF files simultaneously.
+For this to work, you need to have the installed HDF libraries correctly
+configured. See the section <a class="reference external" href="http://www.gdal.org/frmt_hdf4.html">Driver Building</a>
+on the <a class="reference external" href="http://www.gdal.org/">GDAL website</a>.</p>
+<div class="section" id="getting-the-data">
+<h2>Getting the data</h2>
+<p>Although one can use the <a class="reference external" href="http://reverb.echo.nasa.gov/reverb/">Reverb website</a>
+to select and download data, it is also easy enough to just get what
+you need from NASA's FTP servers. You can have sophisticated download
+tools such as <a class="reference external" href="https://github.com/jgomezdans/modisficator">modisficator</a>,
+but sometimes it's just easier to have a shell script that uses wget
+to get the data. Said script is <a class="reference external" href="https://gist.github.com/3145223">grab_modis.sh</a>,
+and uses Bash and wget. Going by our example, let's say we want to download
+two tiles, for a few years. We'd just use a Bash command for this. We
+note that the GPP product for TERRA has the code <tt class="docutils literal">MOD17A2.005</tt></p>
+<div class="highlight"><pre><span class="k">for </span>tile in h17v03 h18v03;
 <span class="k">do</span>
-<span class="k">  </span><span class="nb">echo</span> <span class="s2">&quot;map: $file&quot;</span>
-  gdal_translate -of GTiff -ot Float32 <span class="se">\</span>
-                      -scale 0 65534 -2. 45. <span class="se">\</span>
-                      -a_srs <span class="s2">&quot;EPSG:4326&quot;</span> <span class="se">\</span>
-                      -a_nodata 65535  <span class="se">\</span>
-                      -a_ullr -180 90 180 -90 <span class="se">\</span>
-                      -co <span class="s2">&quot;COMPRESS=PACKBITS&quot;</span> <span class="se">\</span>
-                      <span class="s1">&#39;HDF4_SDS:UNKNOWN:&quot;A20030012003008.L3m_8D_NSST_4&quot;:0&#39;</span><span class="se">\</span>
-                      A20030012003008.L3m_8D_NSST_4.tif
+<span class="k">    for </span>year in <span class="o">{</span>2000..2011<span class="o">}</span>;
+    <span class="k">do</span>
+        ./grab_modis.sh MOD17A2.005 <span class="nv">$tile</span> <span class="nv">$year</span>
+    <span class="k">done</span>
 <span class="k">done</span>
 </pre></div>
-<p>A further refinement to save space is to convert the data to a
-<a class="reference external" href="http://www.gdal.org/gdal_vrttut.html">GDAL Virtual Raster</a>. This
-is basically a pointer to the datafile in the form of an XML file. If
-you only access the files rarely, or if you plan to carry out more processing
-on them, then this saves you storing more copies of the same data</p>
+<p>The previous commands will take a while to download the data. We can
+see that we have downloaded a bunch of files like</p>
 <pre class="literal-block">
-gdal_translate -of VRT -ot Float32 -scale 0 65534 -2. 45. \
-    -a_srs &quot;EPSG:4326&quot; -a_nodata 65535  \
-    -a_ullr -180 90 180 -90 -co &quot;COMPRESS=PACKBITS&quot; \
-    'HDF4_SDS:UNKNOWN:&quot;A20030012003008.L3m_8D_NSST_4&quot;:0' \
-    A20030012003008.L3m_8D_NSST_4.vrt
+MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+MOD17A2.A2005001.h18v03.005.2007356112231.hdf
 </pre>
-<p>results in the following VRT file:</p>
-<div class="highlight"><pre><span class="nt">&lt;VRTDataset</span> <span class="na">rasterXSize=</span><span class="s">&quot;8640&quot;</span> <span class="na">rasterYSize=</span><span class="s">&quot;4320&quot;</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;SRS&gt;</span>GEOGCS[<span class="ni">&amp;quot;</span>WGS 84<span class="ni">&amp;quot;</span>,DATUM[<span class="ni">&amp;quot;</span>WGS_1984<span class="ni">&amp;quot;</span>,SPHEROID[<span class="ni">&amp;quot;</span>WGS 84<span class="ni">&amp;quot;</span>,6378137,298.257223563,AUTHORITY[<span class="ni">&amp;quot;</span>EPSG<span class="ni">&amp;quot;</span>,<span class="ni">&amp;quot;</span>7030<span class="ni">&amp;quot;</span>]],AUTHORITY[<span class="ni">&amp;quot;</span>EPSG<span class="ni">&amp;quot;</span>,<span class="ni">&amp;quot;</span>6326<span class="ni">&amp;quot;</span>]],PRIMEM[<span class="ni">&amp;quot;</span>Greenwich<span class="ni">&amp;quot;</span>,0,AUTHORITY[<span class="ni">&amp;quot;</span>EPSG<span class="ni">&amp;quot;</span>,<span class="ni">&amp;quot;</span>8901<span class="ni">&amp;quot;</span>]],UNIT[<span class="ni">&amp;quot;</span>degree<span class="ni">&amp;quot;</span>,0.0174532925199433,AUTHORITY[<span class="ni">&amp;quot;</span>EPSG<span class="ni">&amp;quot;</span>,<span class="ni">&amp;quot;</span>9122<span class="ni">&amp;quot;</span>]],AUTHORITY[<span class="ni">&amp;quot;</span>EPSG<span class="ni">&amp;quot;</span>,<span class="ni">&amp;quot;</span>4326<span class="ni">&amp;quot;</span>]]<span class="nt">&lt;/SRS&gt;</span>
-  <span class="nt">&lt;GeoTransform&gt;</span> -1.8000000000000000e+02,  4.1666666666666664e-02,  0.0000000000000000e+00,  9.0000000000000000e+01,  0.0000000000000000e+00, -4.1666666666666664e-02<span class="nt">&lt;/GeoTransform&gt;</span>
-  <span class="nt">&lt;Metadata&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Product Name&quot;</span><span class="nt">&gt;</span>A20030012003008.L3m_8D_NSST_4<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Sensor Name&quot;</span><span class="nt">&gt;</span>MODISA<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Sensor&quot;</span><span class="nt">&gt;&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Title&quot;</span><span class="nt">&gt;</span>MODISA Level-3 Standard Mapped Image<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Data Center&quot;</span><span class="nt">&gt;&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Station Name&quot;</span><span class="nt">&gt;&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Station Latitude&quot;</span><span class="nt">&gt;</span>0<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Station Longitude&quot;</span><span class="nt">&gt;</span>0<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Mission&quot;</span><span class="nt">&gt;&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Mission Characteristics&quot;</span><span class="nt">&gt;&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Sensor Characteristics&quot;</span><span class="nt">&gt;&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Product Type&quot;</span><span class="nt">&gt;</span>8-day<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Replacement Flag&quot;</span><span class="nt">&gt;</span>ORIGINAL<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Software Name&quot;</span><span class="nt">&gt;</span>smigen<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Software Version&quot;</span><span class="nt">&gt;</span>3.30<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Processing Time&quot;</span><span class="nt">&gt;</span>2006060201827000<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Input Files&quot;</span><span class="nt">&gt;</span>A20030012003008.L3b_8D_NSST.main<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Processing Control&quot;</span><span class="nt">&gt;</span>smigen par=A20030012003008.L3m_8D_NSST_4.param<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Input Parameters&quot;</span><span class="nt">&gt;</span>IFILE = /data1/vdc/sdpsoper/vpu0/workbuf/A20030012003008.L3b_8D_NSST.main|OFILE = A20030012003008.L3m_8D_NSST_4|PFILE = |PROD = sst|PALFILE = DEFAULT|RFLAG = ORIGINAL|MEAS = 1|STYPE = 0|DATAMIN = 0.000000|DATAMAX = 0.000000|LONWEST = -180.000000|LONEAST = 180.000000|LATSOUTH = -90.000000|LATNORTH = 90.000000|RESOLUTION = 4km|PROJECTION = RECT|GAP_FILL = 0|SEAM_LON = -180.000000|PRECISION = |<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;L2 Flag Names&quot;</span><span class="nt">&gt;</span>LAND,~HISOLZ<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Period Start Year&quot;</span><span class="nt">&gt;</span>2003<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Period Start Day&quot;</span><span class="nt">&gt;</span>1<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Period End Year&quot;</span><span class="nt">&gt;</span>2003<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Period End Day&quot;</span><span class="nt">&gt;</span>8<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Start Time&quot;</span><span class="nt">&gt;</span>2002365123005000<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;End Time&quot;</span><span class="nt">&gt;</span>2003009023005000<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Start Year&quot;</span><span class="nt">&gt;</span>2002<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Start Day&quot;</span><span class="nt">&gt;</span>365<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Start Millisec&quot;</span><span class="nt">&gt;</span>45005000<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;End Year&quot;</span><span class="nt">&gt;</span>2003<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;End Day&quot;</span><span class="nt">&gt;</span>9<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;End Millisec&quot;</span><span class="nt">&gt;</span>9005000<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Start Orbit&quot;</span><span class="nt">&gt;</span>0<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;End Orbit&quot;</span><span class="nt">&gt;</span>0<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Orbit&quot;</span><span class="nt">&gt;</span>0<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Map Projection&quot;</span><span class="nt">&gt;</span>Equidistant Cylindrical<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Latitude Units&quot;</span><span class="nt">&gt;</span>degrees North<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Longitude Units&quot;</span><span class="nt">&gt;</span>degrees East<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Northernmost Latitude&quot;</span><span class="nt">&gt;</span>90<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Southernmost Latitude&quot;</span><span class="nt">&gt;</span>-90<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Westernmost Longitude&quot;</span><span class="nt">&gt;</span>-180<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Easternmost Longitude&quot;</span><span class="nt">&gt;</span>180<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Latitude Step&quot;</span><span class="nt">&gt;</span>0.04166667<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Longitude Step&quot;</span><span class="nt">&gt;</span>0.04166667<span class="err">&lt;</span>/MDI
-        <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;SW Point Latitude&quot;</span><span class="nt">&gt;</span>-89.97916<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;SW Point Longitude&quot;</span><span class="nt">&gt;</span>-179.9792<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Data Bins&quot;</span><span class="nt">&gt;</span>13045202<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Number of Lines&quot;</span><span class="nt">&gt;</span>4320<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Number of Columns&quot;</span><span class="nt">&gt;</span>8640<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Parameter&quot;</span><span class="nt">&gt;</span>Sea Surface Temperature<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Measure&quot;</span><span class="nt">&gt;</span>Mean<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Units&quot;</span><span class="nt">&gt;</span>deg-C<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Scaling&quot;</span><span class="nt">&gt;</span>linear<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Scaling Equation&quot;</span><span class="nt">&gt;</span>(Slope*l3m_data) + Intercept = Parameter value<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Slope&quot;</span><span class="nt">&gt;</span>0.000717185<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Intercept&quot;</span><span class="nt">&gt;</span>-2<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Scaled Data Minimum&quot;</span><span class="nt">&gt;</span>-2<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Scaled Data Maximum&quot;</span><span class="nt">&gt;</span>45<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Data Minimum&quot;</span><span class="nt">&gt;</span>-1.999999<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Data Maximum&quot;</span><span class="nt">&gt;</span>35.785<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Scaling&quot;</span><span class="nt">&gt;</span>linear<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Scaling Equation&quot;</span><span class="nt">&gt;</span>(Slope*l3m_data) + Intercept = Parameter value<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Slope&quot;</span><span class="nt">&gt;</span>0.000717185<span class="nt">&lt;/MDI&gt;</span>
-    <span class="nt">&lt;MDI</span> <span class="na">key=</span><span class="s">&quot;Intercept&quot;</span><span class="nt">&gt;</span>-2<span class="nt">&lt;/MDI&gt;</span>
-  <span class="nt">&lt;/Metadata&gt;</span>
-  <span class="nt">&lt;VRTRasterBand</span> <span class="na">dataType=</span><span class="s">&quot;Float32&quot;</span> <span class="na">band=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;Metadata</span> <span class="nt">/&gt;</span>
-    <span class="nt">&lt;NoDataValue&gt;</span>6.55350000000000E+04<span class="nt">&lt;/NoDataValue&gt;</span>
-    <span class="nt">&lt;ColorInterp&gt;</span>Gray<span class="nt">&lt;/ColorInterp&gt;</span>
-    <span class="nt">&lt;ComplexSource&gt;</span>
-      <span class="nt">&lt;SourceFilename</span> <span class="na">relativeToVRT=</span><span class="s">&quot;0&quot;</span><span class="nt">&gt;</span>HDF4_SDS:UNKNOWN:<span class="ni">&amp;quot;</span>A20030012003008.L3m_8D_NSST_4<span class="ni">&amp;quot;</span>:0<span class="nt">&lt;/SourceFilename&gt;</span>
-      <span class="nt">&lt;SourceBand&gt;</span>1<span class="nt">&lt;/SourceBand&gt;</span>
-      <span class="nt">&lt;SourceProperties</span> <span class="na">RasterXSize=</span><span class="s">&quot;8640&quot;</span> <span class="na">RasterYSize=</span><span class="s">&quot;4320&quot;</span> <span class="na">DataType=</span><span class="s">&quot;UInt16&quot;</span> <span class="na">BlockXSize=</span><span class="s">&quot;8640&quot;</span> <span class="na">BlockYSize=</span><span class="s">&quot;115&quot;</span> <span class="nt">/&gt;</span>
-      <span class="nt">&lt;SrcRect</span> <span class="na">xOff=</span><span class="s">&quot;0&quot;</span> <span class="na">yOff=</span><span class="s">&quot;0&quot;</span> <span class="na">xSize=</span><span class="s">&quot;8640&quot;</span> <span class="na">ySize=</span><span class="s">&quot;4320&quot;</span> <span class="nt">/&gt;</span>
-      <span class="nt">&lt;DstRect</span> <span class="na">xOff=</span><span class="s">&quot;0&quot;</span> <span class="na">yOff=</span><span class="s">&quot;0&quot;</span> <span class="na">xSize=</span><span class="s">&quot;8640&quot;</span> <span class="na">ySize=</span><span class="s">&quot;4320&quot;</span> <span class="nt">/&gt;</span>
-      <span class="nt">&lt;ScaleOffset&gt;</span>-2<span class="nt">&lt;/ScaleOffset&gt;</span>
-      <span class="nt">&lt;ScaleRatio&gt;</span>0.000717185<span class="nt">&lt;/ScaleRatio&gt;</span>
-    <span class="nt">&lt;/ComplexSource&gt;</span>
-  <span class="nt">&lt;/VRTRasterBand&gt;</span>
-<span class="nt">&lt;/VRTDataset&gt;</span>
+<p>We can see what's in each file using <tt class="docutils literal">gdalinfo</tt></p>
+<pre class="literal-block">
+gdalinfo MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+Driver: HDF4/Hierarchical Data Format Release 4
+Files: MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+Size is 512, 512
+Coordinate System is `'
+Metadata:
+  HDFEOSVersion=HDFEOS_V2.9
+  LOCALGRANULEID=MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+  PRODUCTIONDATETIME=2007-12-22T11:06:50.000Z
+  DAYNIGHTFLAG=Day
+  REPROCESSINGACTUAL=reprocessed
+  LOCALVERSIONID=5.2.6
+  REPROCESSINGPLANNED=further update is anticipated
+  SCIENCEQUALITYFLAG=Not Investigated
+  AUTOMATICQUALITYFLAGEXPLANATION=Passed was set as a default value. May or may not require further study
+  AUTOMATICQUALITYFLAG=Passed
+  SCIENCEQUALITYFLAGEXPLANATION=See http://landweb.nascom.nasa.gov/cgi-bin/QA_WWW/qaFlagPage.cgi?sat=terra for the product Science Quality status.
+  QAPERCENTMISSINGDATA=0
+  QAPERCENTOUTOFBOUNDSDATA=77
+  QAPERCENTCLOUDCOVER=82
+  QAPERCENTINTERPOLATEDDATA=0
+  PARAMETERNAME=MOD_PR17A2
+  VERSIONID=5
+  SHORTNAME=MOD17A2
+  INPUTPOINTER=MOD15A2.A2005001.h17v03.005.2007352013935.hdf, MOD17A1.1.A2005.h17v03.hdf, MOD12Q1.A2001001.h17v03.004.2004358134257.hdf, MOD17_ANC_RI11.hdf
+  GRINGPOINTLONGITUDE=-15.4860189105775, -19.9999999949462, 0.0325645816154951, 0.0125638874822562
+  GRINGPOINTLATITUDE=49.7394264948349, 59.9999999946118, 60.0089388384779, 49.7424953501575
+  GRINGPOINTSEQUENCENO=1, 2, 3, 4
+  EXCLUSIONGRINGFLAG=N
+  RANGEENDINGDATE=2005-01-08
+  RANGEENDINGTIME=23:59:59
+  RANGEBEGINNINGDATE=2005-01-01
+  RANGEBEGINNINGTIME=00:00:00
+  PGEVERSION=5.2.8
+  ASSOCIATEDSENSORSHORTNAME=MODIS
+  ASSOCIATEDPLATFORMSHORTNAME=Terra
+  ASSOCIATEDINSTRUMENTSHORTNAME=MODIS
+  QAPERCENTGOODQUALITY=0
+  QAPERCENTOTHERQUALITY=23
+  HORIZONTALTILENUMBER=17
+  VERTICALTILENUMBER=03
+  TileID=51017003
+  NDAYS_COMPOSITED=8
+  QAPERCENTGOODPSN=0
+  QAPERCENTGOODNPP=0
+  NORTHBOUNDINGCOORDINATE=59.9999999946118
+  SOUTHBOUNDINGCOORDINATE=49.9999999955098
+  EASTBOUNDINGCOORDINATE=0.0166666666624637
+  WESTBOUNDINGCOORDINATE=-19.9999999949462
+  ALGORITHMPACKAGEACCEPTANCEDATE=2005-02-11
+  ALGORITHMPACKAGEMATURITYCODE=Normal
+  ALGORITHMPACKAGENAME=MOD17A2
+  ALGORITHMPACKAGEVERSION=5
+  INSTRUMENTNAME=Moderate Resolution Imaging Spectroradiometer
+  PLATFORMSHORTNAME=Terra
+  PROCESSINGDATETIME=2007-12-22T11:06:50.000Z
+  LOCALINPUTGRANULEID=MOD15A2.A2005001.h17v03.005.2007352013935.hdf, MOD17A1.1.A2005.h17v03.hdf, MOD12Q1.A2001001.h17v03.004.2004358134257.hdf, MOD17_ANC_RI11.hdf
+  GEOANYABNORMAL=False
+  GEOESTMAXRMSERROR=50.0
+  LONGNAME=MODIS/Terra Gross Primary Productivity 8-Day L4 Global 1km SIN Grid
+  PROCESSINGCENTER=MODAPS
+  NUMBEROFGRANULES=1
+  GRANULEDAYNIGHTFLAG=Day
+  CHARACTERISTICBINANGULARSIZE=30.0
+  CHARACTERISTICBINSIZE=926.625433055556
+  DATACOLUMNS=1200
+  DATAROWS=1200
+  GLOBALGRIDCOLUMNS=43200
+  GLOBALGRIDROWS=21600
+  NADIRDATARESOLUTION=1km
+  MAXIMUMOBSERVATIONS=1
+  SPSOPARAMETERS=3716
+  PROCESSINGENVIRONMENT=Linux minion5282 2.6.20.3 #1 SMP Thu Mar 22 09:36:24 EST 2007 i686 IntelR XeonR CPU            5148  &#64; 2.33GHz unknown GNU/Linux
+  DESCRREVISION=5.2
+  ENGINEERING_DATA=(none-available)
+
+  UM_VERSION=U.MONTANA MODIS PGE36 Vers 5.2.6 Rev 11 Release 06.09.2006 18:36
+Subdatasets:
+  SUBDATASET_1_NAME=HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km
+  SUBDATASET_1_DESC=[1200x1200] Gpp_1km MOD_Grid_MOD17A2 (16-bit integer)
+  SUBDATASET_2_NAME=HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:PsnNet_1km
+  SUBDATASET_2_DESC=[1200x1200] PsnNet_1km MOD_Grid_MOD17A2 (16-bit integer)
+  SUBDATASET_3_NAME=HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Psn_QC_1km
+  SUBDATASET_3_DESC=[1200x1200] Psn_QC_1km MOD_Grid_MOD17A2 (8-bit unsigned integer)
+Corner Coordinates:
+Upper Left  (    0.0,    0.0)
+Lower Left  (    0.0,  512.0)
+Upper Right (  512.0,    0.0)
+Lower Right (  512.0,  512.0)
+Center      (  256.0,  256.0)
+</pre>
+<p>We immediately see that there are 3 subdatasets: GPP, PSN and a QA dataset.
+For the time being, I'll just focus on GPP, but the idea is identical
+for any other subdataset. The name of the dataset within the HDF file
+that GDAL understands is <tt class="docutils literal"><span class="pre">HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km</span></tt>.</p>
+</div>
+<div class="section" id="stitching-the-files">
+<h2>Stitching the files</h2>
+<p>So the idea is that for each date, we stitch together <tt class="docutils literal">h18v03</tt> and
+<tt class="docutils literal">h17v03</tt>, and then reproject the whole thing to some useful
+projection. To do this efficiently, we'll use GDAL VRTs. First, I'll
+demonstrate on a single date, then we'll automate for a lot of dates.</p>
+<div class="section" id="single-date">
+<h3>Single date</h3>
+<p>First, the stitching is done using <tt class="docutils literal">gdalbuildvrt</tt>. The command
+takes the output filename, the input filenames, and off it goes!</p>
+<pre class="literal-block">
+gdalbuildvrt mosaic_sinu.vrt \
+'HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km' \
+'HDF4_EOS:EOS_GRID:&quot;MOD17A2.A2005001.h18v03.005.2007356112231.hdf&quot;:MOD_Grid_MOD17A2:Gpp_1km'
+</pre>
+<p>Note that we have escaped the GDAL filenames here. You can check
+the output file, <tt class="docutils literal">mosaic_sinu.vrt</tt>, with <tt class="docutils literal">gdalinfo</tt> and satisfiy
+yourself that it makes sense: We have just stitched two adjacent
+tiles into a single dataset. We can have a look at the result with
+Python (who can read the VRT files just fine!):</p>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdal</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span> <span class="p">(</span> <span class="s">&quot;mosaic_sinu.vrt&quot;</span> <span class="p">)</span> <span class="c"># Open file</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span> <span class="c"># Read contents</span>
+<span class="n">mdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">array</span> <span class="p">(</span> <span class="n">data</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">data</span><span class="o">&gt;</span><span class="mi">30000</span> <span class="p">)</span> <span class="c"># Mask data</span>
+<span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span> <span class="c"># Set colormap</span>
+<span class="n">cmap</span><span class="o">.</span><span class="n">set_bad</span> <span class="p">(</span> <span class="s">&#39;k&#39;</span> <span class="p">)</span> <span class="c"># Set masked values to black</span>
+<span class="c"># Next line scales the GPP data by 0.0001 to get the right units</span>
+<span class="c"># and plots it.</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span> <span class="p">(</span> <span class="n">mdata</span><span class="o">*</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;nearest&#39;</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.007</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span> <span class="p">(</span> <span class="n">orientation</span><span class="o">=</span><span class="s">&#39;horizontal&#39;</span> <span class="p">)</span>
 </pre></div>
-<p>It basically points to the original data, and has the scaling information.
-If you wanted to, you could also use the <tt class="docutils literal"><span class="pre">-projwin</span></tt> or <tt class="docutils literal"><span class="pre">-srcwin</span></tt>
-options to crop the data, or even reproject it with <tt class="docutils literal">gdalwarp</tt>.</p>
+<div class="figure">
+<img alt="images/GPP_sinusoidal.png" src="../static/images/GPP_sinusoidal.png" style="width: 90%;" />
+</div>
+<p>Let's say we want to use the Ordnance Survey Projection for the UK. In
+<a class="reference external" href="http://jgomezdans.github.com/gdal_notes/reprojection.html">this webpage</a>,
+the reader is pointed to a <a class="reference external" href="http://spatialreference.org/ref/epsg/27700/">projection definition</a>
+that GDAL will understand, <tt class="docutils literal">EPSG:27700</tt>. We can now feed this to
+<tt class="docutils literal">gdalwarp</tt> and have virtually projected dataset!</p>
+<pre class="literal-block">
+gdalwarp -of VRT -t_srs &quot;EPSG:27700&quot; mosaic_sinu.vrt mosaic.vrt
+</pre>
+<p>This is nice, but it applies the projection to most of the Netherlands,
+and southern Scandinavia. If we just want to crop the UK and Ireland,
+we can do that as well. Say we want to cut out the box that extends
+from longitudes -14 to 5 and latitudes 50 to 61. Using <tt class="docutils literal">gdaltransform</tt></p>
+<pre class="literal-block">
+.. code-block: bash
+</pre>
+<blockquote>
+# Upper left corner
+echo -14 61 | gdaltransform -s_srs &quot;EPSG:4326&quot; -t_srs &quot;EPSG:27700&quot;
+-246410.748854375 1294822.36205397 -54.5953653845936
+# Lower right corner
+echo 5 50 | gdaltransform -s_srs &quot;EPSG:4326&quot; -t_srs &quot;EPSG:27700&quot;
+901561.991813587 34610.1630877961 -35.8900839695707</blockquote>
+<p>We use <tt class="docutils literal">gdal_translate</tt> to crop the region of interest</p>
+<pre class="literal-block">
+gdal_translate -of VRT -projwin -246410.748854375 1294822.36205397 901561.991813587 34610.1630877961 mosaic.vrt mosaic_cropped.vrt
+</pre>
+<div class="figure">
+<img alt="images/GPP_OSNG_cropped.png" src="../static/images/GPP_OSNG_cropped.png" style="width: 90%;" />
+</div>
+<p>At this stage, we have the output that we want for a given date. Let's
+put this together for a whole year.</p>
+</div>
+<div class="section" id="all-dates">
+<h3>All dates</h3>
+<p>We need a script that automates the previous task. <a class="reference external" href="https://gist.github.com/3152468">Here</a>:</p>
+<div class="highlight"><pre><span class="c">#!/bin/bash</span>
+
+<span class="nv">tile1</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">tile2</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">year</span><span class="o">=</span><span class="nv">$3</span>
+
+<span class="c"># First grab the available dates for one tile</span>
+<span class="nv">hdf_tile1</span><span class="o">=(</span><span class="sb">`</span>ls MOD17A2.A<span class="k">${</span><span class="nv">year</span><span class="k">}</span>*<span class="k">${</span><span class="nv">tile1</span><span class="k">}</span>*.hdf<span class="sb">`</span><span class="o">)</span>
+<span class="se">\r</span>m -rf file_list.txt
+<span class="c"># Loop through datasets in time...</span>
+<span class="k">for </span>t1 in <span class="s2">&quot;${hdf_tile1[@]}&quot;</span>
+<span class="k">do</span>
+
+<span class="k">     </span><span class="nv">t2</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$t1</span>| awk -F<span class="s2">&quot;.&quot;</span>  -v <span class="nv">other_tile</span><span class="o">=</span><span class="nv">$tile2</span> <span class="se">\</span>
+         <span class="s1">&#39;{printf( &quot;%s.%s.%s.*\n&quot;,  $1,$2,other_tile)}&#39;</span><span class="sb">`</span>
+     <span class="nv">t2</span><span class="o">=</span><span class="sb">`</span>ls <span class="nv">$t2</span><span class="sb">`</span>
+     <span class="nv">output_fname</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$t1</span>| awk -F<span class="s2">&quot;.&quot;</span>  <span class="s1">&#39;{printf( &quot;%s.%s\n&quot;,  $1,$2)}&#39;</span><span class="sb">`</span>
+     <span class="nb">echo</span> <span class="k">${</span><span class="nv">t1</span><span class="k">}</span> <span class="k">${</span><span class="nv">t2</span><span class="k">}</span> <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>
+     gdalbuildvrt <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic_sinu.vrt <span class="se">\</span>
+         <span class="s1">&#39;HDF4_EOS:EOS_GRID:&quot;&#39;</span><span class="k">${</span><span class="nv">t1</span><span class="k">}</span><span class="s1">&#39;&quot;:MOD_Grid_MOD17A2:Gpp_1km&#39;</span> <span class="se">\</span>
+         <span class="s1">&#39;HDF4_EOS:EOS_GRID:&quot;&#39;</span><span class="k">${</span><span class="nv">t2</span><span class="k">}</span><span class="s1">&#39;&quot;:MOD_Grid_MOD17A2:Gpp_1km&#39;</span>
+      gdalwarp -of VRT -t_srs <span class="s2">&quot;EPSG:27700&quot;</span> <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic_sinu.vrt <span class="se">\</span>
+               <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic.vrt
+      gdal_translate -of VRT <span class="se">\</span>
+          -projwin -246410.748854375 1294822.36205397 901561.991813587 34610.1630877961 <span class="se">\</span>
+          <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>_mosaic.vrt <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>.vrt
+      <span class="nb">echo</span> <span class="k">${</span><span class="nv">output_fname</span><span class="k">}</span>.vrt &gt;&gt; file_list.txt
+
+<span class="k">done</span>
+</pre></div>
+<p>We run the script for each year as</p>
+<pre class="literal-block">
+stitch_files.sh h18v03 h17v03 2004
+</pre>
+</div>
+</div>
+<div class="section" id="putting-all-that-together">
+<h2>Putting all that together</h2>
+<p>In the previous script, a file called <tt class="docutils literal">file_list.txt</tt> holds the name
+of all the output VRT files. We will now create a multiband VRT file
+using all the reprojected and cropped files, and then convert the VRT
+file to a GeoTIFF file:</p>
+<pre class="literal-block">
+gdalbuildvrt -separate -input_file_list file_list.txt MOD17A2.2004.vrt
+gdal_translate -of GTiff -co &quot;COMPRESS=LZW&quot; -co &quot;TILED=YES&quot; MOD17A2.2004.vrt MOD17A2.2004.tif
+</pre>
+<p>At this stage, we can have a look at <tt class="docutils literal">MOD17A2.2004.tif</tt> with e.g.
+<tt class="docutils literal">gdalinfo</tt> or something.</p>
+</div>
 
                 </article>
                 
                     
 <p class="paginator">
     
-    Page 1 / 2
+    Page 1 / 3
     
         <a href=".././category/Blog2.html">&raquo;</a>
     
