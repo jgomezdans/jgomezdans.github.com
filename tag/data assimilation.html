@@ -60,10 +60,10 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././eoldas-out-in-the-wild.html">EOLDAS out in the wild!</a></h1> 
+                    <h1 class="entry-title"><a href=".././eoldas-talk-at-vu-amsterdam.html">EOLDAS talk at VU Amsterdam</a></h1> 
                     <footer class="post-info">
-        <abbr class="published" title="2012-07-18T15:00:00">
-                Wed 18 July 2012
+        <abbr class="published" title="2012-08-01T13:00:00">
+                Wed 01 August 2012
         </abbr>
 
         
@@ -72,133 +72,12 @@
         </address>
         
 <p>In <a href=".././category/Blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/remote sensing.html">remote sensing</a><a href=".././tag/data assimilation.html">data assimilation</a><a href=".././tag/python.html">python</a></p>
+<p>tags: <a href=".././tag/EOLDAS.html">EOLDAS</a><a href=".././tag/data assimilation.html">data assimilation</a><a href=".././tag/python.html">python</a></p>
 
 
-</footer><!-- /.post-info --><p>After quite some time, we have released the <a class="reference external" href="http://jgomezdans.github.com/eoldas_release">EOLDAS software</a>.
-The <a class="reference external" href="http://jgomezdans.github.com/eoldas_release">EOLDAS software</a>
-is a prototype <a class="reference external" href="http://en.wikipedia.org/wiki/Data_assimilation">data assimilation</a>
-framework for the land surface, although it is quite generic, and can
-be used for typical variational problems, with a weak or a strong
-constraint. In essence, data assimilation is the probabilistically
-sound way of merging prior information about processes (such as
-mechanistic models, <em>à la DGVM</em>, but also prior information about
-things, maybe derived from previous studies) and observations (which
-will have noise). It's a solution to Bayes' Theorem, and what's really
-important is that you also get full uncertainties. There's <a class="reference external" href="http://jgomezdans.github.com/static/images/Lewis_et_al.pdf">a paper on this</a></p>
-<div class="section" id="how-it-works">
-<h2>How it works</h2>
-<p>The way EOLDAS works is by specifying a cost function that will be
-minimised using a gradient descent method. This naturally requires
-information on the derivatives of such cost function. If you have an
-adjoint code, then you can use that, and that's what we do. But you
-need adjoints for your dynamic model terms, observation operators, etc.
-These codes are often complicated and getting the adjoints will be even
-more complicated. You could use numerical approximations to the derivatives,
-but that's a bit clunky, and requires running often computationally
-expensive models many times.</p>
-<p>The main assumption in EOLDAS is that the cost function is Gaussian.
-We can build up quite complex cost functions by adding individual terms.
-Typically, these terms could be</p>
-<ol class="arabic simple">
-<li>A observation mismatch term, $J_{obs}$.</li>
-<li>A prior term, $J_{prior}$.</li>
-<li>A dynamic model mismatch term, $J_{model}$.</li>
-</ol>
-<p>For example, $J_{obs}$ can be written under the assumption that the
-state is $\mathbf{x}$, the observations are $\mathbf{y}_{obs}$,
-the observation operator (that transforms the state into observations)
-is $H$, and the observational uncertainty covariance matrix is given by
-$\mathbf{C}_{obs}$. We could include <em>structural error</em> (if we know that
-the model is imperfect) with a covariance matrix $\mathbf{C}_{H}$, but
-will usually ignore this term. $J_{obs}$ is then
-\[
-J_{obs} = (1/2) (\mathbf{y_{obs}} - H(\mathbf{x}))^{T} (\mathbf{C_{obs}}^{-1}+\mathbf{C_{H}}^{-1}) (\mathbf{y_{obs}} -H(\mathbf{x} )),
-\]</p>
-<p>The prior term is just the mismatch between the states and the prior
-value, moderated by how certain/ignorant we are about this prior
-value:
-\[
-J_{prior} = (1/2) (\mathbf{x} - H(\mathbf{x}_{prior}))^{T} \mathbf{C}_{prior}^{-1} (\mathbf{x} - H(\mathbf{x}_{prior})),
-\]</p>
-<p>The dynamic model term is similarly calculated as the mismatch between
-a prediction of the state from a previous value and the inferred state.
-A simple linear model $\mathbf{A}\mathbf{x} + \mathbf{B}$ can be
-used. The easiest useful model is a differential operator model, which
-implies that the first (second...) derivative of the state is minimised
-resulting in a penalisaiton to unsmooth state trajectories. The
-first order differential operator is
-\[
-\mathbf{\Delta} =
-\begin{pmatrix}
-1      &amp; -1     &amp;  0     &amp; \cdots &amp; 0\\
-0      &amp; 1      &amp; -1     &amp; \cdots &amp; 0\\
-\vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; 0\\
-0      &amp; 0      &amp; 0      &amp; \cdots &amp; -1\\
-\end{pmatrix}
-\]
-and the associated cost function is $J_{model}$. We may want to have
-a diagonal $\mathbf{C}_{smooth}$ &quot;model uncertainty&quot; matrix, which is
-in fact the identity, and we can control its magnitude by multiplying it
-by some $\gamma$$ scalar. This terms basically scales how much we allow
-the inferred state to depart from the model, and is in essence, the weak
-constraint. A strong constraint system will make the inferred solution
-lie in the space of the model:
-\[
-J_{model} = (1/2)  \gamma^{2} (\mathbf{\Delta x})^{T}\mathbf{C}_{smooth}^{-1}(\mathbf{\Delta x)}.
-\]</p>
-<p>So the total cost function is $J$:
-\[
-J = J_{obs} + J_{prior} + J_{model}
-\]
-and this function is minimised. Once the minimum is reached, the uncertainty
-can be calculated from the inverse of the Hessian matrix, under the assumption
-that the posterior distribution is not too far off from Gaussian.</p>
-</div>
-<div class="section" id="an-example">
-<h2>An example</h2>
-<p>So what do you get out of this? Well, for one, you can estimate many
-parameters. Using typical optical remote sensing data, you can estimate
-6 or 7 parameters for sensors like MODIS. So not only do you get LAI,
-but you can also get a gauge on chlorophyll concentration, etc. Here's
-a reasonable example from a wheat field in Germany, where we are solving
-for 7 parameters:</p>
-<dl class="docutils">
-<dt>LAI</dt>
-<dd>Leaf Area Index</dd>
-<dt>CAB</dt>
-<dd>Chorophyll a+b concentration</dd>
-<dt>SEN</dt>
-<dd>Leaf senescent matter</dd>
-<dt>EWT</dt>
-<dd>Leaf equivalent water thickness</dd>
-<dt>DM</dt>
-<dd>Dry Matter</dd>
-<dt>N</dt>
-<dd>Leaf Layers</dd>
-<dt>S1</dt>
-<dd>First component of soil reflenctance model</dd>
-</dl>
-<div class="figure">
-<img alt="images/results.png" src="../static/images/results.png" style="width: 90%;" />
-<p class="caption">EOLDAS processing result.</p>
-</div>
-<p>The details of this experiment can be found <a class="reference external" href="http://jgomezdans.github.com/eoldas_release/example_field.html">here</a>
-but we can see that the inversion provides reasonable results (I can't
-access the ground truth measurements of LAI to compare against, this is
-from a nearby site but bear with me!). The maximum of LAI is coincidental
-to the ground measured data (which have an standard deviation of ~2).
-Note that the grey area is the posterior 95% CI. It is interesting to
-see that the leaf related parameters are quite large at the beginning
-and end of the year, where there is little vegetation (although this
-is also compounded by the fact that there are very few observations). Note
-how the soil uncertainty increases when the LAI peaks (the LAI uncertainty
-is also quite high due to saturation). Senescence is low at peak LAI,
-indicating a green crop. Chlorphyll, DM and EWT have similar peaks. N
-moves around quite a lot, possibly compensating for the other parameters.
-Maybe a better way to solve this problem would be to prescribe N to
-a known value.</p>
-</div>
+</footer><!-- /.post-info --><p>So I have just spent a week visiting at the <a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp">VU Amsterdam</a>.
+During this visit, I have also given a talk on EOLDAS. The slides are
+availabe from <cite>here &lt;http://jgomezdans.github.com/eoldas_release/EOLDAS_VUA.pdf&gt;</cite>.</p>
 
                 </article>
                 
