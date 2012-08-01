@@ -71,7 +71,8 @@ gdal_translate -of GTiff -outsize 368 180 world_grid.tif world_grid_1d.tif
 &lt;p&gt;And here you have a picture of how it looks. I'm using a random colormap with
 matplotlib (see &lt;a class="reference external" href="https://gist.github.com/402500"&gt;here&lt;/a&gt;)&lt;/p&gt;
 &lt;div class="figure"&gt;
-&lt;img alt="images/world_map.png" src="images/world_map.png" /&gt;
+&lt;img alt="images/world_map.png" src="images/world_map.png" style="width: 90%;" /&gt;
+&lt;p class="caption"&gt;The map, in all its glory.&lt;/p&gt;
 &lt;/div&gt;
 </summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>EOLDAS talk at VU Amsterdam</title><link href="//eoldas-talk-at-vu-amsterdam.html" rel="alternate"></link><updated>2012-08-01T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>//eoldas-talk-at-vu-amsterdam.html</id><summary type="html">&lt;p&gt;So I have just spent a week visiting at the &lt;a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp"&gt;VU Amsterdam&lt;/a&gt;.
 During this visit, I have also given a talk on EOLDAS. The slides are
