@@ -13,6 +13,146 @@ two sets of files:&lt;/p&gt;
 &lt;dt&gt;ortodvd7_402_multiespectral.tif&lt;/dt&gt;
 &lt;dd&gt;a raster file with a few bands (some multispectral dataset).&lt;/dd&gt;
 &lt;/dl&gt;
+&lt;p&gt;Let's first note the extent and resolution of the GeoTIFF file with &lt;tt class="docutils literal"&gt;gdalinfo&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdalinfo ortodvd7_402_multiespectral.tif
+Driver: GTiff/GeoTIFF
+Files: ortodvd7_402_multiespectral.tif
+       ortodvd7_402_multiespectral.aux
+       ortodvd7_402_multiespectral.rrd
+       ortodvd7_402_multiespectral.tfw
+Size is 6380, 5668
+Coordinate System is:
+PROJCS[&amp;quot;UTM Zone 30N&amp;quot;,
+    GEOGCS[&amp;quot;European_1950_Portugal_Spain&amp;quot;,
+        DATUM[&amp;quot;European_1950_Portugal_Spain&amp;quot;,
+            SPHEROID[&amp;quot;International 1909&amp;quot;,6378388,297.0000000284015]],
+        PRIMEM[&amp;quot;Greenwich&amp;quot;,0],
+        UNIT[&amp;quot;degree&amp;quot;,0.0174532925199433]],
+    PROJECTION[&amp;quot;Transverse_Mercator&amp;quot;],
+    PARAMETER[&amp;quot;latitude_of_origin&amp;quot;,0],
+    PARAMETER[&amp;quot;central_meridian&amp;quot;,-3],
+    PARAMETER[&amp;quot;scale_factor&amp;quot;,0.9996],
+    PARAMETER[&amp;quot;false_easting&amp;quot;,500000],
+    PARAMETER[&amp;quot;false_northing&amp;quot;,0],
+    UNIT[&amp;quot;metre&amp;quot;,1,
+        AUTHORITY[&amp;quot;EPSG&amp;quot;,&amp;quot;9001&amp;quot;]]]
+Origin = (143110.649999999994179,4132515.350000000093132)
+Pixel Size = (2.700000000000000,-2.700000000000000)
+Metadata:
+  TIFFTAG_SOFTWARE=ERDAS IMAGINE
+  TIFFTAG_XRESOLUTION=1
+  TIFFTAG_YRESOLUTION=1
+  TIFFTAG_RESOLUTIONUNIT=1 (unitless)
+  AREA_OR_POINT=Area
+Image Structure Metadata:
+  INTERLEAVE=PIXEL
+Corner Coordinates:
+Upper Left  (  143110.650, 4132515.350) (  7d 1'27.45&amp;quot;W, 37d16'12.83&amp;quot;N)
+Lower Left  (  143110.650, 4117211.750) (  7d 1' 1.14&amp;quot;W, 37d 7'57.46&amp;quot;N)
+Upper Right (  160336.650, 4132515.350) (  6d49'49.65&amp;quot;W, 37d16'36.02&amp;quot;N)
+Lower Right (  160336.650, 4117211.750) (  6d49'24.59&amp;quot;W, 37d 8'20.53&amp;quot;N)
+Center      (  151723.650, 4124863.550) (  6d55'25.71&amp;quot;W, 37d12'16.85&amp;quot;N)
+Band 1 Block=6380x8 Type=UInt16, ColorInterp=Gray
+  Min=0.000 Max=1599.000
+  Minimum=0.000, Maximum=1599.000, Mean=128.363, StdDev=89.004
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=1599
+    STATISTICS_MEAN=128.36316119423
+    STATISTICS_MEDIAN=3.2133151845658e-234
+    STATISTICS_MODE=4.4506188044836e-308
+    STATISTICS_STDDEV=89.003854388224
+    LAYER_TYPE=athematic
+Band 2 Block=6380x8 Type=UInt16, ColorInterp=Undefined
+  Min=0.000 Max=2047.000
+  Minimum=0.000, Maximum=2047.000, Mean=180.116, StdDev=141.805
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=2047
+    STATISTICS_MEAN=180.11620984994
+    STATISTICS_MEDIAN=3.2133151845658e-234
+    STATISTICS_MODE=4.4506188044836e-308
+    STATISTICS_STDDEV=141.80527606593
+    LAYER_TYPE=athematic
+Band 3 Block=6380x8 Type=UInt16, ColorInterp=Undefined
+  Min=0.000 Max=2047.000
+  Minimum=0.000, Maximum=2047.000, Mean=116.447, StdDev=116.221
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=2047
+    STATISTICS_MEAN=116.44734908401
+    STATISTICS_MEDIAN=3.2133151845658e-234
+    STATISTICS_MODE=4.4506188044836e-308
+    STATISTICS_STDDEV=116.2210329906
+    LAYER_TYPE=athematic
+Band 4 Block=6380x8 Type=UInt16, ColorInterp=Undefined
+  Min=0.000 Max=2047.000
+  Minimum=0.000, Maximum=2047.000, Mean=171.386, StdDev=166.748
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=2047
+    STATISTICS_MEAN=171.38578244359
+    STATISTICS_MEDIAN=5.4413901556992e-227
+    STATISTICS_MODE=1.4092176116584e-315
+    STATISTICS_STDDEV=166.74819006626
+    LAYER_TYPE=athematic
+&lt;/pre&gt;
+&lt;p&gt;We can see the four bands (R, G, B and NIR), their statistics in terms of
+DN, as well as the extent, resolution and rows &amp;amp; columns. Now, let's have a
+look at the Shapefile with &lt;tt class="docutils literal"&gt;ogrinfo&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+ogrinfo -al -so 409_QB05_1merg.shp
+INFO: Open of `409_QB05_1merg.shp'
+      using driver `ESRI Shapefile' successful.
+
+      Layer name: 409_QB05_1merg
+      Geometry: Polygon
+      Feature Count: 16
+      Extent: (146113.385068, 4119178.250911) - (153213.897681, 4132145.765108)
+      Layer SRS WKT:
+      (unknown)
+&lt;/pre&gt;
+&lt;p&gt;The shapefile doesn't contain a projection, but it would appear that it belongs
+with the image. We also note that there is no layer, but in fact, the 16
+features are the different classes. As in a previous entry, we can create
+a raster mask that will allow us to select the spectra in the multispectral
+dataset using &lt;tt class="docutils literal"&gt;gdal_rasterize&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdal_rasterize -of GTiff  -a_nodata 0 -co &amp;quot;COMPRESS=LZW&amp;quot; -a FID  \
+    -sql &amp;quot;select FID, * from '409_QB05_1merg'&amp;quot; -ot Byte \
+    -te 143110.650 4117211.750 160336.650 4132515.350 \
+    -ts 6380 5668 -a_srs &amp;quot;EPSG:23030&amp;quot; 409_QB05_1merg.shp mascara.tif
+&lt;/pre&gt;
+&lt;p&gt;I have set the projection to be &lt;a class="reference external" href="http://spatialreference.org/ref/epsg/23030"&gt;UTM 30N/ED50&lt;/a&gt;
+(same as in the geotiff), the no data value to be 0, and the data type to be
+byte (this is to save memory: it's pointless using integers when our mask
+will only go from 0 to 16). I have also set GeoTIFF options to compress the
+data, so that the mask file is a meagre ~840kb of data. We can also plot the result&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;matplotlib.pyplot&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;plt&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;osgeo&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;gdal_rasterize&lt;/span&gt;
+
+&lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;mascara.tif&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ReadAsArray&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;mm&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ma&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mask&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;ortodvd7_402_multiespectral.tif&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ReadAsArray&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;ss&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;  &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rollaxis&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[:&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;::&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;::&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;imshow&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;ss&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;822.&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;interpolation&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;nearest&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; \
+        &lt;span class="n"&gt;extent&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;6380&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;5668&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;hold&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;imshow&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;mm&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;interpolation&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;nearest&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;  &lt;span class="n"&gt;vmin&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vmax&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;\
+        &lt;span class="n"&gt;extent&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;6380&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;5668&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;cmap&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cm&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Reds&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="images/roi_plot.png" src="images/roi_plot.png" style="width: 90%;" /&gt;
+&lt;p class="caption"&gt;The selected polygons on top of the raster data.&lt;/p&gt;
+&lt;/div&gt;
 </summary><category term="draft"></category><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>Creating a country raster mask using GDAL</title><link href="/creating-a-country-raster-mask-using-gdal.html" rel="alternate"></link><updated>2012-08-02T10:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-02:creating-a-country-raster-mask-using-gdal.html</id><summary type="html">&lt;p&gt;Usually, we remote sensing types ignore country boundaries: they don't really
 make much sense, as they are not aligned with MODIS pixels ;-) However, I was
 asked what's the easiest way to produce a global mask of countries, so that all

@@ -91,6 +91,146 @@ two sets of files:</p>
 <dt>ortodvd7_402_multiespectral.tif</dt>
 <dd>a raster file with a few bands (some multispectral dataset).</dd>
 </dl>
+<p>Let's first note the extent and resolution of the GeoTIFF file with <tt class="docutils literal">gdalinfo</tt></p>
+<pre class="literal-block">
+gdalinfo ortodvd7_402_multiespectral.tif
+Driver: GTiff/GeoTIFF
+Files: ortodvd7_402_multiespectral.tif
+       ortodvd7_402_multiespectral.aux
+       ortodvd7_402_multiespectral.rrd
+       ortodvd7_402_multiespectral.tfw
+Size is 6380, 5668
+Coordinate System is:
+PROJCS[&quot;UTM Zone 30N&quot;,
+    GEOGCS[&quot;European_1950_Portugal_Spain&quot;,
+        DATUM[&quot;European_1950_Portugal_Spain&quot;,
+            SPHEROID[&quot;International 1909&quot;,6378388,297.0000000284015]],
+        PRIMEM[&quot;Greenwich&quot;,0],
+        UNIT[&quot;degree&quot;,0.0174532925199433]],
+    PROJECTION[&quot;Transverse_Mercator&quot;],
+    PARAMETER[&quot;latitude_of_origin&quot;,0],
+    PARAMETER[&quot;central_meridian&quot;,-3],
+    PARAMETER[&quot;scale_factor&quot;,0.9996],
+    PARAMETER[&quot;false_easting&quot;,500000],
+    PARAMETER[&quot;false_northing&quot;,0],
+    UNIT[&quot;metre&quot;,1,
+        AUTHORITY[&quot;EPSG&quot;,&quot;9001&quot;]]]
+Origin = (143110.649999999994179,4132515.350000000093132)
+Pixel Size = (2.700000000000000,-2.700000000000000)
+Metadata:
+  TIFFTAG_SOFTWARE=ERDAS IMAGINE
+  TIFFTAG_XRESOLUTION=1
+  TIFFTAG_YRESOLUTION=1
+  TIFFTAG_RESOLUTIONUNIT=1 (unitless)
+  AREA_OR_POINT=Area
+Image Structure Metadata:
+  INTERLEAVE=PIXEL
+Corner Coordinates:
+Upper Left  (  143110.650, 4132515.350) (  7d 1'27.45&quot;W, 37d16'12.83&quot;N)
+Lower Left  (  143110.650, 4117211.750) (  7d 1' 1.14&quot;W, 37d 7'57.46&quot;N)
+Upper Right (  160336.650, 4132515.350) (  6d49'49.65&quot;W, 37d16'36.02&quot;N)
+Lower Right (  160336.650, 4117211.750) (  6d49'24.59&quot;W, 37d 8'20.53&quot;N)
+Center      (  151723.650, 4124863.550) (  6d55'25.71&quot;W, 37d12'16.85&quot;N)
+Band 1 Block=6380x8 Type=UInt16, ColorInterp=Gray
+  Min=0.000 Max=1599.000
+  Minimum=0.000, Maximum=1599.000, Mean=128.363, StdDev=89.004
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=1599
+    STATISTICS_MEAN=128.36316119423
+    STATISTICS_MEDIAN=3.2133151845658e-234
+    STATISTICS_MODE=4.4506188044836e-308
+    STATISTICS_STDDEV=89.003854388224
+    LAYER_TYPE=athematic
+Band 2 Block=6380x8 Type=UInt16, ColorInterp=Undefined
+  Min=0.000 Max=2047.000
+  Minimum=0.000, Maximum=2047.000, Mean=180.116, StdDev=141.805
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=2047
+    STATISTICS_MEAN=180.11620984994
+    STATISTICS_MEDIAN=3.2133151845658e-234
+    STATISTICS_MODE=4.4506188044836e-308
+    STATISTICS_STDDEV=141.80527606593
+    LAYER_TYPE=athematic
+Band 3 Block=6380x8 Type=UInt16, ColorInterp=Undefined
+  Min=0.000 Max=2047.000
+  Minimum=0.000, Maximum=2047.000, Mean=116.447, StdDev=116.221
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=2047
+    STATISTICS_MEAN=116.44734908401
+    STATISTICS_MEDIAN=3.2133151845658e-234
+    STATISTICS_MODE=4.4506188044836e-308
+    STATISTICS_STDDEV=116.2210329906
+    LAYER_TYPE=athematic
+Band 4 Block=6380x8 Type=UInt16, ColorInterp=Undefined
+  Min=0.000 Max=2047.000
+  Minimum=0.000, Maximum=2047.000, Mean=171.386, StdDev=166.748
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=2047
+    STATISTICS_MEAN=171.38578244359
+    STATISTICS_MEDIAN=5.4413901556992e-227
+    STATISTICS_MODE=1.4092176116584e-315
+    STATISTICS_STDDEV=166.74819006626
+    LAYER_TYPE=athematic
+</pre>
+<p>We can see the four bands (R, G, B and NIR), their statistics in terms of
+DN, as well as the extent, resolution and rows &amp; columns. Now, let's have a
+look at the Shapefile with <tt class="docutils literal">ogrinfo</tt></p>
+<pre class="literal-block">
+ogrinfo -al -so 409_QB05_1merg.shp
+INFO: Open of `409_QB05_1merg.shp'
+      using driver `ESRI Shapefile' successful.
+
+      Layer name: 409_QB05_1merg
+      Geometry: Polygon
+      Feature Count: 16
+      Extent: (146113.385068, 4119178.250911) - (153213.897681, 4132145.765108)
+      Layer SRS WKT:
+      (unknown)
+</pre>
+<p>The shapefile doesn't contain a projection, but it would appear that it belongs
+with the image. We also note that there is no layer, but in fact, the 16
+features are the different classes. As in a previous entry, we can create
+a raster mask that will allow us to select the spectra in the multispectral
+dataset using <tt class="docutils literal">gdal_rasterize</tt></p>
+<pre class="literal-block">
+gdal_rasterize -of GTiff  -a_nodata 0 -co &quot;COMPRESS=LZW&quot; -a FID  \
+    -sql &quot;select FID, * from '409_QB05_1merg'&quot; -ot Byte \
+    -te 143110.650 4117211.750 160336.650 4132515.350 \
+    -ts 6380 5668 -a_srs &quot;EPSG:23030&quot; 409_QB05_1merg.shp mascara.tif
+</pre>
+<p>I have set the projection to be <a class="reference external" href="http://spatialreference.org/ref/epsg/23030">UTM 30N/ED50</a>
+(same as in the geotiff), the no data value to be 0, and the data type to be
+byte (this is to save memory: it's pointless using integers when our mask
+will only go from 0 to 16). I have also set GeoTIFF options to compress the
+data, so that the mask file is a meagre ~840kb of data. We can also plot the result</p>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdal_rasterize</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span> <span class="p">(</span> <span class="s">&quot;mascara.tif&quot;</span> <span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span>
+<span class="n">mm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">array</span> <span class="p">(</span> <span class="n">m</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="p">(</span><span class="n">m</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="s">&quot;ortodvd7_402_multiespectral.tif&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span>
+<span class="n">ss</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">data</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">::</span><span class="mi">10</span><span class="p">,</span> <span class="p">::</span><span class="mi">10</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span> <span class="p">(</span> <span class="n">ss</span><span class="o">/</span><span class="mf">822.</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;nearest&#39;</span><span class="p">,</span> \
+        <span class="n">extent</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6380</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5668</span><span class="p">)</span> <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hold</span> <span class="p">(</span> <span class="bp">True</span> <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span> <span class="p">(</span> <span class="n">mm</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;nearest&#39;</span><span class="p">,</span>  <span class="n">vmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>\
+        <span class="n">extent</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6380</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5668</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">Reds</span><span class="p">)</span>
+</pre></div>
+<div class="figure">
+<img alt="images/roi_plot.png" src="../static/images/roi_plot.png" style="width: 90%;" />
+<p class="caption">The selected polygons on top of the raster data.</p>
+</div>
 
                 </article>
                 
