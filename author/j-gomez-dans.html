@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Using MathJax, with the delimiters $ -->
+<!-- Conflict with pygments for the .mo and .mi -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+  "HTML-CSS": {
+  styles: {
+  ".MathJax .mo, .MathJax .mi": {color: "black ! important"}}
+  },
+  tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],processEscapes: true}
+  });
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
         <title>EO & DA ramblings - J Gómez-Dans</title>
         <meta charset="utf-8" />
         <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
@@ -219,7 +232,7 @@ availabe from <a class="reference external" href="http://jgomezdans.github.com/e
                 <p>Supervised classification of EO data uses a set of samples from known
 patterns (usually reflectance spectra) to decide whether a given pattern
 belongs to one class or another. In landcover applications, one goes to
-the field, and observes that a given location is indeed class $omega_c$.
+the field, and observes that a given location is indeed class $\omega_c$.
 These ground observations usually ...</p>
                 <a class="readmore" href=".././how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html">read more</a>
                 
