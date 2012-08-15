@@ -4,7 +4,9 @@
         <title>EO & DA ramblings</title>
         <meta charset="utf-8" />
         <link rel="stylesheet" href="./theme/css/main.css" type="text/css" />
-        <link href="./feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings ATOM Feed" />
+        
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
+        
         
 
         <!--[if IE]>
@@ -16,20 +18,7 @@
 
         <!--[if lt IE 7]>
                 <link rel="stylesheet" type="text/css" media="all" href="./css/ie6.css"/><![endif]-->
-	<!-- Using MathJax, with the delimiters $ -->
-	<!-- Conflict with pygments for the .mo and .mi -->
-	<script type="text/x-mathjax-config">
-	  MathJax.Hub.Config({
-	  "HTML-CSS": {
-	  styles: {
-	  ".MathJax .mo, .MathJax .mi": {color: "black ! important"}}
-	  },
-	  tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],processEscapes: true}
-	  });
-	</script>
-	
-	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-	
+
 </head>
 
 <body id="index" class="home">
@@ -48,7 +37,7 @@
                 
                 
                 
-                    <li ><a href="./category/Blog.html">Blog</a></li>
+                    <li ><a href="./category/blog.html">Blog</a></li>
                 
                 </ul></nav>
         </header><!-- /#banner -->
@@ -58,20 +47,23 @@
 
 <dl>
 
-    <dt>Fri 20 July 2012</dt>
-    <dd><a href='linearly-scaling-raster-data-with-gdal.html'>Linearly scaling raster data with GDAL</a></dd>
-
-    <dt>Fri 20 July 2012</dt>
-    <dd><a href='stitching-together-modis-data.html'>Stitching together MODIS data</a></dd>
-
-    <dt>Mon 23 July 2012</dt>
-    <dd><a href='simple-time-series-modis-data-analysis.html'>Simple time series MODIS data analysis</a></dd>
-
-    <dt>Wed 01 August 2012</dt>
-    <dd><a href='eoldas-talk-at-vu-amsterdam.html'>EOLDAS talk at VU Amsterdam</a></dd>
+    <dt>Thu 02 August 2012</dt>
+    <dd><a href="./creating-a-country-raster-mask-using-gdal.html">Creating a country raster mask using GDAL</a></dd>
 
     <dt>Thu 02 August 2012</dt>
-    <dd><a href='creating-a-country-raster-mask-using-gdal.html'>Creating a country raster mask using GDAL</a></dd>
+    <dd><a href="./how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html">How to extract spectra from image data using ground truth vector data</a></dd>
+
+    <dt>Wed 01 August 2012</dt>
+    <dd><a href="./eoldas-talk-at-vu-amsterdam.html">EOLDAS talk at VU Amsterdam</a></dd>
+
+    <dt>Mon 23 July 2012</dt>
+    <dd><a href="./simple-time-series-modis-data-analysis.html">Simple time series MODIS data analysis</a></dd>
+
+    <dt>Fri 20 July 2012</dt>
+    <dd><a href="./stitching-together-modis-data.html">Stitching together MODIS data</a></dd>
+
+    <dt>Fri 20 July 2012</dt>
+    <dd><a href="./linearly-scaling-raster-data-with-gdal.html">Linearly scaling raster data with GDAL</a></dd>
 
 </dl>
 </section>
@@ -83,7 +75,7 @@
 
         <footer id="contentinfo" class="body">
                 <address id="about" class="vcard body">
-                Proudly powered by <a href="http://alexis.notmyidea.org/pelican/">pelican</a>, which takes great advantages of <a href="http://python.org">python</a>.
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
                 </address><!-- /#about -->
 
                 <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-        <title>EO & DA ramblings - python</title>
+        <title>EO & DA ramblings - draft</title>
         <meta charset="utf-8" />
         <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
         
@@ -49,10 +49,10 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././eoldas-talk-at-vu-amsterdam.html">EOLDAS talk at VU Amsterdam</a></h1> 
+                    <h1 class="entry-title"><a href=".././how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html">How to extract spectra from image data using ground truth vector data</a></h1> 
                     <footer class="post-info">
-        <abbr class="published" title="2012-08-01T13:00:00">
-                Wed 01 August 2012
+        <abbr class="published" title="2012-08-02T10:00:00">
+                Thu 02 August 2012
         </abbr>
 
         
@@ -61,66 +61,34 @@
         </address>
         
 <p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/eoldas.html">EOLDAS</a><a href=".././tag/data-assimilation.html">data assimilation</a><a href=".././tag/python.html">python</a></p>
+<p>tags: <a href=".././tag/draft.html">draft</a><a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a></p>
 
 
-</footer><!-- /.post-info --><p>So I have just spent a week visiting at the <a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp">VU Amsterdam</a>.
-During this visit, I have also given a talk on EOLDAS. The slides are
-availabe from <a class="reference external" href="http://jgomezdans.github.com/eoldas_release/EOLDAS_VUA.pdf">here</a>.</p>
+</footer><!-- /.post-info --><p>Supervised classification of EO data uses a set of samples from known
+patterns (usually reflectance spectra) to decide whether a given pattern
+belongs to one class or another. In landcover applications, one goes to
+the field, and observes that a given location is indeed class $omega_c$.
+These ground observations usually find their ways into a vector dataset,
+and they can be used to extract the relevant pixels from satellite data
+in raster formats. Let's see how this is done. I'm assuming that I have
+two sets of files:</p>
+<dl class="docutils">
+<dt>409_QB05_1merg.shp</dt>
+<dd>a shapefile, where each feature is encoded as a multipolygon,</dd>
+<dt>ortodvd7_402_multiespectral.tif</dt>
+<dd>a raster file with a few bands (some multispectral dataset).</dd>
+</dl>
 
                 </article>
                 
+                    
+                
             </aside><!-- /#featured -->
             
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
         
-        
-        
-            
-
-        
-         
-            
-            <li><article class="hentry">    
-                <header>
-                    <h1><a href=".././simple-time-series-modis-data-analysis.html" rel="bookmark"
-                           title="Permalink to Simple time series MODIS data analysis">Simple time series MODIS data analysis</a></h1>
-                </header>
-                
-                <div class="entry-content">
-                <footer class="post-info">
-        <abbr class="published" title="2012-07-23T15:00:00">
-                Mon 23 July 2012
-        </abbr>
-
-        
-        <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a><a href=".././tag/python.html">python</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>In a <a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html">previous post</a>,
-I demonstrated how to stitch and put together a number of MODIS data
-files. This is useful and interesting, but in the end, we are interested
-in analysing the data we get out of the satellite. One first way around
-this might be to extract time ...</p>
-                <a class="readmore" href=".././simple-time-series-modis-data-analysis.html">read more</a>
-                
-                </div><!-- /.entry-content -->
-            </article></li>
         
         
             </ol><!-- /#posts-list -->
-            
-                
             
             </section><!-- /#content -->
         

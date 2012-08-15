@@ -4,7 +4,9 @@
         <title>Linearly scaling raster data with GDAL</title>
         <meta charset="utf-8" />
         <link rel="stylesheet" href="./theme/css/main.css" type="text/css" />
-        <link href="./feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings ATOM Feed" />
+        
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
+        
         
 
         <!--[if IE]>
@@ -16,20 +18,7 @@
 
         <!--[if lt IE 7]>
                 <link rel="stylesheet" type="text/css" media="all" href="./css/ie6.css"/><![endif]-->
-	<!-- Using MathJax, with the delimiters $ -->
-	<!-- Conflict with pygments for the .mo and .mi -->
-	<script type="text/x-mathjax-config">
-	  MathJax.Hub.Config({
-	  "HTML-CSS": {
-	  styles: {
-	  ".MathJax .mo, .MathJax .mi": {color: "black ! important"}}
-	  },
-	  tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],processEscapes: true}
-	  });
-	</script>
-	
-	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-	
+
 </head>
 
 <body id="index" class="home">
@@ -48,32 +37,37 @@
                 
                 
                 
-                    <li class="active"><a href="./category/Blog.html">Blog</a></li>
+                    <li class="active"><a href="./category/blog.html">Blog</a></li>
                 
                 </ul></nav>
         </header><!-- /#banner -->
-                
-<section id="content" class="body">    
-<article>
-        <header> <h1 class="entry-title"><a href=""
-        rel="bookmark" title="Permalink to Linearly scaling raster data with GDAL">Linearly scaling raster data with GDAL</a></h1>  </header>
-        <div class="entry-content">
-        <footer class="post-info">
+        
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="linearly-scaling-raster-data-with-gdal.html" rel="bookmark"
+           title="Permalink to Linearly scaling raster data with GDAL">Linearly scaling raster data with GDAL</a></h1>
+      
+    </header>
+
+    <div class="entry-content">
+      <footer class="post-info">
         <abbr class="published" title="2012-07-20T13:00:00">
                 Fri 20 July 2012
         </abbr>
 
         
         <address class="vcard author">
-                By <a class="url fn" href="./author/J Gómez-Dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="./author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
         
-<p>In <a href="./category/Blog.html">Blog</a>. </p>
-<p>tags: <a href="./tag/GDAL.html">GDAL</a><a href="./tag/remote sensing.html">remote sensing</a><a href="./tag/tips.html">tips</a></p>
+<p>In <a href="./category/blog.html">Blog</a>. </p>
+<p>tags: <a href="./tag/gdal.html">GDAL</a><a href="./tag/remote-sensing.html">remote sensing</a><a href="./tag/tips.html">tips</a></p>
 
 
 </footer><!-- /.post-info -->
-        <p>So, it's quite tricky to play around with these geospatial datasets: they
+      <p>So, it's quite tricky to play around with these geospatial datasets: they
 have a myriad formats, these keep changing, and you can never know what
 metadata will be available in them. A clever way around this situation
 is to use tools that allow you to read most of the data, most of the
@@ -229,10 +223,10 @@ gdal_translate -of VRT -ot Float32 -scale 0 65534 -2. 45. \
 If you wanted to, you could also use the <tt class="docutils literal"><span class="pre">-projwin</span></tt> or <tt class="docutils literal"><span class="pre">-srcwin</span></tt>
 options to crop the data, or even reproject it with <tt class="docutils literal">gdalwarp</tt>.</p>
 
-        </div><!-- /.entry-content -->
-        
+    </div><!-- /.entry-content -->
+    
 
-</article>
+  </article>
 </section>
 
         <section id="extras" class="body">
@@ -242,7 +236,7 @@ options to crop the data, or even reproject it with <tt class="docutils literal"
 
         <footer id="contentinfo" class="body">
                 <address id="about" class="vcard body">
-                Proudly powered by <a href="http://alexis.notmyidea.org/pelican/">pelican</a>, which takes great advantages of <a href="http://python.org">python</a>.
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
                 </address><!-- /#about -->
 
                 <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
