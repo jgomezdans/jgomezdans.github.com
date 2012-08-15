@@ -74,7 +74,7 @@
         </address>
         
 <p>In <a href="./category/blog.html">Blog</a>. </p>
-<p>tags: <a href="./tag/draft.html">draft</a><a href="./tag/gdal.html">GDAL</a><a href="./tag/remote-sensing.html">remote sensing</a><a href="./tag/tips.html">tips</a></p>
+<p>tags: <a href="./tag/python.html">python</a><a href="./tag/gdal.html">GDAL</a><a href="./tag/remote-sensing.html">remote sensing</a><a href="./tag/tips.html">tips</a></p>
 
 
 </footer><!-- /.post-info --><p>Supervised classification of EO data uses a set of samples from known
@@ -229,7 +229,37 @@ data, so that the mask file is a meagre ~840kb of data. We can also plot the res
 </pre></div>
 <div class="figure">
 <img alt="images/roi_plot.png" src="static/images/roi_plot.png" style="width: 90%;" />
-<p class="caption">The selected polygons on top of the raster data.</p>
+<p class="caption">The selected polygons on top of the raster data using different colours.</p>
+</div>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdal_rasterize</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span> <span class="p">(</span> <span class="s">&quot;mascara.tif&quot;</span> <span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span>
+<span class="n">mm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">array</span> <span class="p">(</span> <span class="n">m</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="p">(</span><span class="n">m</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="s">&quot;ortodvd7_402_multiespectral.tif&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span>
+<span class="n">spectra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span> <span class="mi">1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span><span class="o">==</span><span class="mi">1</span><span class="p">)),</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">m</span><span class="o">==</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">17</span> <span class="p">):</span>
+    <span class="n">spectra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span> <span class="p">[</span> <span class="n">spectra</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span> <span class="n">i</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span><span class="o">==</span><span class="n">i</span><span class="p">)),</span> \
+            <span class="n">data</span><span class="p">[:,</span> <span class="n">m</span><span class="o">==</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">]</span> <span class="p">]</span>
+
+<span class="c"># Plot some classes...</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s">&#39;3d&#39;</span><span class="p">)</span>
+<span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="s">&#39;g&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="s">&#39;k&#39;</span> <span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">):</span>
+   <span class="n">isel</span> <span class="o">=</span> <span class="n">spectra</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span>
+   <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span> <span class="p">(</span> <span class="n">spectra</span><span class="p">[</span><span class="n">isel</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">spectra</span><span class="p">[</span><span class="n">isel</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> \
+           <span class="n">spectra</span><span class="p">[</span><span class="n">isel</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s">&#39;o&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">color</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span>
+<span class="c"># Save the spectra as a text file</span>
+<span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s">&quot;spectra.txt&quot;</span><span class="p">,</span> <span class="n">spectra</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s">&quot;</span><span class="si">%8g</span><span class="s">&quot;</span><span class="p">)</span>
+</pre></div>
+<div class="figure">
+<img alt="images/spectra_scatter.png" src="static/images/spectra_scatter.png" style="width: 90%;" />
+<p class="caption">The extracted pixels for classes 2 to 5 over feature dimensions 2, 3 and 4.
+Note how the different classes can be separated.</p>
 </div>
 
                 </article>
