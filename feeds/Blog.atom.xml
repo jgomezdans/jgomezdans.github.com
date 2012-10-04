@@ -63,6 +63,14 @@ function to do the downsampling.&lt;/p&gt;
       &lt;span class="n"&gt;resampled_3k&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
       &lt;span class="n"&gt;resampled_9k&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here's how the above code works on resampling some 30m Landsat TM/ETM+
+data&lt;/p&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="images/downsample_example.png" src="images/downsample_example.png" style="width: 90%;" /&gt;
+&lt;p class="caption"&gt;The left handside plot shows the original 30m resolution dataset. The
+middle plot shows a 3km modal aggregation, whereas the right handside
+plot shows a 9km modal aggregate.&lt;/p&gt;
+&lt;/div&gt;
 </summary><category term="GDAL"></category><category term="remote sensing"></category><category term="python"></category><category term="tips"></category></entry><entry><title>How to extract spectra from image data using ground truth vector data</title><link href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html" rel="alternate"></link><updated>2012-08-15T16:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-15:how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html</id><summary type="html">&lt;p&gt;Supervised classification of EO data uses a set of samples from known
 patterns (usually reflectance spectra) to decide whether a given pattern
 belongs to one class or another. In landcover applications, one goes to
