@@ -1,2 +1,862 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2012-10-04T13:06:06Z</updated></feed>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2012-10-04T13:00:00+01:00</updated><entry><title>Downsampling with GDAL in python</title><link href="/downsampling-with-gdal-in-python.html" rel="alternate"></link><updated>2012-10-04T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-10-04:downsampling-with-gdal-in-python.html</id><summary type="html">&lt;p&gt;Quite often, one wants to generate some data at high resolution (say
+process some image or images) and then calculate some relevant spatial
+statistics at some other resolution. For example, you might want to
+process Landsat TM data at 30m resolution, and might want to aggregate
+it to a resolution of 500m or so to compare with MODIS. The aggregation
+needs to be defined: do you want to use a simple average, or maybe
+the mode is more informative? Perhaps the median is more robust to
+outliers? Do you want to consider stuff like variance? At any rate,
+it is possible to do all this with Python and the GDAL bidings.&lt;/p&gt;
+&lt;p&gt;The scheme I propose is to create an &lt;em&gt;in-memory&lt;/em&gt; raster dataset with the
+high resolution data that we want to process. Then we use then &lt;cite&gt;gdal.RegenerateOverviews&lt;/cite&gt;
+function to do the downsampling.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;downsample_output&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fname_out&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;hires_data&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
+      &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;This function downsamples, using the **mode**, the 2D array&lt;/span&gt;
+&lt;span class="sd"&gt;      `hires_data`. The datatype is assumed byte in this case, and&lt;/span&gt;
+&lt;span class="sd"&gt;      you might want to change that. The output files are given by&lt;/span&gt;
+&lt;span class="sd"&gt;      `fname_out`, and we downsample by a factor of 100 and 300. The&lt;/span&gt;
+&lt;span class="sd"&gt;      initial GDAL dataset is `g` (this is where the data are coming&lt;/span&gt;
+&lt;span class="sd"&gt;      from, and we use that to fish out the resolution, geotransform,&lt;/span&gt;
+&lt;span class="sd"&gt;      etc.).&lt;/span&gt;
+
+&lt;span class="sd"&gt;      NOTE that this is fairly specialised a function, and you might&lt;/span&gt;
+&lt;span class="sd"&gt;      want to have more flexiblity by adding options to deal with&lt;/span&gt;
+&lt;span class="sd"&gt;      the aggregation procedure in `gdal.RegenerateOverviews`, the&lt;/span&gt;
+&lt;span class="sd"&gt;      resolutions of the aggregations you want, the datatypes, etc.&lt;/span&gt;
+&lt;span class="sd"&gt;      &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+      &lt;span class="c"&gt;# Create an in-memory GDAL dataset to store the full resolution&lt;/span&gt;
+      &lt;span class="c"&gt;# dataset...&lt;/span&gt;
+      &lt;span class="n"&gt;total_obs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RasterCount&lt;/span&gt;
+      &lt;span class="n"&gt;drv&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetDriverByName&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;MEM&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;dst_ds&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;drv&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Create&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RasterXSize&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RasterYSize&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; \
+          &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GDT_Byte&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;dst_ds&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SetGeoTransform&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetGeoTransform&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+      &lt;span class="n"&gt;dst_ds&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SetProjection&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetProjectionRef&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;dst_ds&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetRasterBand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;WriteArray&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;hires_data&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+
+      &lt;span class="n"&gt;geoT&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetGeoTransform&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+      &lt;span class="n"&gt;drv&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetDriverByName&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;GTiff&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_3k&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;drv&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Create&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;_3k.tif&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;fname_out&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; \
+          &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RasterXSize&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RasterYSize&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GDT_Byte&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_9k&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;drv&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Create&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;_9k.tif&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;fname_out&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; \
+          &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RasterXSize&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;300&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RasterYSize&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;300&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GDT_Byte&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+
+      &lt;span class="n"&gt;this_geoT&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="mi"&gt;300&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; \
+              &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="mi"&gt;300&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_9k&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SetGeoTransform&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;this_geoT&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_9k&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SetProjection&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetProjectionRef&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+
+      &lt;span class="n"&gt;this_geoT&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; \
+              &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;geoT&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_3k&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SetGeoTransform&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;this_geoT&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_3k&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SetProjection&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetProjectionRef&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_3k&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SetMetadata&lt;/span&gt; &lt;span class="p"&gt;({&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;TotalNObs&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;total_obs&lt;/span&gt;&lt;span class="p"&gt;})&lt;/span&gt;
+
+      &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RegenerateOverviews&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;dst_ds&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetRasterBand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; \
+          &lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="n"&gt;resampled_3k&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetRasterBand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; \
+          &lt;span class="n"&gt;resampled_9k&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetRasterBand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;],&lt;/span&gt;
+          &lt;span class="s"&gt;&amp;#39;mode&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+
+      &lt;span class="n"&gt;resampled_3k&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetRasterBand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SetNoDataValue&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_9k&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetRasterBand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SetNoDataValue&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_3k&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+      &lt;span class="n"&gt;resampled_9k&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="python"></category><category term="tips"></category></entry><entry><title>How to extract spectra from image data using ground truth vector data</title><link href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html" rel="alternate"></link><updated>2012-08-15T16:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-15:how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html</id><summary type="html">&lt;p&gt;Supervised classification of EO data uses a set of samples from known
+patterns (usually reflectance spectra) to decide whether a given pattern
+belongs to one class or another. In landcover applications, one goes to
+the field, and observes that a given location is indeed class $\omega_c$.
+These ground observations usually find their ways into a vector dataset,
+and they can be used to extract the relevant pixels from satellite data
+in raster formats. Let's see how this is done. I'm assuming that I have
+two sets of files:&lt;/p&gt;
+&lt;dl class="docutils"&gt;
+&lt;dt&gt;409_QB05_1merg.shp&lt;/dt&gt;
+&lt;dd&gt;a shapefile, where each feature is encoded as a multipolygon,&lt;/dd&gt;
+&lt;dt&gt;ortodvd7_402_multiespectral.tif&lt;/dt&gt;
+&lt;dd&gt;a raster file with a few bands (some multispectral dataset).&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;p&gt;Let's first note the extent and resolution of the GeoTIFF file with &lt;tt class="docutils literal"&gt;gdalinfo&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdalinfo ortodvd7_402_multiespectral.tif
+Driver: GTiff/GeoTIFF
+Files: ortodvd7_402_multiespectral.tif
+       ortodvd7_402_multiespectral.aux
+       ortodvd7_402_multiespectral.rrd
+       ortodvd7_402_multiespectral.tfw
+Size is 6380, 5668
+Coordinate System is:
+PROJCS[&amp;quot;UTM Zone 30N&amp;quot;,
+    GEOGCS[&amp;quot;European_1950_Portugal_Spain&amp;quot;,
+        DATUM[&amp;quot;European_1950_Portugal_Spain&amp;quot;,
+            SPHEROID[&amp;quot;International 1909&amp;quot;,6378388,297.0000000284015]],
+        PRIMEM[&amp;quot;Greenwich&amp;quot;,0],
+        UNIT[&amp;quot;degree&amp;quot;,0.0174532925199433]],
+    PROJECTION[&amp;quot;Transverse_Mercator&amp;quot;],
+    PARAMETER[&amp;quot;latitude_of_origin&amp;quot;,0],
+    PARAMETER[&amp;quot;central_meridian&amp;quot;,-3],
+    PARAMETER[&amp;quot;scale_factor&amp;quot;,0.9996],
+    PARAMETER[&amp;quot;false_easting&amp;quot;,500000],
+    PARAMETER[&amp;quot;false_northing&amp;quot;,0],
+    UNIT[&amp;quot;metre&amp;quot;,1,
+        AUTHORITY[&amp;quot;EPSG&amp;quot;,&amp;quot;9001&amp;quot;]]]
+Origin = (143110.649999999994179,4132515.350000000093132)
+Pixel Size = (2.700000000000000,-2.700000000000000)
+Metadata:
+  TIFFTAG_SOFTWARE=ERDAS IMAGINE
+  TIFFTAG_XRESOLUTION=1
+  TIFFTAG_YRESOLUTION=1
+  TIFFTAG_RESOLUTIONUNIT=1 (unitless)
+  AREA_OR_POINT=Area
+Image Structure Metadata:
+  INTERLEAVE=PIXEL
+Corner Coordinates:
+Upper Left  (  143110.650, 4132515.350) (  7d 1'27.45&amp;quot;W, 37d16'12.83&amp;quot;N)
+Lower Left  (  143110.650, 4117211.750) (  7d 1' 1.14&amp;quot;W, 37d 7'57.46&amp;quot;N)
+Upper Right (  160336.650, 4132515.350) (  6d49'49.65&amp;quot;W, 37d16'36.02&amp;quot;N)
+Lower Right (  160336.650, 4117211.750) (  6d49'24.59&amp;quot;W, 37d 8'20.53&amp;quot;N)
+Center      (  151723.650, 4124863.550) (  6d55'25.71&amp;quot;W, 37d12'16.85&amp;quot;N)
+Band 1 Block=6380x8 Type=UInt16, ColorInterp=Gray
+  Min=0.000 Max=1599.000
+  Minimum=0.000, Maximum=1599.000, Mean=128.363, StdDev=89.004
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=1599
+    STATISTICS_MEAN=128.36316119423
+    STATISTICS_MEDIAN=3.2133151845658e-234
+    STATISTICS_MODE=4.4506188044836e-308
+    STATISTICS_STDDEV=89.003854388224
+    LAYER_TYPE=athematic
+Band 2 Block=6380x8 Type=UInt16, ColorInterp=Undefined
+  Min=0.000 Max=2047.000
+  Minimum=0.000, Maximum=2047.000, Mean=180.116, StdDev=141.805
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=2047
+    STATISTICS_MEAN=180.11620984994
+    STATISTICS_MEDIAN=3.2133151845658e-234
+    STATISTICS_MODE=4.4506188044836e-308
+    STATISTICS_STDDEV=141.80527606593
+    LAYER_TYPE=athematic
+Band 3 Block=6380x8 Type=UInt16, ColorInterp=Undefined
+  Min=0.000 Max=2047.000
+  Minimum=0.000, Maximum=2047.000, Mean=116.447, StdDev=116.221
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=2047
+    STATISTICS_MEAN=116.44734908401
+    STATISTICS_MEDIAN=3.2133151845658e-234
+    STATISTICS_MODE=4.4506188044836e-308
+    STATISTICS_STDDEV=116.2210329906
+    LAYER_TYPE=athematic
+Band 4 Block=6380x8 Type=UInt16, ColorInterp=Undefined
+  Min=0.000 Max=2047.000
+  Minimum=0.000, Maximum=2047.000, Mean=171.386, StdDev=166.748
+  Overviews: 1595x1417, 798x709, 399x355, 200x178, 100x89, 50x45
+  Metadata:
+    STATISTICS_MINIMUM=0
+    STATISTICS_MAXIMUM=2047
+    STATISTICS_MEAN=171.38578244359
+    STATISTICS_MEDIAN=5.4413901556992e-227
+    STATISTICS_MODE=1.4092176116584e-315
+    STATISTICS_STDDEV=166.74819006626
+    LAYER_TYPE=athematic
+&lt;/pre&gt;
+&lt;p&gt;We can see the four bands (R, G, B and NIR), their statistics in terms of
+DN, as well as the extent, resolution and rows &amp;amp; columns. Now, let's have a
+look at the Shapefile with &lt;tt class="docutils literal"&gt;ogrinfo&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+ogrinfo -al -so 409_QB05_1merg.shp
+INFO: Open of `409_QB05_1merg.shp'
+      using driver `ESRI Shapefile' successful.
+
+      Layer name: 409_QB05_1merg
+      Geometry: Polygon
+      Feature Count: 16
+      Extent: (146113.385068, 4119178.250911) - (153213.897681, 4132145.765108)
+      Layer SRS WKT:
+      (unknown)
+&lt;/pre&gt;
+&lt;p&gt;The shapefile doesn't contain a projection, but it would appear that it belongs
+with the image. We also note that there is no layer, but in fact, the 16
+features are the different classes. As in a previous entry, we can create
+a raster mask that will allow us to select the spectra in the multispectral
+dataset using &lt;tt class="docutils literal"&gt;gdal_rasterize&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdal_rasterize -of GTiff  -a_nodata 0 -co &amp;quot;COMPRESS=LZW&amp;quot; -a FID  \
+    -sql &amp;quot;select FID, * from '409_QB05_1merg'&amp;quot; -ot Byte \
+    -te 143110.650 4117211.750 160336.650 4132515.350 \
+    -ts 6380 5668 -a_srs &amp;quot;EPSG:23030&amp;quot; 409_QB05_1merg.shp mascara.tif
+&lt;/pre&gt;
+&lt;p&gt;I have set the projection to be &lt;a class="reference external" href="http://spatialreference.org/ref/epsg/23030"&gt;UTM 30N/ED50&lt;/a&gt;
+(same as in the geotiff), the no data value to be 0, and the data type to be
+byte (this is to save memory: it's pointless using integers when our mask
+will only go from 0 to 16). I have also set GeoTIFF options to compress the
+data, so that the mask file is a meagre ~840kb of data. We can also plot the result&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;matplotlib.pyplot&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;plt&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;osgeo&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;gdal_rasterize&lt;/span&gt;
+
+&lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;mascara.tif&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ReadAsArray&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;mm&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ma&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mask&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;ortodvd7_402_multiespectral.tif&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ReadAsArray&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;ss&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;  &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rollaxis&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[:&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;::&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;::&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;imshow&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;ss&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mf"&gt;822.&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;interpolation&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;nearest&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; \
+        &lt;span class="n"&gt;extent&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;6380&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;5668&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;hold&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;imshow&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;mm&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;interpolation&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;nearest&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;  &lt;span class="n"&gt;vmin&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vmax&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;\
+        &lt;span class="n"&gt;extent&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;6380&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;5668&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;cmap&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cm&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Reds&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="images/roi_plot.png" src="images/roi_plot.png" style="width: 90%;" /&gt;
+&lt;p class="caption"&gt;The selected polygons on top of the raster data using different colours.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;matplotlib.pyplot&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;plt&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;osgeo&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;gdal_rasterize&lt;/span&gt;
+
+&lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;mascara.tif&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;m&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ReadAsArray&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;mm&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ma&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mask&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;ortodvd7_402_multiespectral.tif&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ReadAsArray&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;spectra&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;c_&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ones&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)),&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[:,&lt;/span&gt; &lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;T&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;17&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;spectra&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;r_&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="n"&gt;spectra&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;c_&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ones&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;)),&lt;/span&gt; \
+            &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;[:,&lt;/span&gt; &lt;span class="n"&gt;m&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;T&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="p"&gt;]&lt;/span&gt;
+
+&lt;span class="c"&gt;# Plot some classes...&lt;/span&gt;
+&lt;span class="n"&gt;fig&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;figure&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;ax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;fig&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_subplot&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;111&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;projection&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;3d&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;color&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;r&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;g&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;b&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;y&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;k&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+   &lt;span class="n"&gt;isel&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;spectra&lt;/span&gt;&lt;span class="p"&gt;[:,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;
+   &lt;span class="n"&gt;ax&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;scatter&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;spectra&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;isel&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;spectra&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;isel&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; \
+           &lt;span class="n"&gt;spectra&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;isel&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;marker&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;o&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;c&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;color&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="c"&gt;# Save the spectra as a text file&lt;/span&gt;
+&lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;savetxt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;spectra.txt&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;spectra&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fmt&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%8g&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="images/spectra_scatter.png" src="images/spectra_scatter.png" style="width: 90%;" /&gt;
+&lt;p class="caption"&gt;The extracted pixels for classes 2 to 5 over feature dimensions 2, 3 and 4.
+Note how the different classes can be separated.&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="python"></category><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>Creating a country raster mask using GDAL</title><link href="/creating-a-country-raster-mask-using-gdal.html" rel="alternate"></link><updated>2012-08-02T10:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-02:creating-a-country-raster-mask-using-gdal.html</id><summary type="html">&lt;p&gt;Usually, we remote sensing types ignore country boundaries: they don't really
+make much sense, as they are not aligned with MODIS pixels ;-) However, I was
+asked what's the easiest way to produce a global mask of countries, so that all
+th grid cells (say at 0.5 degree resolution) that fall within a country are
+given the same number. I guess the easiest thing would be to use QGIS, add a
+new layer with the offending name (&lt;tt class="docutils literal"&gt;$id&lt;/tt&gt; is the field you are looking for
+there!), and then rasterise the layer.&lt;/p&gt;
+&lt;p&gt;But how do to you that with &lt;a class="reference external" href="http://gdal.osegeo.org/"&gt;GDAL&lt;/a&gt;? We can use
+&lt;tt class="docutils literal"&gt;gdal_rasterize&lt;/tt&gt; for this, and I assume that you are using 1.8.0 or later.
+Let's say we use the ubiquitous
+&lt;a class="reference external" href="http://aprsworld.net/gisdata/world/"&gt;world shapefile&lt;/a&gt;. We need to create a
+single integer tag for each feature or country. The best of doing this is to
+use GDAL's virtual variable &lt;tt class="docutils literal"&gt;FID&lt;/tt&gt;. However, you need to create the field on
+the fly, as it were: you use the &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-sql&lt;/span&gt;&lt;/tt&gt; statement, and add the &lt;tt class="docutils literal"&gt;FID&lt;/tt&gt;
+variable that way (see
+&lt;a class="reference external" href="http://lists.osgeo.org/pipermail/gdal-dev/2010-February/023485.html"&gt;this&lt;/a&gt;.
+We also need to specify the extent of the raster output file. We'll oversample
+a bit to start with&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdal_rasterize -of GTiff  -a FID  -sql &amp;quot;select FID, * from world&amp;quot;  \
+  -te -180 -90 180 90 -tr 0.05 0.05 -a_srs &amp;quot;EPSG:4326&amp;quot; -a_nodata 0 \
+  -ot UInt16 world.shp world_grid.tif
+&lt;/pre&gt;
+&lt;p&gt;So, that gives us &lt;tt class="docutils literal"&gt;world_grid.tif&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+$ gdalinfo world_grid.tif -stats
+Driver: GTiff/GeoTIFF
+Files: world_grid.tif
+Size is 7200, 3600
+Coordinate System is:
+GEOGCS[&amp;quot;WGS 84&amp;quot;,
+    DATUM[&amp;quot;WGS_1984&amp;quot;,
+        SPHEROID[&amp;quot;WGS 84&amp;quot;,6378137,298.257223563,
+            AUTHORITY[&amp;quot;EPSG&amp;quot;,&amp;quot;7030&amp;quot;]],
+        AUTHORITY[&amp;quot;EPSG&amp;quot;,&amp;quot;6326&amp;quot;]],
+    PRIMEM[&amp;quot;Greenwich&amp;quot;,0],
+    UNIT[&amp;quot;degree&amp;quot;,0.0174532925199433],
+    AUTHORITY[&amp;quot;EPSG&amp;quot;,&amp;quot;4326&amp;quot;]]
+Origin = (-180.000000000000000,90.000000000000000)
+Pixel Size = (0.050000000000000,-0.050000000000000)
+Metadata:
+  AREA_OR_POINT=Area
+Image Structure Metadata:
+  INTERLEAVE=BAND
+Corner Coordinates:
+Upper Left  (-180.0000000,  90.0000000) (180d 0' 0.00&amp;quot;W, 90d 0' 0.00&amp;quot;N)
+Lower Left  (-180.0000000, -90.0000000) (180d 0' 0.00&amp;quot;W, 90d 0' 0.00&amp;quot;S)
+Upper Right ( 180.0000000,  90.0000000) (180d 0' 0.00&amp;quot;E, 90d 0' 0.00&amp;quot;N)
+Lower Right ( 180.0000000, -90.0000000) (180d 0' 0.00&amp;quot;E, 90d 0' 0.00&amp;quot;S)
+Center      (   0.0000000,   0.0000000) (  0d 0' 0.01&amp;quot;E,  0d 0' 0.01&amp;quot;N)
+Band 1 Block=7200x1 Type=UInt16, ColorInterp=Gray
+  Minimum=1.000, Maximum=243.000, Mean=166.683, StdDev=76.175
+  NoData Value=0
+  Metadata:
+    STATISTICS_MINIMUM=1
+    STATISTICS_MAXIMUM=243
+    STATISTICS_MEAN=166.68288288267
+    STATISTICS_STDDEV=76.17549545167
+&lt;/pre&gt;
+&lt;p&gt;Cool, so how do we create a say 0.5degree grid from our 0.05degree grid?
+&lt;tt class="docutils literal"&gt;gdaladdo&lt;/tt&gt; can help building overlays with a spatial resolution given as
+integer multiples of 0.05 degrees. Within that new resolution, we can take the
+mode of the 0.05 degree grid, and use that to label the new lower resolution
+grid. Further assume that we want a 0.5 degree and a 1 degree grid out&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdaladdo -r mode world_grid.tif 10 20
+gdal_translate -of GTiff -outsize 720 360 world_grid.tif world_grid_hd.tif
+gdal_translate -of GTiff -outsize 368 180 world_grid.tif world_grid_1d.tif
+&lt;/pre&gt;
+&lt;p&gt;And here you have a picture of how it looks. I'm using a random colormap with
+matplotlib (see &lt;a class="reference external" href="https://gist.github.com/402500"&gt;here&lt;/a&gt;)&lt;/p&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="images/world_map.png" src="images/world_map.png" style="width: 90%;" /&gt;
+&lt;p class="caption"&gt;The map, in all its glory.&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>EOLDAS talk at VU Amsterdam</title><link href="/eoldas-talk-at-vu-amsterdam.html" rel="alternate"></link><updated>2012-08-01T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-01:eoldas-talk-at-vu-amsterdam.html</id><summary type="html">&lt;p&gt;So I have just spent a week visiting at the &lt;a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp"&gt;VU Amsterdam&lt;/a&gt;.
+During this visit, I have also given a talk on EOLDAS. The slides are
+availabe from &lt;a class="reference external" href="http://jgomezdans.github.com/eoldas_release/EOLDAS_VUA.pdf"&gt;here&lt;/a&gt;.&lt;/p&gt;
+</summary><category term="EOLDAS"></category><category term="data assimilation"></category><category term="python"></category></entry><entry><title>Simple time series MODIS data analysis</title><link href="/simple-time-series-modis-data-analysis.html" rel="alternate"></link><updated>2012-07-23T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-23:simple-time-series-modis-data-analysis.html</id><summary type="html">&lt;p&gt;In a &lt;a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html"&gt;previous post&lt;/a&gt;,
+I demonstrated how to stitch and put together a number of MODIS data
+files. This is useful and interesting, but in the end, we are interested
+in analysing the data we get out of the satellite. One first way around
+this might be to extract time series from pixels in the region of interest
+that share some common feature (such as common landcover, or where we
+just happen to have some ground data). In this post, I will demonstrate
+how to extract data for common landcover pixels. To do this, I will
+use the MODIS landcover product, as that's the only one I have lying
+around. Note that in reality, one would just stay in the MODIS projection
+for this, rather than waste time reprojecting and clipping things.
+However, one could think that the landcover map is in a different
+projection.&lt;/p&gt;
+&lt;p&gt;The procedure for this is quite straightforward:&lt;/p&gt;
+&lt;ol class="arabic simple"&gt;
+&lt;li&gt;Open and read in the reference dataset (landcover in our case)&lt;/li&gt;
+&lt;li&gt;Loop over time, grabbing all the individual rasters for each period&lt;/li&gt;
+&lt;li&gt;Loop over the features we are interested in in the reference dataset&lt;/li&gt;
+&lt;li&gt;Calculate some descriptive stats for the given time period &amp;amp; feature&lt;/li&gt;
+&lt;li&gt;Do some plotting&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Here, we shall loop over the different landcover types, and for each
+timestep, we will calculate the mean and standard deviation of GPP.
+&lt;a class="reference external" href="https://gist.github.com/3163682"&gt;A script&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;A script to grab timeseries from MODIS data using GDAL and python&lt;/span&gt;
+&lt;span class="sd"&gt;Author: J Gomez-Dans/NCEO &amp;amp; UCL&lt;/span&gt;
+&lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="n"&gt;__author__&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;J&lt;/span&gt; &lt;span class="n"&gt;G&lt;/span&gt;&lt;span class="err"&gt;ó&lt;/span&gt;&lt;span class="n"&gt;mez&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;Dans&lt;/span&gt;
+
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;matplotlib.pyplot&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;plt&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;osgeo&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;
+
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ion&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="c"&gt;# Read in the landcover data&lt;/span&gt;
+&lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;modis_lc1.tif&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;lc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ReadAsArray&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="c"&gt;# The different landcover types we are interested in&lt;/span&gt;
+&lt;span class="n"&gt;lc_labels&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Evergreen Needleleaf forest&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Evergreen Broadleaf forest&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Deciduous Needleleaf forest&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Decidious Broadleaf forst&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Mixed forest&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;6&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Closed shrublands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Open shrublands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Woody savannas&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;    &lt;span class="s"&gt;&amp;quot;Savannas&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;   &lt;span class="s"&gt;&amp;quot;Grasslands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;11&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;   &lt;span class="s"&gt;&amp;quot;Permanent wetlands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;12&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;   &lt;span class="s"&gt;&amp;quot;Croplands&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;   &lt;span class="s"&gt;&amp;quot;Cropland/Natural vegetation mosaic&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="c"&gt;# Time axis&lt;/span&gt;
+&lt;span class="n"&gt;doys&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;arange&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;365&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;t_axis&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="mf"&gt;730486.&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;doys&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;365&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt; \
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;flatten&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;iplot&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+&lt;span class="c"&gt;# Loop over landcover types&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;class_no&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;class_label&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;lc_labels&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;iteritems&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+&lt;span class="c"&gt;# The landcover filter for this class is calculated now.&lt;/span&gt;
+&lt;span class="n"&gt;passer_lc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;lc&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="n"&gt;class_no&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;class_label&lt;/span&gt;
+&lt;span class="n"&gt;n_years&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;clf&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="c"&gt;# Remember to clear the screen&lt;/span&gt;
+&lt;span class="n"&gt;mean_gpp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+&lt;span class="n"&gt;std_gpp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+&lt;span class="c"&gt;# The lists above will hold the time series&lt;/span&gt;
+&lt;span class="c"&gt;# Now loop over years&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="mi"&gt;2002&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2012&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt;
+    &lt;span class="c"&gt;# Open the relevant file&lt;/span&gt;
+    &lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;MOD17A2.&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;.tif&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="c"&gt;# For eacth time step (ie band)...&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;tstep&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RasterCount&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="c"&gt;# Read the data. Note bands start @ 1 in GDAL, not 0&lt;/span&gt;
+        &lt;span class="n"&gt;gpp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GetRasterBand&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;tstep&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="n"&gt;ReadAsArray&lt;/span&gt; &lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="c"&gt;# Scale and filter wrong values&lt;/span&gt;
+        &lt;span class="n"&gt;gpp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;where&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;gpp&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;30000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;nan&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;gpp&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="mf"&gt;0.0001&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c"&gt;# Filter, where the data are OK, and the landcover is&lt;/span&gt;
+        &lt;span class="c"&gt;# the one we stipulated above&lt;/span&gt;
+        &lt;span class="n"&gt;passer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;logical_and&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isfinite&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;gpp&lt;/span&gt; &lt;span class="p"&gt;),&lt;/span&gt; \
+                &lt;span class="n"&gt;passer_lc&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c"&gt;# The pixels that get selected from this date.&lt;/span&gt;
+        &lt;span class="n"&gt;work&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gpp&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="n"&gt;passer&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+        &lt;span class="c"&gt;# Calculate means and standard deviations&lt;/span&gt;
+        &lt;span class="n"&gt;mean_gpp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;work&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;mean&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;std_gpp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;work&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;std&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="c"&gt;# At the end of all years, do some plotting&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fill_between&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;t_axis&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;mean_gpp&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;  \
+    &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;std_gpp&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;mean_gpp&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;std_gpp&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; \
+    &lt;span class="n"&gt;facecolor&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;0.8&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;plot&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;t_axis&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;mean_gpp&lt;/span&gt; &lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;-r&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lw&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mf"&gt;1.2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;ax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;gca&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;ax&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xaxis_date&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;title&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;class_label&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;grid&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xlabel&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Time&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ylabel&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;r&amp;#39;GPP $[\frac{kg C}{m^2}]$&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;iplot&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;iplot&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Saving&amp;quot;&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;savefig&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;lc_&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;.png&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;class_no&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;dpi&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;150&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;savefig&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;lc_&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;.pdf&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;class_no&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\t&lt;/span&gt;&lt;span class="s"&gt;Saved...&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="A time series (2002-2011) of GPP over the UK (&amp;amp; Ireland, and bits of France, Belgium, etc!) for what the MODIS landcover products claims to be             &amp;quot;Croplands&amp;quot; )" src="images/lc_12.png" style="width: 90%;" /&gt;
+&lt;p class="caption"&gt;A time series of GPP over the UK (&amp;amp; Ireland, and bits of France,
+Belgium, etc!) for what the MODIS landcover products claims to be
+&amp;quot;Croplands&amp;quot; )&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Cool, hey? ;-)&lt;/p&gt;
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category><category term="python"></category></entry><entry><title>Stitching together MODIS data</title><link href="/stitching-together-modis-data.html" rel="alternate"></link><updated>2012-07-20T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-20:stitching-together-modis-data.html</id><summary type="html">&lt;p&gt;MODIS has been around for some 12 years. There are many products that
+have large time series over the whole globe which one can use to study
+things. So I might want to produce a a timeseries of the &lt;a class="reference external" href="https://lpdaac.usgs.gov/products/modis_products_table/gross_primary_productivity/8_day_l4_global_1km/mod17a2"&gt;8-day Gross Primary Productivity (GPP) product&lt;/a&gt;
+over say the UK. Moreover, I might want to change the projection to
+something more appropriate to the UK. The first thing to note is that
+the UK (OK, and Ireland, and I'm ignoring Gibraltar, the Falklands and
+the like!;-D) is spread over two tiles, &lt;tt class="docutils literal"&gt;h17v03&lt;/tt&gt; and &lt;tt class="docutils literal"&gt;h18v03&lt;/tt&gt;.
+The MODIS product needs to be downloaded for both tiles, and then
+mosaicked/stitched together. So, this is what we want to do:&lt;/p&gt;
+&lt;ol class="arabic simple"&gt;
+&lt;li&gt;Download the complete time series for the relevant tiles&lt;/li&gt;
+&lt;li&gt;Stitch together the tiles&lt;/li&gt;
+&lt;li&gt;Reproject to some useful projection&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The output data ought to be in an easy-to-use format, for example a
+multiband GeoTIFF file, where each band represents a different period.&lt;/p&gt;
+&lt;p&gt;It is important to note that I shall be using the GDAL VRT format a lot,
+and this requires in this case, opening many HDF files simultaneously.
+For this to work, you need to have the installed HDF libraries correctly
+configured. See the section &lt;a class="reference external" href="http://www.gdal.org/frmt_hdf4.html"&gt;Driver Building&lt;/a&gt;
+on the &lt;a class="reference external" href="http://www.gdal.org/"&gt;GDAL website&lt;/a&gt;.&lt;/p&gt;
+&lt;div class="section" id="getting-the-data"&gt;
+&lt;h2&gt;Getting the data&lt;/h2&gt;
+&lt;p&gt;Although one can use the &lt;a class="reference external" href="http://reverb.echo.nasa.gov/reverb/"&gt;Reverb website&lt;/a&gt;
+to select and download data, it is also easy enough to just get what
+you need from NASA's FTP servers. You can have sophisticated download
+tools such as &lt;a class="reference external" href="https://github.com/jgomezdans/modisficator"&gt;modisficator&lt;/a&gt;,
+but sometimes it's just easier to have a shell script that uses wget
+to get the data. Said script is &lt;a class="reference external" href="https://gist.github.com/3145223"&gt;grab_modis.sh&lt;/a&gt;,
+and uses Bash and wget. Going by our example, let's say we want to download
+two tiles, for a few years. We'd just use a Bash command for this. We
+note that the GPP product for TERRA has the code &lt;tt class="docutils literal"&gt;MOD17A2.005&lt;/tt&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;for &lt;/span&gt;tile in h17v03 h18v03;
+&lt;span class="k"&gt;do&lt;/span&gt;
+&lt;span class="k"&gt;    for &lt;/span&gt;year in &lt;span class="o"&gt;{&lt;/span&gt;2000..2011&lt;span class="o"&gt;}&lt;/span&gt;;
+    &lt;span class="k"&gt;do&lt;/span&gt;
+        ./grab_modis.sh MOD17A2.005 &lt;span class="nv"&gt;$tile&lt;/span&gt; &lt;span class="nv"&gt;$year&lt;/span&gt;
+    &lt;span class="k"&gt;done&lt;/span&gt;
+&lt;span class="k"&gt;done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The previous commands will take a while to download the data. We can
+see that we have downloaded a bunch of files like&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+MOD17A2.A2005001.h18v03.005.2007356112231.hdf
+&lt;/pre&gt;
+&lt;p&gt;We can see what's in each file using &lt;tt class="docutils literal"&gt;gdalinfo&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdalinfo MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+Driver: HDF4/Hierarchical Data Format Release 4
+Files: MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+Size is 512, 512
+Coordinate System is `'
+Metadata:
+  HDFEOSVersion=HDFEOS_V2.9
+  LOCALGRANULEID=MOD17A2.A2005001.h17v03.005.2007356110650.hdf
+  PRODUCTIONDATETIME=2007-12-22T11:06:50.000Z
+  DAYNIGHTFLAG=Day
+  REPROCESSINGACTUAL=reprocessed
+  LOCALVERSIONID=5.2.6
+  REPROCESSINGPLANNED=further update is anticipated
+  SCIENCEQUALITYFLAG=Not Investigated
+  AUTOMATICQUALITYFLAGEXPLANATION=Passed was set as a default value. May or may not require further study
+  AUTOMATICQUALITYFLAG=Passed
+  SCIENCEQUALITYFLAGEXPLANATION=See http://landweb.nascom.nasa.gov/cgi-bin/QA_WWW/qaFlagPage.cgi?sat=terra for the product Science Quality status.
+  QAPERCENTMISSINGDATA=0
+  QAPERCENTOUTOFBOUNDSDATA=77
+  QAPERCENTCLOUDCOVER=82
+  QAPERCENTINTERPOLATEDDATA=0
+  PARAMETERNAME=MOD_PR17A2
+  VERSIONID=5
+  SHORTNAME=MOD17A2
+  INPUTPOINTER=MOD15A2.A2005001.h17v03.005.2007352013935.hdf, MOD17A1.1.A2005.h17v03.hdf, MOD12Q1.A2001001.h17v03.004.2004358134257.hdf, MOD17_ANC_RI11.hdf
+  GRINGPOINTLONGITUDE=-15.4860189105775, -19.9999999949462, 0.0325645816154951, 0.0125638874822562
+  GRINGPOINTLATITUDE=49.7394264948349, 59.9999999946118, 60.0089388384779, 49.7424953501575
+  GRINGPOINTSEQUENCENO=1, 2, 3, 4
+  EXCLUSIONGRINGFLAG=N
+  RANGEENDINGDATE=2005-01-08
+  RANGEENDINGTIME=23:59:59
+  RANGEBEGINNINGDATE=2005-01-01
+  RANGEBEGINNINGTIME=00:00:00
+  PGEVERSION=5.2.8
+  ASSOCIATEDSENSORSHORTNAME=MODIS
+  ASSOCIATEDPLATFORMSHORTNAME=Terra
+  ASSOCIATEDINSTRUMENTSHORTNAME=MODIS
+  QAPERCENTGOODQUALITY=0
+  QAPERCENTOTHERQUALITY=23
+  HORIZONTALTILENUMBER=17
+  VERTICALTILENUMBER=03
+  TileID=51017003
+  NDAYS_COMPOSITED=8
+  QAPERCENTGOODPSN=0
+  QAPERCENTGOODNPP=0
+  NORTHBOUNDINGCOORDINATE=59.9999999946118
+  SOUTHBOUNDINGCOORDINATE=49.9999999955098
+  EASTBOUNDINGCOORDINATE=0.0166666666624637
+  WESTBOUNDINGCOORDINATE=-19.9999999949462
+  ALGORITHMPACKAGEACCEPTANCEDATE=2005-02-11
+  ALGORITHMPACKAGEMATURITYCODE=Normal
+  ALGORITHMPACKAGENAME=MOD17A2
+  ALGORITHMPACKAGEVERSION=5
+  INSTRUMENTNAME=Moderate Resolution Imaging Spectroradiometer
+  PLATFORMSHORTNAME=Terra
+  PROCESSINGDATETIME=2007-12-22T11:06:50.000Z
+  LOCALINPUTGRANULEID=MOD15A2.A2005001.h17v03.005.2007352013935.hdf, MOD17A1.1.A2005.h17v03.hdf, MOD12Q1.A2001001.h17v03.004.2004358134257.hdf, MOD17_ANC_RI11.hdf
+  GEOANYABNORMAL=False
+  GEOESTMAXRMSERROR=50.0
+  LONGNAME=MODIS/Terra Gross Primary Productivity 8-Day L4 Global 1km SIN Grid
+  PROCESSINGCENTER=MODAPS
+  NUMBEROFGRANULES=1
+  GRANULEDAYNIGHTFLAG=Day
+  CHARACTERISTICBINANGULARSIZE=30.0
+  CHARACTERISTICBINSIZE=926.625433055556
+  DATACOLUMNS=1200
+  DATAROWS=1200
+  GLOBALGRIDCOLUMNS=43200
+  GLOBALGRIDROWS=21600
+  NADIRDATARESOLUTION=1km
+  MAXIMUMOBSERVATIONS=1
+  SPSOPARAMETERS=3716
+  PROCESSINGENVIRONMENT=Linux minion5282 2.6.20.3 #1 SMP Thu Mar 22 09:36:24 EST 2007 i686 IntelR XeonR CPU            5148  &amp;#64; 2.33GHz unknown GNU/Linux
+  DESCRREVISION=5.2
+  ENGINEERING_DATA=(none-available)
+
+  UM_VERSION=U.MONTANA MODIS PGE36 Vers 5.2.6 Rev 11 Release 06.09.2006 18:36
+Subdatasets:
+  SUBDATASET_1_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&amp;quot;:MOD_Grid_MOD17A2:Gpp_1km
+  SUBDATASET_1_DESC=[1200x1200] Gpp_1km MOD_Grid_MOD17A2 (16-bit integer)
+  SUBDATASET_2_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&amp;quot;:MOD_Grid_MOD17A2:PsnNet_1km
+  SUBDATASET_2_DESC=[1200x1200] PsnNet_1km MOD_Grid_MOD17A2 (16-bit integer)
+  SUBDATASET_3_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&amp;quot;:MOD_Grid_MOD17A2:Psn_QC_1km
+  SUBDATASET_3_DESC=[1200x1200] Psn_QC_1km MOD_Grid_MOD17A2 (8-bit unsigned integer)
+Corner Coordinates:
+Upper Left  (    0.0,    0.0)
+Lower Left  (    0.0,  512.0)
+Upper Right (  512.0,    0.0)
+Lower Right (  512.0,  512.0)
+Center      (  256.0,  256.0)
+&lt;/pre&gt;
+&lt;p&gt;We immediately see that there are 3 subdatasets: GPP, PSN and a QA dataset.
+For the time being, I'll just focus on GPP, but the idea is identical
+for any other subdataset. The name of the dataset within the HDF file
+that GDAL understands is &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;HDF4_EOS:EOS_GRID:&amp;quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&amp;quot;:MOD_Grid_MOD17A2:Gpp_1km&lt;/span&gt;&lt;/tt&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="section" id="stitching-the-files"&gt;
+&lt;h2&gt;Stitching the files&lt;/h2&gt;
+&lt;p&gt;So the idea is that for each date, we stitch together &lt;tt class="docutils literal"&gt;h18v03&lt;/tt&gt; and
+&lt;tt class="docutils literal"&gt;h17v03&lt;/tt&gt;, and then reproject the whole thing to some useful
+projection. To do this efficiently, we'll use GDAL VRTs. First, I'll
+demonstrate on a single date, then we'll automate for a lot of dates.&lt;/p&gt;
+&lt;div class="section" id="single-date"&gt;
+&lt;h3&gt;Single date&lt;/h3&gt;
+&lt;p&gt;First, the stitching is done using &lt;tt class="docutils literal"&gt;gdalbuildvrt&lt;/tt&gt;. The command
+takes the output filename, the input filenames, and off it goes!&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdalbuildvrt mosaic_sinu.vrt \
+'HDF4_EOS:EOS_GRID:&amp;quot;MOD17A2.A2005001.h17v03.005.2007356110650.hdf&amp;quot;:MOD_Grid_MOD17A2:Gpp_1km' \
+'HDF4_EOS:EOS_GRID:&amp;quot;MOD17A2.A2005001.h18v03.005.2007356112231.hdf&amp;quot;:MOD_Grid_MOD17A2:Gpp_1km'
+&lt;/pre&gt;
+&lt;p&gt;Note that we have escaped the GDAL filenames here. You can check
+the output file, &lt;tt class="docutils literal"&gt;mosaic_sinu.vrt&lt;/tt&gt;, with &lt;tt class="docutils literal"&gt;gdalinfo&lt;/tt&gt; and satisfiy
+yourself that it makes sense: We have just stitched two adjacent
+tiles into a single dataset. We can have a look at the result with
+Python (who can read the VRT files just fine!):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;matplotlib.pyplot&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;plt&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;osgeo&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;
+
+&lt;span class="n"&gt;g&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gdal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Open&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;mosaic_sinu.vrt&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c"&gt;# Open file&lt;/span&gt;
+&lt;span class="n"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ReadAsArray&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="c"&gt;# Read contents&lt;/span&gt;
+&lt;span class="n"&gt;mdata&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ma&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;array&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mask&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="mi"&gt;30000&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c"&gt;# Mask data&lt;/span&gt;
+&lt;span class="n"&gt;cmap&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cm&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;jet&lt;/span&gt; &lt;span class="c"&gt;# Set colormap&lt;/span&gt;
+&lt;span class="n"&gt;cmap&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;set_bad&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;k&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c"&gt;# Set masked values to black&lt;/span&gt;
+&lt;span class="c"&gt;# Next line scales the GPP data by 0.0001 to get the right units&lt;/span&gt;
+&lt;span class="c"&gt;# and plots it.&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;imshow&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;mdata&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="mf"&gt;0.0001&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;interpolation&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;nearest&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vmax&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mf"&gt;0.007&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cmap&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;cmap&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;colorbar&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;orientation&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;horizontal&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="images/GPP_sinusoidal.png" src="images/GPP_sinusoidal.png" style="width: 90%;" /&gt;
+&lt;/div&gt;
+&lt;p&gt;Let's say we want to use the Ordnance Survey Projection for the UK. In
+&lt;a class="reference external" href="http://jgomezdans.github.com/gdal_notes/reprojection.html"&gt;this webpage&lt;/a&gt;,
+the reader is pointed to a &lt;a class="reference external" href="http://spatialreference.org/ref/epsg/27700/"&gt;projection definition&lt;/a&gt;
+that GDAL will understand, &lt;tt class="docutils literal"&gt;EPSG:27700&lt;/tt&gt;. We can now feed this to
+&lt;tt class="docutils literal"&gt;gdalwarp&lt;/tt&gt; and have virtually projected dataset!&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdalwarp -of VRT -t_srs &amp;quot;EPSG:27700&amp;quot; mosaic_sinu.vrt mosaic.vrt
+&lt;/pre&gt;
+&lt;p&gt;This is nice, but it applies the projection to most of the Netherlands,
+and southern Scandinavia. If we just want to crop the UK and Ireland,
+we can do that as well. Say we want to cut out the box that extends
+from longitudes -14 to 5 and latitudes 50 to 61. Using &lt;tt class="docutils literal"&gt;gdaltransform&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+.. code-block: bash
+&lt;/pre&gt;
+&lt;blockquote&gt;
+# Upper left corner
+echo -14 61 | gdaltransform -s_srs &amp;quot;EPSG:4326&amp;quot; -t_srs &amp;quot;EPSG:27700&amp;quot;
+-246410.748854375 1294822.36205397 -54.5953653845936
+# Lower right corner
+echo 5 50 | gdaltransform -s_srs &amp;quot;EPSG:4326&amp;quot; -t_srs &amp;quot;EPSG:27700&amp;quot;
+901561.991813587 34610.1630877961 -35.8900839695707&lt;/blockquote&gt;
+&lt;p&gt;We use &lt;tt class="docutils literal"&gt;gdal_translate&lt;/tt&gt; to crop the region of interest&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdal_translate -of VRT -projwin -246410.748854375 1294822.36205397 901561.991813587 34610.1630877961 mosaic.vrt mosaic_cropped.vrt
+&lt;/pre&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="images/GPP_OSNG_cropped.png" src="images/GPP_OSNG_cropped.png" style="width: 90%;" /&gt;
+&lt;/div&gt;
+&lt;p&gt;At this stage, we have the output that we want for a given date. Let's
+put this together for a whole year.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="section" id="all-dates"&gt;
+&lt;h3&gt;All dates&lt;/h3&gt;
+&lt;p&gt;We need a script that automates the previous task. &lt;a class="reference external" href="https://gist.github.com/3152468"&gt;Here&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+
+&lt;span class="nv"&gt;tile1&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;$1&lt;/span&gt;
+&lt;span class="nv"&gt;tile2&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;$2&lt;/span&gt;
+&lt;span class="nv"&gt;year&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;$3&lt;/span&gt;
+
+&lt;span class="c"&gt;# First grab the available dates for one tile&lt;/span&gt;
+&lt;span class="nv"&gt;hdf_tile1&lt;/span&gt;&lt;span class="o"&gt;=(&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;ls MOD17A2.A&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;year&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;*&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;tile1&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;*.hdf&lt;span class="sb"&gt;`&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;span class="se"&gt;\r&lt;/span&gt;m -rf file_list.txt
+&lt;span class="c"&gt;# Loop through datasets in time...&lt;/span&gt;
+&lt;span class="k"&gt;for &lt;/span&gt;t1 in &lt;span class="s2"&gt;&amp;quot;${hdf_tile1[@]}&amp;quot;&lt;/span&gt;
+&lt;span class="k"&gt;do&lt;/span&gt;
+
+&lt;span class="k"&gt;     &lt;/span&gt;&lt;span class="nv"&gt;t2&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="nv"&gt;$t1&lt;/span&gt;| awk -F&lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt;  -v &lt;span class="nv"&gt;other_tile&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;$tile2&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+         &lt;span class="s1"&gt;&amp;#39;{printf( &amp;quot;%s.%s.%s.*\n&amp;quot;,  $1,$2,other_tile)}&amp;#39;&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;
+     &lt;span class="nv"&gt;t2&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;ls &lt;span class="nv"&gt;$t2&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;
+     &lt;span class="nv"&gt;output_fname&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="nv"&gt;$t1&lt;/span&gt;| awk -F&lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt;  &lt;span class="s1"&gt;&amp;#39;{printf( &amp;quot;%s.%s\n&amp;quot;,  $1,$2)}&amp;#39;&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;
+     &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;t1&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;t2&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_fname&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;
+     gdalbuildvrt &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_fname&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;_mosaic_sinu.vrt &lt;span class="se"&gt;\&lt;/span&gt;
+         &lt;span class="s1"&gt;&amp;#39;HDF4_EOS:EOS_GRID:&amp;quot;&amp;#39;&lt;/span&gt;&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;t1&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&amp;quot;:MOD_Grid_MOD17A2:Gpp_1km&amp;#39;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+         &lt;span class="s1"&gt;&amp;#39;HDF4_EOS:EOS_GRID:&amp;quot;&amp;#39;&lt;/span&gt;&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;t2&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&amp;quot;:MOD_Grid_MOD17A2:Gpp_1km&amp;#39;&lt;/span&gt;
+      gdalwarp -of VRT -t_srs &lt;span class="s2"&gt;&amp;quot;EPSG:27700&amp;quot;&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_fname&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;_mosaic_sinu.vrt &lt;span class="se"&gt;\&lt;/span&gt;
+               &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_fname&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;_mosaic.vrt
+      gdal_translate -of VRT &lt;span class="se"&gt;\&lt;/span&gt;
+          -projwin -246410.748854375 1294822.36205397 901561.991813587 34610.1630877961 &lt;span class="se"&gt;\&lt;/span&gt;
+          &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_fname&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;_mosaic.vrt &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_fname&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;.vrt
+      &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_fname&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;.vrt &amp;gt;&amp;gt; file_list.txt
+
+&lt;span class="k"&gt;done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We run the script for each year as&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+stitch_files.sh h18v03 h17v03 2004
+&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="putting-all-that-together"&gt;
+&lt;h2&gt;Putting all that together&lt;/h2&gt;
+&lt;p&gt;In the previous script, a file called &lt;tt class="docutils literal"&gt;file_list.txt&lt;/tt&gt; holds the name
+of all the output VRT files. We will now create a multiband VRT file
+using all the reprojected and cropped files, and then convert the VRT
+file to a GeoTIFF file:&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdalbuildvrt -separate -input_file_list file_list.txt MOD17A2.2004.vrt
+gdal_translate -of GTiff -co &amp;quot;COMPRESS=LZW&amp;quot; -co &amp;quot;TILED=YES&amp;quot; MOD17A2.2004.vrt MOD17A2.2004.tif
+&lt;/pre&gt;
+&lt;p&gt;At this stage, we can have a look at &lt;tt class="docutils literal"&gt;MOD17A2.2004.tif&lt;/tt&gt; with e.g.
+&lt;tt class="docutils literal"&gt;gdalinfo&lt;/tt&gt; or something.&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>Linearly scaling raster data with GDAL</title><link href="/linearly-scaling-raster-data-with-gdal.html" rel="alternate"></link><updated>2012-07-20T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-20:linearly-scaling-raster-data-with-gdal.html</id><summary type="html">&lt;p&gt;So, it's quite tricky to play around with these geospatial datasets: they
+have a myriad formats, these keep changing, and you can never know what
+metadata will be available in them. A clever way around this situation
+is to use tools that allow you to read most of the data, most of the
+associated metadata, and that let you do the usual minor tweaks that
+you'll require to get things working. And this means GDAL (for rasters)
+and OGR (for vectors).&lt;/p&gt;
+&lt;p&gt;Typical problem: you get some data you've never seen before, and it is
+linearly scaled (so they put it in as a 16bit integer and you need to
+apply a linear mapping to get the units right as floating point numbers).
+In the GDAL mailing list &lt;a class="reference external" href="http://lists.osgeo.org/pipermail/gdal-dev/2012-July/033504.html"&gt;there's a thread on this&lt;/a&gt;
+using the MODIS SST product. Obviously, you need a reasonable file format
+that is read easily (this mean GeoTIFF), and you need it in the right
+units, as you don't want to remember these things. The easiest way to
+accomplish this is to use &lt;tt class="docutils literal"&gt;gdal_translate&lt;/tt&gt;, with its rather handy
+&lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-scale&lt;/span&gt; option&lt;/tt&gt;, which performs a linear scaling. We'll also want to
+change the data type to a floating point number, as otherwise results
+will be quantised. From the post above, we know what the linear scaling
+is, but we need to convert it to GDAL, which requires a mapping from
+source minimum and maximum values to destimation min/max. One way to
+do this is to assume that the data span the complete range between
+0 and 65534 (maximum possible number) and calculate the two extrema
+in the destination space if you know the slope and intercept. Another
+way is to fish those two destination numbers from the metadata. Using&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdalinfo A20030012003008.L3m_8D_NSST_4
+[...]
+Scaling=linear
+Scaling Equation=(Slope*l3m_data) + Intercept = Parameter value
+Slope=0.000717185
+Intercept=-2
+Scaled Data Minimum=-2
+Scaled Data Maximum=45
+Data Minimum=-1.999999
+Data Maximum=35.785
+[...]
+&lt;/pre&gt;
+&lt;dl class="docutils"&gt;
+&lt;dt&gt;we see that the total scaling is between -2 and 45. A bash script that&lt;/dt&gt;
+&lt;dd&gt;loops over a set of files could be&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;for &lt;/span&gt;file in A*L3m_8D_NSST_4 ;
+&lt;span class="k"&gt;do&lt;/span&gt;
+&lt;span class="k"&gt;  &lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;map: $file&amp;quot;&lt;/span&gt;
+  gdal_translate -of GTiff -ot Float32 &lt;span class="se"&gt;\&lt;/span&gt;
+                      -scale 0 65534 -2. 45. &lt;span class="se"&gt;\&lt;/span&gt;
+                      -a_srs &lt;span class="s2"&gt;&amp;quot;EPSG:4326&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+                      -a_nodata 65535  &lt;span class="se"&gt;\&lt;/span&gt;
+                      -a_ullr -180 90 180 -90 &lt;span class="se"&gt;\&lt;/span&gt;
+                      -co &lt;span class="s2"&gt;&amp;quot;COMPRESS=PACKBITS&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+                      &lt;span class="s1"&gt;&amp;#39;HDF4_SDS:UNKNOWN:&amp;quot;A20030012003008.L3m_8D_NSST_4&amp;quot;:0&amp;#39;&lt;/span&gt;&lt;span class="se"&gt;\&lt;/span&gt;
+                      A20030012003008.L3m_8D_NSST_4.tif
+&lt;span class="k"&gt;done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;A further refinement to save space is to convert the data to a
+&lt;a class="reference external" href="http://www.gdal.org/gdal_vrttut.html"&gt;GDAL Virtual Raster&lt;/a&gt;. This
+is basically a pointer to the datafile in the form of an XML file. If
+you only access the files rarely, or if you plan to carry out more processing
+on them, then this saves you storing more copies of the same data&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+gdal_translate -of VRT -ot Float32 -scale 0 65534 -2. 45. \
+    -a_srs &amp;quot;EPSG:4326&amp;quot; -a_nodata 65535  \
+    -a_ullr -180 90 180 -90 -co &amp;quot;COMPRESS=PACKBITS&amp;quot; \
+    'HDF4_SDS:UNKNOWN:&amp;quot;A20030012003008.L3m_8D_NSST_4&amp;quot;:0' \
+    A20030012003008.L3m_8D_NSST_4.vrt
+&lt;/pre&gt;
+&lt;p&gt;results in the following VRT file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nt"&gt;&amp;lt;VRTDataset&lt;/span&gt; &lt;span class="na"&gt;rasterXSize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;8640&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;rasterYSize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;4320&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;SRS&amp;gt;&lt;/span&gt;GEOGCS[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;WGS 84&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,DATUM[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;WGS_1984&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,SPHEROID[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;WGS 84&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,6378137,298.257223563,AUTHORITY[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;EPSG&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;7030&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;]],AUTHORITY[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;EPSG&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;6326&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;]],PRIMEM[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;Greenwich&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,0,AUTHORITY[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;EPSG&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;8901&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;]],UNIT[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;degree&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,0.0174532925199433,AUTHORITY[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;EPSG&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;9122&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;]],AUTHORITY[&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;EPSG&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;,&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;4326&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;]]&lt;span class="nt"&gt;&amp;lt;/SRS&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;GeoTransform&amp;gt;&lt;/span&gt; -1.8000000000000000e+02,  4.1666666666666664e-02,  0.0000000000000000e+00,  9.0000000000000000e+01,  0.0000000000000000e+00, -4.1666666666666664e-02&lt;span class="nt"&gt;&amp;lt;/GeoTransform&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;Metadata&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Product Name&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;A20030012003008.L3m_8D_NSST_4&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Sensor Name&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;MODISA&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Sensor&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Title&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;MODISA Level-3 Standard Mapped Image&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Data Center&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Station Name&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Station Latitude&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;0&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Station Longitude&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;0&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Mission&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Mission Characteristics&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Sensor Characteristics&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Product Type&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;8-day&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Replacement Flag&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;ORIGINAL&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Software Name&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;smigen&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Software Version&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;3.30&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Processing Time&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;2006060201827000&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Input Files&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;A20030012003008.L3b_8D_NSST.main&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Processing Control&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;smigen par=A20030012003008.L3m_8D_NSST_4.param&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Input Parameters&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;IFILE = /data1/vdc/sdpsoper/vpu0/workbuf/A20030012003008.L3b_8D_NSST.main|OFILE = A20030012003008.L3m_8D_NSST_4|PFILE = |PROD = sst|PALFILE = DEFAULT|RFLAG = ORIGINAL|MEAS = 1|STYPE = 0|DATAMIN = 0.000000|DATAMAX = 0.000000|LONWEST = -180.000000|LONEAST = 180.000000|LATSOUTH = -90.000000|LATNORTH = 90.000000|RESOLUTION = 4km|PROJECTION = RECT|GAP_FILL = 0|SEAM_LON = -180.000000|PRECISION = |&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;L2 Flag Names&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;LAND,~HISOLZ&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Period Start Year&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;2003&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Period Start Day&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;1&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Period End Year&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;2003&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Period End Day&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;8&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Start Time&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;2002365123005000&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;End Time&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;2003009023005000&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Start Year&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;2002&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Start Day&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;365&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Start Millisec&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;45005000&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;End Year&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;2003&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;End Day&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;9&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;End Millisec&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;9005000&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Start Orbit&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;0&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;End Orbit&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;0&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Orbit&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;0&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Map Projection&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;Equidistant Cylindrical&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Latitude Units&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;degrees North&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Longitude Units&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;degrees East&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Northernmost Latitude&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;90&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Southernmost Latitude&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;-90&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Westernmost Longitude&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;-180&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Easternmost Longitude&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;180&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Latitude Step&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;0.04166667&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Longitude Step&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;0.04166667&lt;span class="err"&gt;&amp;lt;&lt;/span&gt;/MDI
+        &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;SW Point Latitude&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;-89.97916&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;SW Point Longitude&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;-179.9792&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Data Bins&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;13045202&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Number of Lines&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;4320&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Number of Columns&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;8640&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Parameter&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;Sea Surface Temperature&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Measure&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;Mean&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Units&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;deg-C&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Scaling&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;linear&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Scaling Equation&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;(Slope*l3m_data) + Intercept = Parameter value&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Slope&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;0.000717185&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Intercept&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;-2&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Scaled Data Minimum&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;-2&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Scaled Data Maximum&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;45&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Data Minimum&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;-1.999999&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Data Maximum&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;35.785&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Scaling&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;linear&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Scaling Equation&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;(Slope*l3m_data) + Intercept = Parameter value&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Slope&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;0.000717185&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;MDI&lt;/span&gt; &lt;span class="na"&gt;key=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Intercept&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;-2&lt;span class="nt"&gt;&amp;lt;/MDI&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;/Metadata&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;VRTRasterBand&lt;/span&gt; &lt;span class="na"&gt;dataType=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Float32&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;band=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;1&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;Metadata&lt;/span&gt; &lt;span class="nt"&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;NoDataValue&amp;gt;&lt;/span&gt;6.55350000000000E+04&lt;span class="nt"&gt;&amp;lt;/NoDataValue&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;ColorInterp&amp;gt;&lt;/span&gt;Gray&lt;span class="nt"&gt;&amp;lt;/ColorInterp&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;ComplexSource&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;SourceFilename&lt;/span&gt; &lt;span class="na"&gt;relativeToVRT=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;0&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;HDF4_SDS:UNKNOWN:&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;A20030012003008.L3m_8D_NSST_4&lt;span class="ni"&gt;&amp;amp;quot;&lt;/span&gt;:0&lt;span class="nt"&gt;&amp;lt;/SourceFilename&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;SourceBand&amp;gt;&lt;/span&gt;1&lt;span class="nt"&gt;&amp;lt;/SourceBand&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;SourceProperties&lt;/span&gt; &lt;span class="na"&gt;RasterXSize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;8640&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;RasterYSize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;4320&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;DataType=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;UInt16&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;BlockXSize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;8640&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;BlockYSize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;115&amp;quot;&lt;/span&gt; &lt;span class="nt"&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;SrcRect&lt;/span&gt; &lt;span class="na"&gt;xOff=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;0&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;yOff=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;0&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;xSize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;8640&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;ySize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;4320&amp;quot;&lt;/span&gt; &lt;span class="nt"&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;DstRect&lt;/span&gt; &lt;span class="na"&gt;xOff=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;0&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;yOff=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;0&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;xSize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;8640&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;ySize=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;4320&amp;quot;&lt;/span&gt; &lt;span class="nt"&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;ScaleOffset&amp;gt;&lt;/span&gt;-2&lt;span class="nt"&gt;&amp;lt;/ScaleOffset&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;ScaleRatio&amp;gt;&lt;/span&gt;0.000717185&lt;span class="nt"&gt;&amp;lt;/ScaleRatio&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;/ComplexSource&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;/VRTRasterBand&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/VRTDataset&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;It basically points to the original data, and has the scaling information.
+If you wanted to, you could also use the &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-projwin&lt;/span&gt;&lt;/tt&gt; or &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-srcwin&lt;/span&gt;&lt;/tt&gt;
+options to crop the data, or even reproject it with &lt;tt class="docutils literal"&gt;gdalwarp&lt;/tt&gt;.&lt;/p&gt;
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry></feed>
