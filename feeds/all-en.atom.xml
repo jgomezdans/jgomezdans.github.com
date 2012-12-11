@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>A Pelican Blog</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2012-12-11T13:00:00Z</updated><entry><title>Downloading Andalusian meteo data</title><link href="/downloading-andalusian-meteo-data.html" rel="alternate"></link><updated>2012-12-11T13:00:00Z</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-12-11:downloading-andalusian-meteo-data.html</id><summary type="html">&lt;p&gt;Many networks of automated meteo stations are around. In some places,
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2012-12-11T13:00:00+00:00</updated><entry><title>Downloading Andalusian meteo data</title><link href="/downloading-andalusian-meteo-data.html" rel="alternate"></link><updated>2012-12-11T13:00:00+00:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-12-11:downloading-andalusian-meteo-data.html</id><summary type="html">&lt;p&gt;Many networks of automated meteo stations are around. In some places,
 the data are easy to access and therefore use. In some others, you have
 to go through a number of hoops. In Andalusia, it's a mixed bag: a number
 of independent networks are available for agricultural and environmental
@@ -20,7 +20,7 @@ simple: you just execute &lt;tt class="docutils literal"&gt;GetRia.py&lt;/tt&gt;
 from all stations on both networks since 1/1/2000. The data will be saved
 in text files that will appear in your current working directory.&lt;/p&gt;
 &lt;p&gt;Easy no? ;-)&lt;/p&gt;
-</summary><category term="python"></category><category term="tips"></category><category term="meteo"></category></entry><entry><title>Downsampling with GDAL in python</title><link href="/downsampling-with-gdal-in-python.html" rel="alternate"></link><updated>2012-10-04T13:00:00Z</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-10-04:downsampling-with-gdal-in-python.html</id><summary type="html">&lt;p&gt;Quite often, one wants to generate some data at high resolution (say
+</summary><category term="python"></category><category term="tips"></category><category term="meteo"></category></entry><entry><title>Downsampling with GDAL in python</title><link href="/downsampling-with-gdal-in-python.html" rel="alternate"></link><updated>2012-10-04T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-10-04:downsampling-with-gdal-in-python.html</id><summary type="html">&lt;p&gt;Quite often, one wants to generate some data at high resolution (say
 process some image or images) and then calculate some relevant spatial
 statistics at some other resolution. For example, you might want to
 process Landsat TM data at 30m resolution, and might want to aggregate
@@ -92,7 +92,7 @@ data&lt;/p&gt;
 middle plot shows a 3km modal aggregation, whereas the right handside
 plot shows a 9km modal aggregate.&lt;/p&gt;
 &lt;/div&gt;
-</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="python"></category><category term="tips"></category></entry><entry><title>How to extract spectra from image data using ground truth vector data</title><link href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html" rel="alternate"></link><updated>2012-08-15T16:00:00Z</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-15:how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html</id><summary type="html">&lt;p&gt;Supervised classification of EO data uses a set of samples from known
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="python"></category><category term="tips"></category></entry><entry><title>How to extract spectra from image data using ground truth vector data</title><link href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html" rel="alternate"></link><updated>2012-08-15T16:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-15:how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html</id><summary type="html">&lt;p&gt;Supervised classification of EO data uses a set of samples from known
 patterns (usually reflectance spectra) to decide whether a given pattern
 belongs to one class or another. In landcover applications, one goes to
 the field, and observes that a given location is indeed class $\omega_c$.
@@ -276,7 +276,7 @@ data, so that the mask file is a meagre ~840kb of data. We can also plot the res
 &lt;p class="caption"&gt;The extracted pixels for classes 2 to 5 over feature dimensions 2, 3 and 4.
 Note how the different classes can be separated.&lt;/p&gt;
 &lt;/div&gt;
-</summary><category term="python"></category><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>Creating a country raster mask using GDAL</title><link href="/creating-a-country-raster-mask-using-gdal.html" rel="alternate"></link><updated>2012-08-02T10:00:00Z</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-02:creating-a-country-raster-mask-using-gdal.html</id><summary type="html">&lt;p&gt;Usually, we remote sensing types ignore country boundaries: they don't really
+</summary><category term="python"></category><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>Creating a country raster mask using GDAL</title><link href="/creating-a-country-raster-mask-using-gdal.html" rel="alternate"></link><updated>2012-08-02T10:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-02:creating-a-country-raster-mask-using-gdal.html</id><summary type="html">&lt;p&gt;Usually, we remote sensing types ignore country boundaries: they don't really
 make much sense, as they are not aligned with MODIS pixels ;-) However, I was
 asked what's the easiest way to produce a global mask of countries, so that all
 th grid cells (say at 0.5 degree resolution) that fall within a country are
@@ -351,10 +351,10 @@ matplotlib (see &lt;a class="reference external" href="https://gist.github.com/4
 &lt;img alt="images/world_map.png" src="images/world_map.png" style="width: 90%;" /&gt;
 &lt;p class="caption"&gt;The map, in all its glory.&lt;/p&gt;
 &lt;/div&gt;
-</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>EOLDAS talk at VU Amsterdam</title><link href="/eoldas-talk-at-vu-amsterdam.html" rel="alternate"></link><updated>2012-08-01T13:00:00Z</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-01:eoldas-talk-at-vu-amsterdam.html</id><summary type="html">&lt;p&gt;So I have just spent a week visiting at the &lt;a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp"&gt;VU Amsterdam&lt;/a&gt;.
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>EOLDAS talk at VU Amsterdam</title><link href="/eoldas-talk-at-vu-amsterdam.html" rel="alternate"></link><updated>2012-08-01T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-01:eoldas-talk-at-vu-amsterdam.html</id><summary type="html">&lt;p&gt;So I have just spent a week visiting at the &lt;a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp"&gt;VU Amsterdam&lt;/a&gt;.
 During this visit, I have also given a talk on EOLDAS. The slides are
 availabe from &lt;a class="reference external" href="http://jgomezdans.github.com/eoldas_release/EOLDAS_VUA.pdf"&gt;here&lt;/a&gt;.&lt;/p&gt;
-</summary><category term="EOLDAS"></category><category term="data assimilation"></category><category term="python"></category></entry><entry><title>Simple time series MODIS data analysis</title><link href="/simple-time-series-modis-data-analysis.html" rel="alternate"></link><updated>2012-07-23T15:00:00Z</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-23:simple-time-series-modis-data-analysis.html</id><summary type="html">&lt;p&gt;In a &lt;a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html"&gt;previous post&lt;/a&gt;,
+</summary><category term="EOLDAS"></category><category term="data assimilation"></category><category term="python"></category></entry><entry><title>Simple time series MODIS data analysis</title><link href="/simple-time-series-modis-data-analysis.html" rel="alternate"></link><updated>2012-07-23T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-23:simple-time-series-modis-data-analysis.html</id><summary type="html">&lt;p&gt;In a &lt;a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html"&gt;previous post&lt;/a&gt;,
 I demonstrated how to stitch and put together a number of MODIS data
 files. This is useful and interesting, but in the end, we are interested
 in analysing the data we get out of the satellite. One first way around
@@ -468,7 +468,7 @@ Belgium, etc!) for what the MODIS landcover products claims to be
 &amp;quot;Croplands&amp;quot; )&lt;/p&gt;
 &lt;/div&gt;
 &lt;p&gt;Cool, hey? ;-)&lt;/p&gt;
-</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category><category term="python"></category></entry><entry><title>Stitching together MODIS data</title><link href="/stitching-together-modis-data.html" rel="alternate"></link><updated>2012-07-20T15:00:00Z</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-20:stitching-together-modis-data.html</id><summary type="html">&lt;p&gt;MODIS has been around for some 12 years. There are many products that
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category><category term="python"></category></entry><entry><title>Stitching together MODIS data</title><link href="/stitching-together-modis-data.html" rel="alternate"></link><updated>2012-07-20T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-20:stitching-together-modis-data.html</id><summary type="html">&lt;p&gt;MODIS has been around for some 12 years. There are many products that
 have large time series over the whole globe which one can use to study
 things. So I might want to produce a a timeseries of the &lt;a class="reference external" href="https://lpdaac.usgs.gov/products/modis_products_table/gross_primary_productivity/8_day_l4_global_1km/mod17a2"&gt;8-day Gross Primary Productivity (GPP) product&lt;/a&gt;
 over say the UK. Moreover, I might want to change the projection to
@@ -733,7 +733,7 @@ gdal_translate -of GTiff -co &amp;quot;COMPRESS=LZW&amp;quot; -co &amp;quot;TILE
 &lt;p&gt;At this stage, we can have a look at &lt;tt class="docutils literal"&gt;MOD17A2.2004.tif&lt;/tt&gt; with e.g.
 &lt;tt class="docutils literal"&gt;gdalinfo&lt;/tt&gt; or something.&lt;/p&gt;
 &lt;/div&gt;
-</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>Linearly scaling raster data with GDAL</title><link href="/linearly-scaling-raster-data-with-gdal.html" rel="alternate"></link><updated>2012-07-20T13:00:00Z</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-20:linearly-scaling-raster-data-with-gdal.html</id><summary type="html">&lt;p&gt;So, it's quite tricky to play around with these geospatial datasets: they
+</summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>Linearly scaling raster data with GDAL</title><link href="/linearly-scaling-raster-data-with-gdal.html" rel="alternate"></link><updated>2012-07-20T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-20:linearly-scaling-raster-data-with-gdal.html</id><summary type="html">&lt;p&gt;So, it's quite tricky to play around with these geospatial datasets: they
 have a myriad formats, these keep changing, and you can never know what
 metadata will be available in them. A clever way around this situation
 is to use tools that allow you to read most of the data, most of the
