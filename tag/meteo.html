@@ -14,7 +14,7 @@
 </script>
 
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-        <title>A Pelican Blog - EOLDAS</title>
+        <title>A Pelican Blog - meteo</title>
         <meta charset="utf-8" />
         <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
         
@@ -56,10 +56,10 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././eoldas-talk-at-vu-amsterdam.html">EOLDAS talk at VU Amsterdam</a></h1> 
+                    <h1 class="entry-title"><a href=".././downloading-andalusian-meteo-data.html">Downloading Andalusian meteo data</a></h1> 
                     <footer class="post-info">
-        <abbr class="published" title="2012-08-01T13:00:00">
-                Wed 01 August 2012
+        <abbr class="published" title="2012-12-11T13:00:00">
+                Tue 11 December 2012
         </abbr>
 
         
@@ -68,12 +68,30 @@
         </address>
         
 <p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/eoldas.html">EOLDAS</a><a href=".././tag/data-assimilation.html">data assimilation</a><a href=".././tag/python.html">python</a></p>
+<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/tips.html">tips</a><a href=".././tag/meteo.html">meteo</a></p>
 
 
-</footer><!-- /.post-info --><p>So I have just spent a week visiting at the <a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp">VU Amsterdam</a>.
-During this visit, I have also given a talk on EOLDAS. The slides are
-availabe from <a class="reference external" href="http://jgomezdans.github.com/eoldas_release/EOLDAS_VUA.pdf">here</a>.</p>
+</footer><!-- /.post-info --><p>Many networks of automated meteo stations are around. In some places,
+the data are easy to access and therefore use. In some others, you have
+to go through a number of hoops. In Andalusia, it's a mixed bag: a number
+of independent networks are available for agricultural and environmental
+monitoring. While there's a system that allows you to query all these
+networks, it's hardly in an operational state if you want to download
+all the data in all the stations between two dates because you want to
+for example, interpolate some weather fields.</p>
+<p>Two of the networks (RIA, <em>Red de Informaión Agraria</em> and RAIF, <em>Red de Alerta e Información Fitosanitaria</em>)
+have individual websites where you can select and download information
+for a given station and period of interest. In this post, I introduce some
+code that allows you use these websites to automatically download data. Note
+that there might well be other networks whose data is accessible in a similar
+way (in Andalusia or elsewhere) but I'm not aware of them.</p>
+<p>The main idea is that the websites serve a file in reaction to a form
+submission. The code is in <a class="reference external" href="https://github.com/jgomezdans/get_ria">github</a>,
+and it basically consists of one file, <tt class="docutils literal">GetRia.py</tt>. Its use is extremely
+simple: you just execute <tt class="docutils literal">GetRia.py</tt>, and it will download the data
+from all stations on both networks since 1/1/2000. The data will be saved
+in text files that will appear in your current working directory.</p>
+<p>Easy no? ;-)</p>
 
                 </article>
                 
