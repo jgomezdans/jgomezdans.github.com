@@ -1,5 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/Blog.atom.xml" rel="self"></link><id>/</id><updated>2012-12-11T13:00:00+00:00</updated><entry><title>Downloading Andalusian meteo data</title><link href="/downloading-andalusian-meteo-data.html" rel="alternate"></link><updated>2012-12-11T13:00:00+00:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-12-11:downloading-andalusian-meteo-data.html</id><summary type="html">&lt;p&gt;Many networks of automated meteo stations are around. In some places,
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/Blog.atom.xml" rel="self"></link><id>/</id><updated>2013-05-08T13:00:00+01:00</updated><entry><title>Fast copying of files over the network</title><link href="/fast-copying-of-files-over-the-network.html" rel="alternate"></link><updated>2013-05-08T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-05-08:fast-copying-of-files-over-the-network.html</id><summary type="html">&lt;p&gt;A common requirement when dealing with processing large datasets over
+multiple networked machines is to have a local staging space: copy the
+data on the local disk to improve access speed and not to bog down a
+NFS server when all different processes start accessing different files
+all at once in the server. In most cases, such insight is typically achieved
+post-facto, so you end up needing to copy all files across to your local
+staging directories, resulting in pretty much collapsing all NFS traffic
+and servers.&lt;/p&gt;
+&lt;p&gt;If your network allows this, using &lt;tt class="docutils literal"&gt;netcat&lt;/tt&gt; can be a good and fast option
+for copying the files across. If you are on a trusted network, there's no
+need to encrypt traffic, so netcat is appropriate (it's just like &lt;tt class="docutils literal"&gt;cat&lt;/tt&gt;, but
+over the network). First, on the target machine, go to the directory where
+you want to copy things, and set up a listener&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+nc -l 7000 | gunzip -v| tar -xvf -
+&lt;/pre&gt;
+&lt;p&gt;In the previous example, I'm placing the listener on port 7000 (other ports could
+be used). Note that the output is being piped through &lt;tt class="docutils literal"&gt;gunzip&lt;/tt&gt; into &lt;tt class="docutils literal"&gt;tar&lt;/tt&gt;: we
+expect that the data will be compressed. On the server, we can issue the command
+that packs the files we want to transfer and sends them using &lt;tt class="docutils literal"&gt;netcat&lt;/tt&gt;&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+tar c my_directory/ |gzip --fast -v | nc target 7000
+&lt;/pre&gt;
+&lt;p&gt;In here, we &lt;tt class="docutils literal"&gt;tar&lt;/tt&gt; and &lt;tt class="docutils literal"&gt;gzip&lt;/tt&gt; (using the fastest compression to minimise overhead), and
+pipe stuff into &lt;tt class="docutils literal"&gt;netcat&lt;/tt&gt;. &lt;tt class="docutils literal"&gt;netcat&lt;/tt&gt; will output that stuff to a computer named &lt;tt class="docutils literal"&gt;target&lt;/tt&gt;
+on port 7000, which is where our listener is waiting.&lt;/p&gt;
+</summary><category term="unix"></category><category term="tips"></category><category term="meteo"></category></entry><entry><title>Downloading Andalusian meteo data</title><link href="/downloading-andalusian-meteo-data.html" rel="alternate"></link><updated>2012-12-11T13:00:00+00:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-12-11:downloading-andalusian-meteo-data.html</id><summary type="html">&lt;p&gt;Many networks of automated meteo stations are around. In some places,
 the data are easy to access and therefore use. In some others, you have
 to go through a number of hoops. In Andalusia, it's a mixed bag: a number
 of independent networks are available for agricultural and environmental

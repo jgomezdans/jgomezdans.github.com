@@ -62,8 +62,73 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="./downloading-andalusian-meteo-data.html">Downloading Andalusian meteo data</a></h1> 
+                    <h1 class="entry-title"><a href="./fast-copying-of-files-over-the-network.html">Fast copying of files over the network</a></h1> 
                     <footer class="post-info">
+        <abbr class="published" title="2013-05-08T13:00:00">
+                Wed 08 May 2013
+        </abbr>
+
+        
+        <address class="vcard author">
+                By <a class="url fn" href="./author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+        
+<p>In <a href="./category/blog.html">Blog</a>. </p>
+<p>tags: <a href="./tag/unix.html">unix</a><a href="./tag/tips.html">tips</a><a href="./tag/meteo.html">meteo</a></p>
+
+
+</footer><!-- /.post-info --><p>A common requirement when dealing with processing large datasets over
+multiple networked machines is to have a local staging space: copy the
+data on the local disk to improve access speed and not to bog down a
+NFS server when all different processes start accessing different files
+all at once in the server. In most cases, such insight is typically achieved
+post-facto, so you end up needing to copy all files across to your local
+staging directories, resulting in pretty much collapsing all NFS traffic
+and servers.</p>
+<p>If your network allows this, using <tt class="docutils literal">netcat</tt> can be a good and fast option
+for copying the files across. If you are on a trusted network, there's no
+need to encrypt traffic, so netcat is appropriate (it's just like <tt class="docutils literal">cat</tt>, but
+over the network). First, on the target machine, go to the directory where
+you want to copy things, and set up a listener</p>
+<pre class="literal-block">
+nc -l 7000 | gunzip -v| tar -xvf -
+</pre>
+<p>In the previous example, I'm placing the listener on port 7000 (other ports could
+be used). Note that the output is being piped through <tt class="docutils literal">gunzip</tt> into <tt class="docutils literal">tar</tt>: we
+expect that the data will be compressed. On the server, we can issue the command
+that packs the files we want to transfer and sends them using <tt class="docutils literal">netcat</tt></p>
+<pre class="literal-block">
+tar c my_directory/ |gzip --fast -v | nc target 7000
+</pre>
+<p>In here, we <tt class="docutils literal">tar</tt> and <tt class="docutils literal">gzip</tt> (using the fastest compression to minimise overhead), and
+pipe stuff into <tt class="docutils literal">netcat</tt>. <tt class="docutils literal">netcat</tt> will output that stuff to a computer named <tt class="docutils literal">target</tt>
+on port 7000, which is where our listener is waiting.</p>
+
+                </article>
+                
+            </aside><!-- /#featured -->
+            
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+            
+        
+        
+        
+            
+
+        
+         
+            
+            <li><article class="hentry">    
+                <header>
+                    <h1><a href="./downloading-andalusian-meteo-data.html" rel="bookmark"
+                           title="Permalink to Downloading Andalusian meteo data">Downloading Andalusian meteo data</a></h1>
+                </header>
+                
+                <div class="entry-content">
+                <footer class="post-info">
         <abbr class="published" title="2012-12-11T13:00:00">
                 Tue 11 December 2012
         </abbr>
@@ -77,38 +142,15 @@
 <p>tags: <a href="./tag/python.html">python</a><a href="./tag/tips.html">tips</a><a href="./tag/meteo.html">meteo</a></p>
 
 
-</footer><!-- /.post-info --><p>Many networks of automated meteo stations are around. In some places,
+</footer><!-- /.post-info -->
+                <p>Many networks of automated meteo stations are around. In some places,
 the data are easy to access and therefore use. In some others, you have
 to go through a number of hoops. In Andalusia, it's a mixed bag: a number
-of independent networks are available for agricultural and environmental
-monitoring. While there's a system that allows you to query all these
-networks, it's hardly in an operational state if you want to download
-all the data in all the stations between two dates because you want to
-for example, interpolate some weather fields.</p>
-<p>Two of the networks (RIA, <em>Red de Informaión Agraria</em> and RAIF, <em>Red de Alerta e Información Fitosanitaria</em>)
-have individual websites where you can select and download information
-for a given station and period of interest. In this post, I introduce some
-code that allows you use these websites to automatically download data. Note
-that there might well be other networks whose data is accessible in a similar
-way (in Andalusia or elsewhere) but I'm not aware of them.</p>
-<p>The main idea is that the websites serve a file in reaction to a form
-submission. The code is in <a class="reference external" href="https://github.com/jgomezdans/get_ria">github</a>,
-and it basically consists of one file, <tt class="docutils literal">GetRia.py</tt>. Its use is extremely
-simple: you just execute <tt class="docutils literal">GetRia.py</tt>, and it will download the data
-from all stations on both networks since 1/1/2000. The data will be saved
-in text files that will appear in your current working directory.</p>
-<p>Easy no? ;-)</p>
-
-                </article>
+of independent networks are available for agricultural and environmental ...</p>
+                <a class="readmore" href="./downloading-andalusian-meteo-data.html">read more</a>
                 
-            </aside><!-- /#featured -->
-            
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
-        
+                </div><!-- /.entry-content -->
+            </article></li>
         
         
             

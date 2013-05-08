@@ -14,9 +14,9 @@
 </script>
 
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-        <title>EO & DA ramblings - meteo</title>
+        <title>Fast copying of files over the network</title>
         <meta charset="utf-8" />
-        <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
+        <link rel="stylesheet" href="./theme/css/main.css" type="text/css" />
         
         <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
         
@@ -26,11 +26,11 @@
                 <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
 
         <!--[if lte IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie.css"/>
-                <script src=".././js/IE8.js" type="text/javascript"></script><![endif]-->
+                <link rel="stylesheet" type="text/css" media="all" href="./css/ie.css"/>
+                <script src="./js/IE8.js" type="text/javascript"></script><![endif]-->
 
         <!--[if lt IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie6.css"/><![endif]-->
+                <link rel="stylesheet" type="text/css" media="all" href="./css/ie6.css"/><![endif]-->
 
 </head>
 
@@ -43,41 +43,44 @@
 </a>
 
         <header id="banner" class="body">
-                <h1><a href="../.">EO & DA ramblings </a></h1>
+                <h1><a href=".">EO & DA ramblings </a></h1>
                 <nav><ul>
                 
                 
                 
                 
                 
-                    <li ><a href=".././category/blog.html">Blog</a></li>
+                    <li class="active"><a href="./category/blog.html">Blog</a></li>
                 
                 </ul></nav>
         </header><!-- /#banner -->
-                
-
-            
-
         
-        
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href=".././fast-copying-of-files-over-the-network.html">Fast copying of files over the network</a></h1> 
-                    <footer class="post-info">
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="fast-copying-of-files-over-the-network.html" rel="bookmark"
+           title="Permalink to Fast copying of files over the network">Fast copying of files over the network</a></h1>
+      
+    </header>
+
+    <div class="entry-content">
+      <footer class="post-info">
         <abbr class="published" title="2013-05-08T13:00:00">
                 Wed 08 May 2013
         </abbr>
 
         
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="./author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
         
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/unix.html">unix</a><a href=".././tag/tips.html">tips</a><a href=".././tag/meteo.html">meteo</a></p>
+<p>In <a href="./category/blog.html">Blog</a>. </p>
+<p>tags: <a href="./tag/unix.html">unix</a><a href="./tag/tips.html">tips</a><a href="./tag/meteo.html">meteo</a></p>
 
 
-</footer><!-- /.post-info --><p>A common requirement when dealing with processing large datasets over
+</footer><!-- /.post-info -->
+      <p>A common requirement when dealing with processing large datasets over
 multiple networked machines is to have a local staging space: copy the
 data on the local disk to improve access speed and not to bog down a
 NFS server when all different processes start accessing different files
@@ -104,63 +107,11 @@ tar c my_directory/ |gzip --fast -v | nc target 7000
 pipe stuff into <tt class="docutils literal">netcat</tt>. <tt class="docutils literal">netcat</tt> will output that stuff to a computer named <tt class="docutils literal">target</tt>
 on port 7000, which is where our listener is waiting.</p>
 
-                </article>
-                
-            </aside><!-- /#featured -->
-            
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
-        
-        
-        
-            
-
-        
-         
-            
-            <li><article class="hentry">    
-                <header>
-                    <h1><a href=".././downloading-andalusian-meteo-data.html" rel="bookmark"
-                           title="Permalink to Downloading Andalusian meteo data">Downloading Andalusian meteo data</a></h1>
-                </header>
-                
-                <div class="entry-content">
-                <footer class="post-info">
-        <abbr class="published" title="2012-12-11T13:00:00">
-                Tue 11 December 2012
-        </abbr>
-
-        
-        <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/tips.html">tips</a><a href=".././tag/meteo.html">meteo</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Many networks of automated meteo stations are around. In some places,
-the data are easy to access and therefore use. In some others, you have
-to go through a number of hoops. In Andalusia, it's a mixed bag: a number
-of independent networks are available for agricultural and environmental ...</p>
-                <a class="readmore" href=".././downloading-andalusian-meteo-data.html">read more</a>
-                
-                </div><!-- /.entry-content -->
-            </article></li>
-        
-        
-            </ol><!-- /#posts-list -->
-            
-                
-            
-            </section><!-- /#content -->
-        
+    </div><!-- /.entry-content -->
     
 
+  </article>
+</section>
 
         <section id="extras" class="body">
         
