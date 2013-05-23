@@ -14,11 +14,11 @@
 </script>
 
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-        <title>EO & DA ramblings - Blog</title>
+        <title>A Pelican Blog - Blog</title>
         <meta charset="utf-8" />
         <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
         
-        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="A Pelican Blog Atom Feed" />
         
         
 
@@ -36,14 +36,8 @@
 
 <body id="index" class="home">
 
-<a href="http://github.com/jgomezdans">
-
-<img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" />
-
-</a>
-
         <header id="banner" class="body">
-                <h1><a href="../.">EO & DA ramblings </a></h1>
+                <h1><a href="../.">A Pelican Blog </a></h1>
                 <nav><ul>
                 
                 
@@ -62,8 +56,193 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././fast-copying-of-files-over-the-network.html">Fast copying of files over the network</a></h1> 
+                    <h1 class="entry-title"><a href=".././smp-processing-with-multiprocessing.html">SMP processing with multiprocessing</a></h1> 
                     <footer class="post-info">
+        <abbr class="published" title="2013-05-23T17:00:00">
+                Thu 23 May 2013
+        </abbr>
+
+        
+        <address class="vcard author">
+                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+        
+<p>In <a href=".././category/blog.html">Blog</a>. </p>
+<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/gdal.html">gdal</a><a href=".././tag/tips.html">tips</a></p>
+
+
+</footer><!-- /.post-info --><p>This note details how to use parallel processing in python accessing
+shared memory. The usage case is when you have a process that reads in a
+lot of data, and where the data can be processed in parallel, such as
+when reading and processing images/stacks of images in a pixel by pixel
+basis.</p>
+<p>Critically, we want to avoid making lots of copies of the data to
+distribute to the individual processes. To do this, we need to use the
+<tt class="docutils literal">multiprocessing</tt> module and the <tt class="docutils literal">sharedmem</tt> module. The latter just
+makes using shared memory much more user friendly.</p>
+<div class="section" id="the-example">
+<h2>The example</h2>
+<p>One possible example is the calculation of the typical <em>maximum value
+composite</em> from MODIS data. This means that the value of NDVI is
+calculated for each observation within a temporal period, and the
+maximum value within that time period is reported. The processing is
+clearly pixel-by-pixel, so we could think of running the processing on
+different cores working on different pixels or different windows of the
+image. The main loop looks like this</p>
+<pre class="literal-block">
+def worker ( red, nir, ndvi, chunk ):
+    &quot;&quot;&quot;Process a chunk of the image stack.
+
+    This function first calculates a window of rows
+    which is directed by the value of `chunk`. Each
+    worker processes 20 at a time, and this is
+    reflected in the `row_slice` variable. It then
+    loops over the 37 *dekads* in a year, taking into
+    account the last period is only 5 days, and defines
+    a new slice object, `time_slice`. For each period and
+    spatial chunk, the ndvi for each day is calculated,
+    and the maximum value is then stored in the ndvi
+    array for the appropriate period.
+
+    Note how we don't return any results here, we are
+    modifying ndvi **in-place** in memory&quot;&quot;&quot;
+
+    # We do 20 lines each time
+    row_slice = np.s_[ (20*chunk):((chunk+1)*20) ]
+    # This is the time loop: 37 periods per year
+    for i in xrange(37):
+        # Start position
+        istart = i*10
+        # End position
+        iend = (i+1)*10
+        # Correct for last period
+        if iend &gt; nir.shape[1]:
+            iend = nir.shape[1]
+        # Define the temporal slice for easier coding
+        time_slice=np.s_[istart:iend]
+        # calculates NDVI and stores it in `the_val`
+        the_val = nir[time_slice, :, row_slice] - \
+                    red[time_slice, :, row_slice]
+        the_val = the_val /(1.0e-12 + \
+                    nir[time_slice, :, row_slice] + \
+                    red[time_slice, :, row_slice] )
+        the_val = np.where ( np.isnan( the_val ), -1, \
+            the_val )
+        # Take maximum value and store it
+        ndvi[i, :, row_slice] = the_val.max(axis=0)
+    return
+</pre>
+<p>The worker above will get the data, modify one of the arrays in place
+<tt class="docutils literal">ndvi</tt> and return. The multiprocessing mechanism is the one in charge
+of distributing the load. Let's see how this is done.</p>
+<p>First, we need to import some stuff</p>
+<pre class="literal-block">
+import time
+import sys
+import multiprocessing as mp
+
+from osgeo import gdal
+import sharedmem as shm
+import numpy as np
+</pre>
+<p>Now, we need a data reader. We'll use some data lying around on UCL for
+simplicity</p>
+<pre class="literal-block">
+N=2400
+
+print &quot;[%s] Reading RED...&quot; % time.asctime()
+sys.stdout.flush()
+red = shm.zeros((365, N, N),dtype=np.float32)
+g = gdal.Open(&quot;brdf_2004_b01.vrt&quot;)
+for i in xrange(365):
+    red[i,:,:] = g.GetRasterBand(2*i+1).ReadAsArray()/10000.
+print &quot;[%s] Read RED...&quot; % time.asctime()
+print &quot;[%s] Reading NIR...&quot; % time.asctime()
+sys.stdout.flush()
+nir = shm.zeros((365, N, N),dtype=np.float32)
+g = gdal.Open(&quot;brdf_2004_b02.vrt&quot;)
+for i in xrange(365):
+    nir[i,:,:] = g.GetRasterBand(2*i+1).ReadAsArray()/10000.
+print &quot;[%s] Read NIR...&quot; % time.asctime()
+sys.stdout.flush()
+# Output data
+ndvi=shm.zeros((37, N, N),dtype=np.float32)
+jobs = []
+print &quot;[%s] Spreading chunks!&quot; % time.asctime()
+sys.stdout.flush()
+</pre>
+<p>The previous code basically just sets to <tt class="docutils literal">sharedmem</tt> arrays, <tt class="docutils literal">red</tt>
+and <tt class="docutils literal">nir</tt>, and reads data into them. Note that we specify the
+datatype, but otherwise, they could just be <tt class="docutils literal">np.zeros</tt> incantations.
+The reading process can take several minutes if started from cold (i.e.
+data not on disk cache).</p>
+<p>The next step is to actually spread the load over the different cores.
+We have assumed that we'd be doing 20 rows/cols at a time, so we'll have
+2400/20 = 120 windows to process. The code is straightforward</p>
+<pre class="literal-block">
+jobs = []
+for i in range(2400/20):
+    p = mp.Process(target=worker, args=(red, nir, ndvi,i,))
+    jobs.append(p)
+    p.start()
+
+for j in jobs:
+    j.join()
+print &quot;[%s] Done chunking&quot; % time.asctime()
+sys.stdout.flush()
+</pre>
+<p>The only weird bit is the <tt class="docutils literal">join</tt>: this is done to wait for the
+processes that might not have finished. After this is done, we get the
+processed data in the <tt class="docutils literal">ndvi</tt> array. During this process, you can look
+at the output from <tt class="docutils literal">htop</tt> to see how bad the CPU banging is.</p>
+<pre class="literal-block">
+[Thu May 23 16:26:20 2013] Reading RED...
+[Thu May 23 16:26:43 2013] Read RED...
+[Thu May 23 16:26:43 2013] Reading NIR...
+[Thu May 23 16:27:04 2013] Read NIR...
+[Thu May 23 16:27:04 2013] Spreading chunks!
+[Thu May 23 16:29:36 2013] Done chunking
+</pre>
+</div>
+<div class="section" id="finally">
+<h2>Finally...</h2>
+<p>So, in a nutshell, what one needs to do is:</p>
+<ol class="arabic simple">
+<li>Create the <tt class="docutils literal">sharedmem</tt> arrays and populate them</li>
+<li>Create a <tt class="docutils literal">worker</tt> function that does the require processing. Just
+assume all data is there, and use slicing!</li>
+<li>Use <tt class="docutils literal">multiprocessing</tt> to distribute the job, creating a <tt class="docutils literal">Process</tt>
+that passes the shared memory arrays, as well as the &quot;chunk&quot;
+indicator.</li>
+<li>Wait for <tt class="docutils literal">multiprocessing</tt> and use the data!</li>
+</ol>
+</div>
+
+                </article>
+                
+            </aside><!-- /#featured -->
+            
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+            
+        
+        
+        
+            
+
+        
+         
+            
+            <li><article class="hentry">    
+                <header>
+                    <h1><a href=".././fast-copying-of-files-over-the-network.html" rel="bookmark"
+                           title="Permalink to Fast copying of files over the network">Fast copying of files over the network</a></h1>
+                </header>
+                
+                <div class="entry-content">
+                <footer class="post-info">
         <abbr class="published" title="2013-05-08T13:00:00">
                 Wed 08 May 2013
         </abbr>
@@ -77,43 +256,16 @@
 <p>tags: <a href=".././tag/unix.html">unix</a><a href=".././tag/tips.html">tips</a><a href=".././tag/meteo.html">meteo</a></p>
 
 
-</footer><!-- /.post-info --><p>A common requirement when dealing with processing large datasets over
+</footer><!-- /.post-info -->
+                <p>A common requirement when dealing with processing large datasets over
 multiple networked machines is to have a local staging space: copy the
 data on the local disk to improve access speed and not to bog down a
 NFS server when all different processes start accessing different files
-all at once in the server. In most cases, such insight is typically achieved
-post-facto, so you end up needing to copy all files across to your local
-staging directories, resulting in pretty much collapsing all NFS traffic
-and servers.</p>
-<p>If your network allows this, using <tt class="docutils literal">netcat</tt> can be a good and fast option
-for copying the files across. If you are on a trusted network, there's no
-need to encrypt traffic, so netcat is appropriate (it's just like <tt class="docutils literal">cat</tt>, but
-over the network). First, on the target machine, go to the directory where
-you want to copy things, and set up a listener</p>
-<pre class="literal-block">
-nc -l 7000 | gunzip -v| tar -xvf -
-</pre>
-<p>In the previous example, I'm placing the listener on port 7000 (other ports could
-be used). Note that the output is being piped through <tt class="docutils literal">gunzip</tt> into <tt class="docutils literal">tar</tt>: we
-expect that the data will be compressed. On the server, we can issue the command
-that packs the files we want to transfer and sends them using <tt class="docutils literal">netcat</tt></p>
-<pre class="literal-block">
-tar c my_directory/ |gzip --fast -v | nc target 7000
-</pre>
-<p>In here, we <tt class="docutils literal">tar</tt> and <tt class="docutils literal">gzip</tt> (using the fastest compression to minimise overhead), and
-pipe stuff into <tt class="docutils literal">netcat</tt>. <tt class="docutils literal">netcat</tt> will output that stuff to a computer named <tt class="docutils literal">target</tt>
-on port 7000, which is where our listener is waiting.</p>
-
-                </article>
+all at once ...</p>
+                <a class="readmore" href=".././fast-copying-of-files-over-the-network.html">read more</a>
                 
-            </aside><!-- /#featured -->
-            
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
-        
+                </div><!-- /.entry-content -->
+            </article></li>
         
         
             
@@ -437,16 +589,6 @@ is to use tools that allow you to read most of the ...</p>
                 <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
         </footer><!-- /#contentinfo -->
 
-
-    <script type="text/javascript">
-    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-    </script>
-    <script type="text/javascript">
-    try {
-        var pageTracker = _gat._getTracker("UA-25702318-1");
-    pageTracker._trackPageview();
-    } catch(err) {}</script>
 
 
 
