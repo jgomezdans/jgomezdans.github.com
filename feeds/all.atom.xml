@@ -7,7 +7,9 @@ basis.&lt;/p&gt;
 &lt;p&gt;Critically, we want to avoid making lots of copies of the data to
 distribute to the individual processes. To do this, we need to use the
 &lt;tt class="docutils literal"&gt;multiprocessing&lt;/tt&gt; module and the &lt;tt class="docutils literal"&gt;sharedmem&lt;/tt&gt; module. The latter just
-makes using shared memory much more user friendly.&lt;/p&gt;
+makes using shared memory much more user friendly. There seem to be a
+few versions of &lt;tt class="docutils literal"&gt;sharedmem&lt;/tt&gt; around, but you can get the code from
+&lt;a class="reference external" href="https://bitbucket.org/cleemesser/numpy-sharedmem/overview"&gt;here&lt;/a&gt;.&lt;/p&gt;
 &lt;div class="section" id="the-example"&gt;
 &lt;h2&gt;The example&lt;/h2&gt;
 &lt;p&gt;One possible example is the calculation of the typical &lt;em&gt;maximum value
@@ -118,23 +120,30 @@ We have assumed that we'd be doing 20 rows/cols at a time, so we'll have
 &lt;p&gt;The only weird bit is the &lt;tt class="docutils literal"&gt;join&lt;/tt&gt;: this is done to wait for the
 processes that might not have finished. After this is done, we get the
 processed data in the &lt;tt class="docutils literal"&gt;ndvi&lt;/tt&gt; array. During this process, you can look
-at the output from &lt;tt class="docutils literal"&gt;htop&lt;/tt&gt; to see how bad the CPU banging is.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Thu&lt;/span&gt; &lt;span class="n"&gt;May&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Reading&lt;/span&gt; &lt;span class="n"&gt;RED&lt;/span&gt;&lt;span class="o"&gt;...&lt;/span&gt;
-&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Thu&lt;/span&gt; &lt;span class="n"&gt;May&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;43&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Read&lt;/span&gt; &lt;span class="n"&gt;RED&lt;/span&gt;&lt;span class="o"&gt;...&lt;/span&gt;
-&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Thu&lt;/span&gt; &lt;span class="n"&gt;May&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;43&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Reading&lt;/span&gt; &lt;span class="n"&gt;NIR&lt;/span&gt;&lt;span class="o"&gt;...&lt;/span&gt;
-&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Thu&lt;/span&gt; &lt;span class="n"&gt;May&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;27&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;04&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Read&lt;/span&gt; &lt;span class="n"&gt;NIR&lt;/span&gt;&lt;span class="o"&gt;...&lt;/span&gt;
-&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Thu&lt;/span&gt; &lt;span class="n"&gt;May&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;27&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mo"&gt;04&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Spreading&lt;/span&gt; &lt;span class="n"&gt;chunks&lt;/span&gt;&lt;span class="err"&gt;!&lt;/span&gt;
-&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Thu&lt;/span&gt; &lt;span class="n"&gt;May&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;29&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="mi"&gt;36&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="n"&gt;Done&lt;/span&gt; &lt;span class="n"&gt;chunking&lt;/span&gt;
+at the output from &lt;tt class="docutils literal"&gt;htop&lt;/tt&gt; to see how bad the CPU banging is. Running
+the script in a 24-core machine shows the following output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;[Thu May 23 18:18:04 2013] Reading RED...
+[Thu May 23 18:42:53 2013] Read RED...
+[Thu May 23 18:42:53 2013] Reading NIR...
+[Thu May 23 18:47:24 2013] Read NIR...
+[Thu May 23 18:47:25 2013] Spreading chunks!
+[Thu May 23 18:47:42 2013] Done chunking
 &lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Note how most of the time is spent reading in the data. Notice that reading
+the red band is very slow but subsequently reading the NIR band is fairly
+fast. This is because the data are stored in an NFS share. During the first
+read the files will be cached locally (this particular server has lots of
+memory), and hence subsequently reading the NIR data is fast as little use
+of the network is done.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div class="section" id="finally"&gt;
 &lt;h2&gt;Finally...&lt;/h2&gt;
 &lt;p&gt;So, in a nutshell, what one needs to do is:&lt;/p&gt;
 &lt;ol class="arabic simple"&gt;
-&lt;li&gt;Create the &lt;tt class="docutils literal"&gt;sharedmem&lt;/tt&gt; arrays and populate them&lt;/li&gt;
+&lt;li&gt;Create the &lt;tt class="docutils literal"&gt;sharedmem&lt;/tt&gt; arrays and populate them.&lt;/li&gt;
 &lt;li&gt;Create a &lt;tt class="docutils literal"&gt;worker&lt;/tt&gt; function that does the require processing. Just
 assume all data is there, and use slicing!&lt;/li&gt;
-&lt;li&gt;Use &lt;tt class="docutils literal"&gt;multiprocessing&lt;/tt&gt; to distribute the job, creating a &lt;tt class="docutils literal"&gt;Process&lt;/tt&gt;
+&lt;li&gt;Use &lt;tt class="docutils literal"&gt;multiprocessing&lt;/tt&gt; to distribute the job, creating a &lt;tt class="docutils literal"&gt;Process&lt;/tt&gt;.
 that passes the shared memory arrays, as well as the &amp;quot;chunk&amp;quot;
 indicator.&lt;/li&gt;
 &lt;li&gt;Wait for &lt;tt class="docutils literal"&gt;multiprocessing&lt;/tt&gt; and use the data!&lt;/li&gt;

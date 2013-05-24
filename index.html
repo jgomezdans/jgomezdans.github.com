@@ -85,7 +85,9 @@ basis.</p>
 <p>Critically, we want to avoid making lots of copies of the data to
 distribute to the individual processes. To do this, we need to use the
 <tt class="docutils literal">multiprocessing</tt> module and the <tt class="docutils literal">sharedmem</tt> module. The latter just
-makes using shared memory much more user friendly.</p>
+makes using shared memory much more user friendly. There seem to be a
+few versions of <tt class="docutils literal">sharedmem</tt> around, but you can get the code from
+<a class="reference external" href="https://bitbucket.org/cleemesser/numpy-sharedmem/overview">here</a>.</p>
 <div class="section" id="the-example">
 <h2>The example</h2>
 <p>One possible example is the calculation of the typical <em>maximum value
@@ -196,23 +198,30 @@ We have assumed that we'd be doing 20 rows/cols at a time, so we'll have
 <p>The only weird bit is the <tt class="docutils literal">join</tt>: this is done to wait for the
 processes that might not have finished. After this is done, we get the
 processed data in the <tt class="docutils literal">ndvi</tt> array. During this process, you can look
-at the output from <tt class="docutils literal">htop</tt> to see how bad the CPU banging is.</p>
-<div class="highlight"><pre><span class="p">[</span><span class="n">Thu</span> <span class="n">May</span> <span class="mi">23</span> <span class="mi">16</span><span class="p">:</span><span class="mi">26</span><span class="p">:</span><span class="mi">20</span> <span class="mi">2013</span><span class="p">]</span> <span class="n">Reading</span> <span class="n">RED</span><span class="o">...</span>
-<span class="p">[</span><span class="n">Thu</span> <span class="n">May</span> <span class="mi">23</span> <span class="mi">16</span><span class="p">:</span><span class="mi">26</span><span class="p">:</span><span class="mi">43</span> <span class="mi">2013</span><span class="p">]</span> <span class="n">Read</span> <span class="n">RED</span><span class="o">...</span>
-<span class="p">[</span><span class="n">Thu</span> <span class="n">May</span> <span class="mi">23</span> <span class="mi">16</span><span class="p">:</span><span class="mi">26</span><span class="p">:</span><span class="mi">43</span> <span class="mi">2013</span><span class="p">]</span> <span class="n">Reading</span> <span class="n">NIR</span><span class="o">...</span>
-<span class="p">[</span><span class="n">Thu</span> <span class="n">May</span> <span class="mi">23</span> <span class="mi">16</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mo">04</span> <span class="mi">2013</span><span class="p">]</span> <span class="n">Read</span> <span class="n">NIR</span><span class="o">...</span>
-<span class="p">[</span><span class="n">Thu</span> <span class="n">May</span> <span class="mi">23</span> <span class="mi">16</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mo">04</span> <span class="mi">2013</span><span class="p">]</span> <span class="n">Spreading</span> <span class="n">chunks</span><span class="err">!</span>
-<span class="p">[</span><span class="n">Thu</span> <span class="n">May</span> <span class="mi">23</span> <span class="mi">16</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">36</span> <span class="mi">2013</span><span class="p">]</span> <span class="n">Done</span> <span class="n">chunking</span>
+at the output from <tt class="docutils literal">htop</tt> to see how bad the CPU banging is. Running
+the script in a 24-core machine shows the following output:</p>
+<div class="highlight"><pre>[Thu May 23 18:18:04 2013] Reading RED...
+[Thu May 23 18:42:53 2013] Read RED...
+[Thu May 23 18:42:53 2013] Reading NIR...
+[Thu May 23 18:47:24 2013] Read NIR...
+[Thu May 23 18:47:25 2013] Spreading chunks!
+[Thu May 23 18:47:42 2013] Done chunking
 </pre></div>
+<p>Note how most of the time is spent reading in the data. Notice that reading
+the red band is very slow but subsequently reading the NIR band is fairly
+fast. This is because the data are stored in an NFS share. During the first
+read the files will be cached locally (this particular server has lots of
+memory), and hence subsequently reading the NIR data is fast as little use
+of the network is done.</p>
 </div>
 <div class="section" id="finally">
 <h2>Finally...</h2>
 <p>So, in a nutshell, what one needs to do is:</p>
 <ol class="arabic simple">
-<li>Create the <tt class="docutils literal">sharedmem</tt> arrays and populate them</li>
+<li>Create the <tt class="docutils literal">sharedmem</tt> arrays and populate them.</li>
 <li>Create a <tt class="docutils literal">worker</tt> function that does the require processing. Just
 assume all data is there, and use slicing!</li>
-<li>Use <tt class="docutils literal">multiprocessing</tt> to distribute the job, creating a <tt class="docutils literal">Process</tt>
+<li>Use <tt class="docutils literal">multiprocessing</tt> to distribute the job, creating a <tt class="docutils literal">Process</tt>.
 that passes the shared memory arrays, as well as the &quot;chunk&quot;
 indicator.</li>
 <li>Wait for <tt class="docutils literal">multiprocessing</tt> and use the data!</li>
