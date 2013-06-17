@@ -62,8 +62,127 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="./smp-processing-with-multiprocessing.html">SMP processing with multiprocessing</a></h1> 
+                    <h1 class="entry-title"><a href="./downloading-modis-data-with-python.html">Downloading MODIS data with Python</a></h1> 
                     <footer class="post-info">
+        <abbr class="published" title="2013-06-17T17:00:00">
+                Mon 17 June 2013
+        </abbr>
+
+        
+        <address class="vcard author">
+                By <a class="url fn" href="./author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+        
+<p>In <a href="./category/blog.html">Blog</a>. </p>
+<p>tags: <a href="./tag/python.html">python</a><a href="./tag/modis.html">modis</a><a href="./tag/web.html">web</a></p>
+
+
+</footer><!-- /.post-info --><p>Recently, the USGS has closed their FTP download service for MODIS
+products, such as LAI, surface reflectance, etc. This is quite annoying,
+because I had a nice <tt class="docutils literal">wget</tt> script that no longer works... So I decided
+to code a simple downloader in python that woud supersede my previous
+hacked together bash script with <tt class="docutils literal">wget</tt> (you can still find it <a class="reference external" href="https://gist.github.com/jgomezdans/3145223#file-grab_modis-sh">here.</a>)</p>
+<p>The script is quite simple to use: you just call it with the <tt class="docutils literal"><span class="pre">-h</span></tt> option and you get
+some help text</p>
+<p>..code-block:: guess</p>
+<blockquote>
+<p>$ ./get_modis.py -h
+Usage</p>
+<p>SYNOPSIS</p>
+<p>./get_modis.py [-h,--help] [--verbose, -v] [--platform=PLATFORM, -s PLATFORM]     [--product=PRODUCT, -p PRODUCT] [--tile=TILE, -t TILE] [--year=YEAR, -y YEAR]     [--output=DIR_OUT, -o DIR_OUT] [--begin=DOY_START, -b DOY_START] [--end=DOY_END, -e DOY_END]</p>
+<p>DESCRIPTION</p>
+<p>A program to download MODIS data from the USGS website using the HTTP
+transport. This program is able to download daily, monthly, 8-daily, etc products
+for a given year, it only requires the product names (including the collection number),
+the year, the MODIS reference tile and additionally, where to save the data to, and
+whether to verbose. The user may also select a temporal period in terms of days of year.</p>
+<p>EXAMPLES</p>
+<p>The following example downloads daily surface reflectance from the TERRA platform for
+tile h17v04 for 2004, between DoY 153 and 243:</p>
+<p>$ ./get_modis.py -v -p MOD09GA.005 -s MOLT -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243</p>
+<p>The script will also work with monthly or 8-daily composites. Here's how you
+download the monthly MCD45A1 (burned area) product for the same period:</p>
+<p>$./get_modis.py -v -p MCD45A1.005 -s MOTA -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243</p>
+<dl class="docutils">
+<dt>EXIT STATUS</dt>
+<dd>No exit status yet, can't be bothered.</dd>
+</dl>
+<p>AUTHOR</p>
+<blockquote>
+J Gomez-Dans &lt;<a class="reference external" href="mailto:j.gomez-dans&#64;ucl.ac.uk">j.gomez-dans&#64;ucl.ac.uk</a>&gt;
+See also <a class="reference external" href="http://github.com/jgomezdans/get_modis/">http://github.com/jgomezdans/get_modis/</a></blockquote>
+<p>Options</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">--help</span>, <span class="option">-h</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--verbose</span>, <span class="option">-v</span></kbd></td>
+<td>verbose output</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--platform=<var>PLATFORM</var></span>, <span class="option">-s <var>PLATFORM</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Platfor type: MOLA, MOLT or MOTA</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--prodcut=<var>PRODUCT</var></span>, <span class="option">-p <var>PRODUCT</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>MODIS product name with collection tag at the end
+(e.g. MOD09GA.005)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--tile=<var>TILE</var></span>, <span class="option">-t <var>TILE</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Required tile (h17v04, for example)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--year=<var>YEAR</var></span>, <span class="option">-y <var>YEAR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Year of interest</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--output=<var>DIR_OUT</var></span>, <span class="option">-o <var>DIR_OUT</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Output directory</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--begin=<var>DOY_START</var></span>, <span class="option">-b <var>DOY_START</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Starting day of year (DoY)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--end=<var>DOY_END</var></span>, <span class="option">-e <var>DOY_END</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Ending day of year (DoY)</td></tr>
+</tbody>
+</table>
+</blockquote>
+<p>So, you can see on the above examples that it is actually quite easy to use, and apparently it
+works for daily and composited products. At some point, I'd like to build a tool that gets the
+relevant data from the swath archive, but that's for when I grow up...</p>
+
+                </article>
+                
+            </aside><!-- /#featured -->
+            
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+            
+        
+        
+        
+            
+
+        
+         
+            
+            <li><article class="hentry">    
+                <header>
+                    <h1><a href="./smp-processing-with-multiprocessing.html" rel="bookmark"
+                           title="Permalink to SMP processing with multiprocessing">SMP processing with multiprocessing</a></h1>
+                </header>
+                
+                <div class="entry-content">
+                <footer class="post-info">
         <abbr class="published" title="2013-05-23T17:00:00">
                 Thu 23 May 2013
         </abbr>
@@ -77,167 +196,15 @@
 <p>tags: <a href="./tag/python.html">python</a><a href="./tag/gdal.html">gdal</a><a href="./tag/tips.html">tips</a></p>
 
 
-</footer><!-- /.post-info --><p>This note details how to use parallel processing in python accessing
+</footer><!-- /.post-info -->
+                <p>This note details how to use parallel processing in python accessing
 shared memory. The usage case is when you have a process that reads in a
 lot of data, and where the data can be processed in parallel, such as
-when reading and processing images/stacks of images in a pixel by pixel
-basis.</p>
-<p>Critically, we want to avoid making lots of copies of the data to
-distribute to the individual processes. To do this, we need to use the
-<tt class="docutils literal">multiprocessing</tt> module and the <tt class="docutils literal">sharedmem</tt> module. The latter just
-makes using shared memory much more user friendly. There seem to be a
-few versions of <tt class="docutils literal">sharedmem</tt> around, but you can get the code from
-<a class="reference external" href="https://bitbucket.org/cleemesser/numpy-sharedmem/overview">here</a>.</p>
-<div class="section" id="the-example">
-<h2>The example</h2>
-<p>One possible example is the calculation of the typical <em>maximum value
-composite</em> from MODIS data. This means that the value of NDVI is
-calculated for each observation within a temporal period, and the
-maximum value within that time period is reported. The processing is
-clearly pixel-by-pixel, so we could think of running the processing on
-different cores working on different pixels or different windows of the
-image. The main loop looks like this</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">worker</span> <span class="p">(</span> <span class="n">red</span><span class="p">,</span> <span class="n">nir</span><span class="p">,</span> <span class="n">ndvi</span><span class="p">,</span> <span class="n">chunk</span> <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Process a chunk of the image stack.</span>
-
-<span class="sd">    This function first calculates a window of rows</span>
-<span class="sd">    which is directed by the value of `chunk`. Each</span>
-<span class="sd">    worker processes 20 at a time, and this is</span>
-<span class="sd">    reflected in the `row_slice` variable. It then</span>
-<span class="sd">    loops over the 37 *dekads* in a year, taking into</span>
-<span class="sd">    account the last period is only 5 days, and defines</span>
-<span class="sd">    a new slice object, `time_slice`. For each period and</span>
-<span class="sd">    spatial chunk, the ndvi for each day is calculated,</span>
-<span class="sd">    and the maximum value is then stored in the ndvi</span>
-<span class="sd">    array for the appropriate period.</span>
-
-<span class="sd">    Note how we don&#39;t return any results here, we are</span>
-<span class="sd">    modifying ndvi **in-place** in memory&quot;&quot;&quot;</span>
-
-    <span class="c"># We do 20 lines each time</span>
-    <span class="n">row_slice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[</span> <span class="p">(</span><span class="mi">20</span><span class="o">*</span><span class="n">chunk</span><span class="p">):((</span><span class="n">chunk</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">20</span><span class="p">)</span> <span class="p">]</span>
-    <span class="c"># This is the time loop: 37 periods per year</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">37</span><span class="p">):</span>
-        <span class="c"># Start position</span>
-        <span class="n">istart</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="mi">10</span>
-        <span class="c"># End position</span>
-        <span class="n">iend</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">10</span>
-        <span class="c"># Correct for last period</span>
-        <span class="k">if</span> <span class="n">iend</span> <span class="o">&gt;</span> <span class="n">nir</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
-            <span class="n">iend</span> <span class="o">=</span> <span class="n">nir</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="c"># Define the temporal slice for easier coding</span>
-        <span class="n">time_slice</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[</span><span class="n">istart</span><span class="p">:</span><span class="n">iend</span><span class="p">]</span>
-        <span class="c"># calculates NDVI and stores it in `the_val`</span>
-        <span class="n">the_val</span> <span class="o">=</span> <span class="n">nir</span><span class="p">[</span><span class="n">time_slice</span><span class="p">,</span> <span class="p">:,</span> <span class="n">row_slice</span><span class="p">]</span> <span class="o">-</span> \
-                    <span class="n">red</span><span class="p">[</span><span class="n">time_slice</span><span class="p">,</span> <span class="p">:,</span> <span class="n">row_slice</span><span class="p">]</span>
-        <span class="n">the_val</span> <span class="o">=</span> <span class="n">the_val</span> <span class="o">/</span><span class="p">(</span><span class="mf">1.0e-12</span> <span class="o">+</span> \
-                    <span class="n">nir</span><span class="p">[</span><span class="n">time_slice</span><span class="p">,</span> <span class="p">:,</span> <span class="n">row_slice</span><span class="p">]</span> <span class="o">+</span> \
-                    <span class="n">red</span><span class="p">[</span><span class="n">time_slice</span><span class="p">,</span> <span class="p">:,</span> <span class="n">row_slice</span><span class="p">]</span> <span class="p">)</span>
-        <span class="n">the_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span> <span class="n">the_val</span> <span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> \
-            <span class="n">the_val</span> <span class="p">)</span>
-        <span class="c"># Take maximum value and store it</span>
-        <span class="n">ndvi</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="n">row_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">the_val</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="k">return</span>
-</pre></div>
-<p>The worker above will get the data, modify one of the arrays in place
-<tt class="docutils literal">ndvi</tt> and return. The multiprocessing mechanism is the one in charge
-of distributing the load. Let's see how this is done.</p>
-<p>First, we need to import some stuff</p>
-<div class="highlight"><pre><span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="kn">as</span> <span class="nn">mp</span>
-
-<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdal</span>
-<span class="kn">import</span> <span class="nn">sharedmem</span> <span class="kn">as</span> <span class="nn">shm</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-</pre></div>
-<p>Now, we need a data reader. We'll use some data lying around on UCL for
-simplicity</p>
-<div class="highlight"><pre><span class="n">N</span><span class="o">=</span><span class="mi">2400</span>
-
-<span class="k">print</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">] Reading RED...&quot;</span> <span class="o">%</span> <span class="n">time</span><span class="o">.</span><span class="n">asctime</span><span class="p">()</span>
-<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-<span class="n">red</span> <span class="o">=</span> <span class="n">shm</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">365</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="s">&quot;brdf_2004_b01.vrt&quot;</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">365</span><span class="p">):</span>
-    <span class="n">red</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span><span class="o">/</span><span class="mf">10000.</span>
-<span class="k">print</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">] Read RED...&quot;</span> <span class="o">%</span> <span class="n">time</span><span class="o">.</span><span class="n">asctime</span><span class="p">()</span>
-<span class="k">print</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">] Reading NIR...&quot;</span> <span class="o">%</span> <span class="n">time</span><span class="o">.</span><span class="n">asctime</span><span class="p">()</span>
-<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-<span class="n">nir</span> <span class="o">=</span> <span class="n">shm</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">365</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="n">g</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="s">&quot;brdf_2004_b02.vrt&quot;</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">365</span><span class="p">):</span>
-    <span class="n">nir</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span><span class="o">/</span><span class="mf">10000.</span>
-<span class="k">print</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">] Read NIR...&quot;</span> <span class="o">%</span> <span class="n">time</span><span class="o">.</span><span class="n">asctime</span><span class="p">()</span>
-<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-<span class="c"># Output data</span>
-<span class="n">ndvi</span><span class="o">=</span><span class="n">shm</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">37</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="n">jobs</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">print</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">] Spreading chunks!&quot;</span> <span class="o">%</span> <span class="n">time</span><span class="o">.</span><span class="n">asctime</span><span class="p">()</span>
-<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-</pre></div>
-<p>The previous code basically just sets to <tt class="docutils literal">sharedmem</tt> arrays, <tt class="docutils literal">red</tt>
-and <tt class="docutils literal">nir</tt>, and reads data into them. Note that we specify the
-datatype, but otherwise, they could just be <tt class="docutils literal">np.zeros</tt> incantations.
-The reading process can take several minutes if started from cold (i.e.
-data not on disk cache).</p>
-<p>The next step is to actually spread the load over the different cores.
-We have assumed that we'd be doing 20 rows/cols at a time, so we'll have
-2400/20 = 120 windows to process. The code is straightforward</p>
-<div class="highlight"><pre><span class="n">jobs</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2400</span><span class="o">/</span><span class="mi">20</span><span class="p">):</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">worker</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">nir</span><span class="p">,</span> <span class="n">ndvi</span><span class="p">,</span><span class="n">i</span><span class="p">,))</span>
-    <span class="n">jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-    <span class="n">p</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-
-<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>
-    <span class="n">j</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-<span class="k">print</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">] Done chunking&quot;</span> <span class="o">%</span> <span class="n">time</span><span class="o">.</span><span class="n">asctime</span><span class="p">()</span>
-<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-</pre></div>
-<p>The only weird bit is the <tt class="docutils literal">join</tt>: this is done to wait for the
-processes that might not have finished. After this is done, we get the
-processed data in the <tt class="docutils literal">ndvi</tt> array. During this process, you can look
-at the output from <tt class="docutils literal">htop</tt> to see how bad the CPU banging is. Running
-the script in a 24-core machine shows the following output:</p>
-<div class="highlight"><pre>[Thu May 23 18:18:04 2013] Reading RED...
-[Thu May 23 18:42:53 2013] Read RED...
-[Thu May 23 18:42:53 2013] Reading NIR...
-[Thu May 23 18:47:24 2013] Read NIR...
-[Thu May 23 18:47:25 2013] Spreading chunks!
-[Thu May 23 18:47:42 2013] Done chunking
-</pre></div>
-<p>Note how most of the time is spent reading in the data. Notice that reading
-the red band is very slow but subsequently reading the NIR band is fairly
-fast. This is because the data are stored in an NFS share. During the first
-read the files will be cached locally (this particular server has lots of
-memory), and hence subsequently reading the NIR data is fast as little use
-of the network is done.</p>
-</div>
-<div class="section" id="finally">
-<h2>Finally...</h2>
-<p>So, in a nutshell, what one needs to do is:</p>
-<ol class="arabic simple">
-<li>Create the <tt class="docutils literal">sharedmem</tt> arrays and populate them.</li>
-<li>Create a <tt class="docutils literal">worker</tt> function that does the require processing. Just
-assume all data is there, and use slicing!</li>
-<li>Use <tt class="docutils literal">multiprocessing</tt> to distribute the job, creating a <tt class="docutils literal">Process</tt>.
-that passes the shared memory arrays, as well as the &quot;chunk&quot;
-indicator.</li>
-<li>Wait for <tt class="docutils literal">multiprocessing</tt> and use the data!</li>
-</ol>
-</div>
-
-                </article>
+when reading and processing images/stacks of images in a ...</p>
+                <a class="readmore" href="./smp-processing-with-multiprocessing.html">read more</a>
                 
-            </aside><!-- /#featured -->
-            
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
-        
+                </div><!-- /.entry-content -->
+            </article></li>
         
         
             

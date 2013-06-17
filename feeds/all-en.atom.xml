@@ -1,5 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2013-05-23T17:00:00+01:00</updated><entry><title>SMP processing with multiprocessing</title><link href="/smp-processing-with-multiprocessing.html" rel="alternate"></link><updated>2013-05-23T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-05-23:smp-processing-with-multiprocessing.html</id><summary type="html">&lt;p&gt;This note details how to use parallel processing in python accessing
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2013-06-17T17:00:00+01:00</updated><entry><title>Downloading MODIS data with Python</title><link href="/downloading-modis-data-with-python.html" rel="alternate"></link><updated>2013-06-17T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-06-17:downloading-modis-data-with-python.html</id><summary type="html">&lt;p&gt;Recently, the USGS has closed their FTP download service for MODIS
+products, such as LAI, surface reflectance, etc. This is quite annoying,
+because I had a nice &lt;tt class="docutils literal"&gt;wget&lt;/tt&gt; script that no longer works... So I decided
+to code a simple downloader in python that woud supersede my previous
+hacked together bash script with &lt;tt class="docutils literal"&gt;wget&lt;/tt&gt; (you can still find it &lt;a class="reference external" href="https://gist.github.com/jgomezdans/3145223#file-grab_modis-sh"&gt;here.&lt;/a&gt;)&lt;/p&gt;
+&lt;p&gt;The script is quite simple to use: you just call it with the &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-h&lt;/span&gt;&lt;/tt&gt; option and you get
+some help text&lt;/p&gt;
+&lt;p&gt;..code-block:: guess&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;$ ./get_modis.py -h
+Usage&lt;/p&gt;
+&lt;p&gt;SYNOPSIS&lt;/p&gt;
+&lt;p&gt;./get_modis.py [-h,--help] [--verbose, -v] [--platform=PLATFORM, -s PLATFORM]     [--product=PRODUCT, -p PRODUCT] [--tile=TILE, -t TILE] [--year=YEAR, -y YEAR]     [--output=DIR_OUT, -o DIR_OUT] [--begin=DOY_START, -b DOY_START] [--end=DOY_END, -e DOY_END]&lt;/p&gt;
+&lt;p&gt;DESCRIPTION&lt;/p&gt;
+&lt;p&gt;A program to download MODIS data from the USGS website using the HTTP
+transport. This program is able to download daily, monthly, 8-daily, etc products
+for a given year, it only requires the product names (including the collection number),
+the year, the MODIS reference tile and additionally, where to save the data to, and
+whether to verbose. The user may also select a temporal period in terms of days of year.&lt;/p&gt;
+&lt;p&gt;EXAMPLES&lt;/p&gt;
+&lt;p&gt;The following example downloads daily surface reflectance from the TERRA platform for
+tile h17v04 for 2004, between DoY 153 and 243:&lt;/p&gt;
+&lt;p&gt;$ ./get_modis.py -v -p MOD09GA.005 -s MOLT -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243&lt;/p&gt;
+&lt;p&gt;The script will also work with monthly or 8-daily composites. Here's how you
+download the monthly MCD45A1 (burned area) product for the same period:&lt;/p&gt;
+&lt;p&gt;$./get_modis.py -v -p MCD45A1.005 -s MOTA -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243&lt;/p&gt;
+&lt;dl class="docutils"&gt;
+&lt;dt&gt;EXIT STATUS&lt;/dt&gt;
+&lt;dd&gt;No exit status yet, can't be bothered.&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;p&gt;AUTHOR&lt;/p&gt;
+&lt;blockquote&gt;
+J Gomez-Dans &amp;lt;&lt;a class="reference external" href="mailto:j.gomez-dans&amp;#64;ucl.ac.uk"&gt;j.gomez-dans&amp;#64;ucl.ac.uk&lt;/a&gt;&amp;gt;
+See also &lt;a class="reference external" href="http://github.com/jgomezdans/get_modis/"&gt;http://github.com/jgomezdans/get_modis/&lt;/a&gt;&lt;/blockquote&gt;
+&lt;p&gt;Options&lt;/p&gt;
+&lt;table class="docutils option-list" frame="void" rules="none"&gt;
+&lt;col class="option" /&gt;
+&lt;col class="description" /&gt;
+&lt;tbody valign="top"&gt;
+&lt;tr&gt;&lt;td class="option-group"&gt;
+&lt;kbd&gt;&lt;span class="option"&gt;--help&lt;/span&gt;, &lt;span class="option"&gt;-h&lt;/span&gt;&lt;/kbd&gt;&lt;/td&gt;
+&lt;td&gt;show this help message and exit&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="option-group"&gt;
+&lt;kbd&gt;&lt;span class="option"&gt;--verbose&lt;/span&gt;, &lt;span class="option"&gt;-v&lt;/span&gt;&lt;/kbd&gt;&lt;/td&gt;
+&lt;td&gt;verbose output&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="option-group" colspan="2"&gt;
+&lt;kbd&gt;&lt;span class="option"&gt;--platform=&lt;var&gt;PLATFORM&lt;/var&gt;&lt;/span&gt;, &lt;span class="option"&gt;-s &lt;var&gt;PLATFORM&lt;/var&gt;&lt;/span&gt;&lt;/kbd&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;Platfor type: MOLA, MOLT or MOTA&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="option-group" colspan="2"&gt;
+&lt;kbd&gt;&lt;span class="option"&gt;--prodcut=&lt;var&gt;PRODUCT&lt;/var&gt;&lt;/span&gt;, &lt;span class="option"&gt;-p &lt;var&gt;PRODUCT&lt;/var&gt;&lt;/span&gt;&lt;/kbd&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;MODIS product name with collection tag at the end
+(e.g. MOD09GA.005)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="option-group" colspan="2"&gt;
+&lt;kbd&gt;&lt;span class="option"&gt;--tile=&lt;var&gt;TILE&lt;/var&gt;&lt;/span&gt;, &lt;span class="option"&gt;-t &lt;var&gt;TILE&lt;/var&gt;&lt;/span&gt;&lt;/kbd&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;Required tile (h17v04, for example)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="option-group" colspan="2"&gt;
+&lt;kbd&gt;&lt;span class="option"&gt;--year=&lt;var&gt;YEAR&lt;/var&gt;&lt;/span&gt;, &lt;span class="option"&gt;-y &lt;var&gt;YEAR&lt;/var&gt;&lt;/span&gt;&lt;/kbd&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;Year of interest&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="option-group" colspan="2"&gt;
+&lt;kbd&gt;&lt;span class="option"&gt;--output=&lt;var&gt;DIR_OUT&lt;/var&gt;&lt;/span&gt;, &lt;span class="option"&gt;-o &lt;var&gt;DIR_OUT&lt;/var&gt;&lt;/span&gt;&lt;/kbd&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;Output directory&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="option-group" colspan="2"&gt;
+&lt;kbd&gt;&lt;span class="option"&gt;--begin=&lt;var&gt;DOY_START&lt;/var&gt;&lt;/span&gt;, &lt;span class="option"&gt;-b &lt;var&gt;DOY_START&lt;/var&gt;&lt;/span&gt;&lt;/kbd&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;Starting day of year (DoY)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class="option-group" colspan="2"&gt;
+&lt;kbd&gt;&lt;span class="option"&gt;--end=&lt;var&gt;DOY_END&lt;/var&gt;&lt;/span&gt;, &lt;span class="option"&gt;-e &lt;var&gt;DOY_END&lt;/var&gt;&lt;/span&gt;&lt;/kbd&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;Ending day of year (DoY)&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;So, you can see on the above examples that it is actually quite easy to use, and apparently it
+works for daily and composited products. At some point, I'd like to build a tool that gets the
+relevant data from the swath archive, but that's for when I grow up...&lt;/p&gt;
+</summary><category term="python"></category><category term="modis"></category><category term="web"></category></entry><entry><title>SMP processing with multiprocessing</title><link href="/smp-processing-with-multiprocessing.html" rel="alternate"></link><updated>2013-05-23T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-05-23:smp-processing-with-multiprocessing.html</id><summary type="html">&lt;p&gt;This note details how to use parallel processing in python accessing
 shared memory. The usage case is when you have a process that reads in a
 lot of data, and where the data can be processed in parallel, such as
 when reading and processing images/stacks of images in a pixel by pixel
