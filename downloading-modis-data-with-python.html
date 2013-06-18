@@ -84,82 +84,80 @@
 products, such as LAI, surface reflectance, etc. This is quite annoying,
 because I had a nice <tt class="docutils literal">wget</tt> script that no longer works... So I decided
 to code a simple downloader in python that woud supersede my previous
-hacked together bash script with <tt class="docutils literal">wget</tt> (you can still find it <a class="reference external" href="https://gist.github.com/jgomezdans/3145223#file-grab_modis-sh">here.</a>)</p>
+hacked together bash script with <tt class="docutils literal">wget</tt> (you can still find it <a class="reference external" href="https://gist.github.com/jgomezdans/3145223#file-grab_modis-sh">here.</a>).</p>
+<div class="section" id="update">
+<h2>Update</h2>
+<p>An update to the software has taken place. The following new features have been added:</p>
+<dl class="docutils">
+<dt>Skip downloaded files</dt>
+<dd>The software is now able to detected already downloaded files and will only download if local and remote sizes are different</dd>
+<dt>Proxy support</dt>
+<dd>It is now possible to provide an HTTP proxy through the <tt class="docutils literal"><span class="pre">--proxy</span></tt> option.</dd>
+</dl>
+<p>You can fork the code on <a class="reference external" href="https://github.com/jgomezdans/get_modis">github</a>, or download the lates version as a <a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.2.0.tar.gz">tarball</a> or a <a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.2.0.zip">zip file</a>.</p>
 <p>The script is quite simple to use: you just call it with the <tt class="docutils literal"><span class="pre">-h</span></tt> option and you get
 some help text</p>
-<p>..code-block:: guess</p>
-<blockquote>
-<p>$ ./get_modis.py -h
-Usage</p>
-<p>SYNOPSIS</p>
-<p>./get_modis.py [-h,--help] [--verbose, -v] [--platform=PLATFORM, -s PLATFORM]     [--product=PRODUCT, -p PRODUCT] [--tile=TILE, -t TILE] [--year=YEAR, -y YEAR]     [--output=DIR_OUT, -o DIR_OUT] [--begin=DOY_START, -b DOY_START] [--end=DOY_END, -e DOY_END]</p>
-<p>DESCRIPTION</p>
-<p>A program to download MODIS data from the USGS website using the HTTP
+<div class="highlight"><pre>$ ./get_modis.py -h
+Usage
+
+
+SYNOPSIS
+
+./get_modis.py [-h,--help] [--verbose, -v] [--platform=PLATFORM, -s PLATFORM]     [--product=PRODUCT, -p PRODUCT] [--tile=TILE, -t TILE] [--year=YEAR, -y YEAR]     [--output=DIR_OUT, -o DIR_OUT] [--begin=DOY_START, -b DOY_START] [--end=DOY_END, -e DOY_END]
+
+DESCRIPTION
+
+A program to download MODIS data from the USGS website using the HTTP
 transport. This program is able to download daily, monthly, 8-daily, etc products
 for a given year, it only requires the product names (including the collection number),
 the year, the MODIS reference tile and additionally, where to save the data to, and
-whether to verbose. The user may also select a temporal period in terms of days of year.</p>
-<p>EXAMPLES</p>
-<p>The following example downloads daily surface reflectance from the TERRA platform for
-tile h17v04 for 2004, between DoY 153 and 243:</p>
-<p>$ ./get_modis.py -v -p MOD09GA.005 -s MOLT -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243</p>
-<p>The script will also work with monthly or 8-daily composites. Here's how you
-download the monthly MCD45A1 (burned area) product for the same period:</p>
-<p>$./get_modis.py -v -p MCD45A1.005 -s MOTA -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243</p>
-<dl class="docutils">
-<dt>EXIT STATUS</dt>
-<dd>No exit status yet, can't be bothered.</dd>
-</dl>
-<p>AUTHOR</p>
-<blockquote>
-J Gomez-Dans &lt;<a class="reference external" href="mailto:j.gomez-dans&#64;ucl.ac.uk">j.gomez-dans&#64;ucl.ac.uk</a>&gt;
-See also <a class="reference external" href="http://github.com/jgomezdans/get_modis/">http://github.com/jgomezdans/get_modis/</a></blockquote>
-<p>Options</p>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group">
-<kbd><span class="option">--help</span>, <span class="option">-h</span></kbd></td>
-<td>show this help message and exit</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">--verbose</span>, <span class="option">-v</span></kbd></td>
-<td>verbose output</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--platform=<var>PLATFORM</var></span>, <span class="option">-s <var>PLATFORM</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Platfor type: MOLA, MOLT or MOTA</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--prodcut=<var>PRODUCT</var></span>, <span class="option">-p <var>PRODUCT</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>MODIS product name with collection tag at the end
-(e.g. MOD09GA.005)</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--tile=<var>TILE</var></span>, <span class="option">-t <var>TILE</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Required tile (h17v04, for example)</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--year=<var>YEAR</var></span>, <span class="option">-y <var>YEAR</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Year of interest</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--output=<var>DIR_OUT</var></span>, <span class="option">-o <var>DIR_OUT</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Output directory</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--begin=<var>DOY_START</var></span>, <span class="option">-b <var>DOY_START</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Starting day of year (DoY)</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--end=<var>DOY_END</var></span>, <span class="option">-e <var>DOY_END</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Ending day of year (DoY)</td></tr>
-</tbody>
-</table>
-</blockquote>
+whether to verbose. The user may also select a temporal period in terms of days of year.
+
+EXAMPLES
+
+The following example downloads daily surface reflectance from the TERRA platform for
+tile h17v04 for 2004, between DoY 153 and 243:
+
+$ ./get_modis.py -v -p MOD09GA.005 -s MOLT -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243
+
+The script will also work with monthly or 8-daily composites. Here&#39;s how you
+download the monthly MCD45A1 (burned area) product for the same period:
+
+$./get_modis.py -v -p MCD45A1.005 -s MOTA -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243
+
+
+EXIT STATUS
+    No exit status yet, can&#39;t be bothered.
+
+AUTHOR
+
+    J Gomez-Dans &lt;j.gomez-dans@ucl.ac.uk&gt;
+    See also http://github.com/jgomezdans/get_modis/
+
+
+
+Options
+
+--help, -h              show this help message and exit
+--verbose, -v           verbose output
+--platform=PLATFORM, -s PLATFORM
+                        Platfor type: MOLA, MOLT or MOTA
+--prodcut=PRODUCT, -p PRODUCT
+                        MODIS product name with collection tag at the end
+                        (e.g. MOD09GA.005)
+--tile=TILE, -t TILE    Required tile (h17v04, for example)
+--year=YEAR, -y YEAR    Year of interest
+--output=DIR_OUT, -o DIR_OUT
+                        Output directory
+--begin=DOY_START, -b DOY_START
+                        Starting day of year (DoY)
+--end=DOY_END, -e DOY_END
+                        Ending day of year (DoY)
+</pre></div>
 <p>So, you can see on the above examples that it is actually quite easy to use, and apparently it
 works for daily and composited products. At some point, I'd like to build a tool that gets the
 relevant data from the swath archive, but that's for when I grow up...</p>
+</div>
 
     </div><!-- /.entry-content -->
     
