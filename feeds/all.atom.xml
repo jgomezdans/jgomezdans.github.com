@@ -13,7 +13,7 @@ hacked together bash script with &lt;tt class="docutils literal"&gt;wget&lt;/tt&
 &lt;dt&gt;Proxy support&lt;/dt&gt;
 &lt;dd&gt;It is now possible to provide an HTTP proxy through the &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;--proxy&lt;/span&gt;&lt;/tt&gt; option.&lt;/dd&gt;
 &lt;/dl&gt;
-&lt;p&gt;You can fork the code on &lt;a class="reference external" href="https://github.com/jgomezdans/get_modis"&gt;github&lt;/a&gt;, or download the lates version as a &lt;a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.2.0.tar.gz"&gt;tarball&lt;/a&gt; or a &lt;a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.2.0.zip"&gt;zip file&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;You can fork the code on &lt;a class="reference external" href="https://github.com/jgomezdans/get_modis"&gt;github&lt;/a&gt;, or download the lates version as a &lt;a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.3.0.tar.gz"&gt;tarball&lt;/a&gt; or a &lt;a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.3.0.zip"&gt;zip file&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;The script is quite simple to use: you just call it with the &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;-h&lt;/span&gt;&lt;/tt&gt; option and you get
 some help text&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;$ ./get_modis.py -h
