@@ -1,5 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2013-06-17T17:00:00+01:00</updated><entry><title>Downloading MODIS data with Python</title><link href="/downloading-modis-data-with-python.html" rel="alternate"></link><updated>2013-06-17T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-06-17:downloading-modis-data-with-python.html</id><summary type="html">&lt;p&gt;Recently, the USGS has closed their FTP download service for MODIS
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2013-06-23T17:00:00+01:00</updated><entry><title>Getting a box</title><link href="/getting-a-box.html" rel="alternate"></link><updated>2013-06-23T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-06-23:getting-a-box.html</id><summary type="html">&lt;p&gt;Let's say one wants to find out a box around a given latitude/longitude point. How to do this
+without GIS software using an artisan UNIX approach? Hell, if it works for coffee! The steps
+are as follows:&lt;/p&gt;
+&lt;ol class="arabic simple"&gt;
+&lt;li&gt;Convert the centre point into UTM so we have meters rather than degrees&lt;/li&gt;
+&lt;li&gt;Write a box (manual buffering)&lt;/li&gt;
+&lt;li&gt;Convert the box corners back to WGS84&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;We need to know the projection we want to use as degrees are not constant at all latitudes. To know what UTM zone you need you could go &lt;a class="reference external" href="http://www.dmap.co.uk/utmworld.htm"&gt;here&lt;/a&gt;&lt;/p&gt;
+&lt;img alt="From dmap.co.uk" class="align-center" src="http://www.dmap.co.uk/utmworld.gif" /&gt;
+&lt;p&gt;For the example above of Lopé National Park, we could use UTM zone 32S with the WGS84 datum. This, &lt;a class="reference external" href="http://spatialreference.org/ref/epsg/32732/"&gt;according to spatialreference.org&lt;/a&gt; is EPSG code 32732. Let' now use
+&lt;a class="reference external" href="http://www.gdal.org/gdaltransform.html"&gt;gdaltransform&lt;/a&gt; to reproject to UTM:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;echo &lt;/span&gt;11.459789 -0.169737 | gdaltransform -s_srs &lt;span class="s2"&gt;&amp;quot;EPSG:4326&amp;quot;&lt;/span&gt; -t_srs &lt;span class="s2"&gt;&amp;quot;EPSG:32732&amp;quot;&lt;/span&gt;
+773796.421559477 9981221.54175601 0
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So this gives us the coordinates of the centre poin in meters. We know that we need a 10km square box around it, so we do this by defining the edges as (x-5000, y-5000), (x-5000, y+5000), (x+5000, y+5000), (x-5000, y+5000), (x-5000, y-5000). We can quickly just create a GML file with these points using a template like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;utf-8&amp;quot; ?&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;ogr:FeatureCollection&lt;/span&gt;
+     &lt;span class="na"&gt;xmlns:xsi=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;http://www.w3.org/2001/XMLSchema-instance&amp;quot;&lt;/span&gt;
+     &lt;span class="na"&gt;xsi:schemaLocation=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;http://ogr.maptools.org/ gabon2.xsd&amp;quot;&lt;/span&gt;
+     &lt;span class="na"&gt;xmlns:ogr=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;http://ogr.maptools.org/&amp;quot;&lt;/span&gt;
+     &lt;span class="na"&gt;xmlns:gml=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;http://www.opengis.net/gml&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+
+  &lt;span class="nt"&gt;&amp;lt;gml:featureMember&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;ogr:Site&lt;/span&gt; &lt;span class="na"&gt;fid=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Site&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;ogr:geometryProperty&amp;gt;&amp;lt;gml:Polygon&lt;/span&gt; &lt;span class="na"&gt;srsName=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;EPSG:32732&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&amp;lt;gml:outerBoundaryIs&amp;gt;&amp;lt;gml:LinearRing&amp;gt;&amp;lt;gml:coordinates&amp;gt;&lt;/span&gt;%g,%g,0 %g,%g,0 %g,%g,0 %g,%g,0 %g,%g,0&lt;span class="nt"&gt;&amp;lt;/gml:coordinates&amp;gt;&amp;lt;/gml:LinearRing&amp;gt;&amp;lt;/gml:outerBoundaryIs&amp;gt;&amp;lt;/gml:Polygon&amp;gt;&amp;lt;/ogr:geometryProperty&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;ogr:Name&amp;gt;&lt;/span&gt;Shape 1&lt;span class="nt"&gt;&amp;lt;/ogr:Name&amp;gt;&lt;/span&gt;
+      &lt;span class="nt"&gt;&amp;lt;ogr:Description&amp;gt;&amp;lt;/ogr:Description&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;/ogr:Site&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;/gml:featureMember&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/ogr:FeatureCollection&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;In Python, we can just use the above snippet to populate the box, save it to a text file and convert it to our desired output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;gml&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&amp;quot;&amp;quot;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;utf-8&amp;quot; ?&amp;gt;&lt;/span&gt;
+&lt;span class="s"&gt;    &amp;lt;ogr:FeatureCollection&lt;/span&gt;
+&lt;span class="s"&gt;         xmlns:xsi=&amp;quot;http://www.w3.org/2001/XMLSchema-instance&amp;quot;&lt;/span&gt;
+&lt;span class="s"&gt;         xsi:schemaLocation=&amp;quot;http://ogr.maptools.org/ gabon2.xsd&amp;quot;&lt;/span&gt;
+&lt;span class="s"&gt;         xmlns:ogr=&amp;quot;http://ogr.maptools.org/&amp;quot;&lt;/span&gt;
+&lt;span class="s"&gt;         xmlns:gml=&amp;quot;http://www.opengis.net/gml&amp;quot;&amp;gt;&lt;/span&gt;
+
+&lt;span class="s"&gt;      &amp;lt;gml:featureMember&amp;gt;&lt;/span&gt;
+&lt;span class="s"&gt;        &amp;lt;ogr:Site fid=&amp;quot;Site&amp;quot;&amp;gt;&lt;/span&gt;
+&lt;span class="s"&gt;          &amp;lt;ogr:geometryProperty&amp;gt;&amp;lt;gml:Polygon srsName=&amp;quot;EPSG:32732&amp;quot;&amp;gt;&amp;lt;gml:outerBoundaryIs&amp;gt;&amp;lt;gml:LinearRing&amp;gt;&amp;lt;gml:coordinates&amp;gt;&lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,&lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,0 &lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,&lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,0 &lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,&lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,0 &lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,&lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,0 &lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,&lt;/span&gt;&lt;span class="si"&gt;%g&lt;/span&gt;&lt;span class="s"&gt;,0&amp;lt;/gml:coordinates&amp;gt;&amp;lt;/gml:LinearRing&amp;gt;&amp;lt;/gml:outerBoundaryIs&amp;gt;&amp;lt;/gml:Polygon&amp;gt;&amp;lt;/ogr:geometryProperty&amp;gt;&lt;/span&gt;
+&lt;span class="s"&gt;          &amp;lt;ogr:Name&amp;gt;Shape 1&amp;lt;/ogr:Name&amp;gt;&lt;/span&gt;
+&lt;span class="s"&gt;          &amp;lt;ogr:Description&amp;gt;&amp;lt;/ogr:Description&amp;gt;&lt;/span&gt;
+&lt;span class="s"&gt;        &amp;lt;/ogr:Site&amp;gt;&lt;/span&gt;
+&lt;span class="s"&gt;      &amp;lt;/gml:featureMember&amp;gt;&lt;/span&gt;
+&lt;span class="s"&gt;    &amp;lt;/ogr:FeatureCollection&amp;gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="c"&gt;# The center location from gdaltransform&lt;/span&gt;
+&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;773796.421559477&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;9981221.54175601&lt;/span&gt;
+&lt;span class="n"&gt;fp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;open&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;my_box.gml&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;w&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;fp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;write&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;gml&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;5000&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;fp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now, &lt;tt class="docutils literal"&gt;my_box.gml&lt;/tt&gt; contains our box in UTM. What we want is a Shapefile in WGS84. We can use &lt;tt class="docutils literal"&gt;ogr2ogr&lt;/tt&gt; for that:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;ogr2ogr -f &lt;span class="s2"&gt;&amp;quot;ESRI Shapefile&amp;quot;&lt;/span&gt; -t_srs &lt;span class="s2"&gt;&amp;quot;EPSG:4326&amp;quot;&lt;/span&gt; my_box_wgs84.shp my_box.gml
+&lt;span class="nv"&gt;$ &lt;/span&gt;ogr2ogr -f &lt;span class="s2"&gt;&amp;quot;KML&amp;quot;&lt;/span&gt; -t_srs &lt;span class="s2"&gt;&amp;quot;EPSG:4326&amp;quot;&lt;/span&gt; my_box_wgs84.kml my_box.gml
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Check that we got something useful:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;ogrinfo -al -so my_box_wgs84.kml
+Had to open data &lt;span class="nb"&gt;source read&lt;/span&gt;-only.
+INFO: Open of &lt;span class="sb"&gt;`&lt;/span&gt;my_box_wgs84.kml&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;
+&lt;span class="s1"&gt;      using driver `KML&amp;#39;&lt;/span&gt; successful.
+
+Layer name: Site
+Geometry: Polygon
+Feature Count: 1
+Extent: &lt;span class="o"&gt;(&lt;/span&gt;11.414887, -0.214953&lt;span class="o"&gt;)&lt;/span&gt; - &lt;span class="o"&gt;(&lt;/span&gt;11.504683, -0.124552&lt;span class="o"&gt;)&lt;/span&gt;
+Layer SRS WKT:
+GEOGCS&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;WGS 84&amp;quot;&lt;/span&gt;,
+    DATUM&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;WGS_1984&amp;quot;&lt;/span&gt;,
+        SPHEROID&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;WGS 84&amp;quot;&lt;/span&gt;,6378137,298.257223563,
+            AUTHORITY&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;EPSG&amp;quot;&lt;/span&gt;,&lt;span class="s2"&gt;&amp;quot;7030&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;]]&lt;/span&gt;,
+        TOWGS84&lt;span class="o"&gt;[&lt;/span&gt;0,0,0,0,0,0,0&lt;span class="o"&gt;]&lt;/span&gt;,
+        AUTHORITY&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;EPSG&amp;quot;&lt;/span&gt;,&lt;span class="s2"&gt;&amp;quot;6326&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;]]&lt;/span&gt;,
+    PRIMEM&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Greenwich&amp;quot;&lt;/span&gt;,0,
+        AUTHORITY&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;EPSG&amp;quot;&lt;/span&gt;,&lt;span class="s2"&gt;&amp;quot;8901&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;]]&lt;/span&gt;,
+    UNIT&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;degree&amp;quot;&lt;/span&gt;,0.0174532925199433,
+        AUTHORITY&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;EPSG&amp;quot;&lt;/span&gt;,&lt;span class="s2"&gt;&amp;quot;9108&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;]]&lt;/span&gt;,
+    AUTHORITY&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;EPSG&amp;quot;&lt;/span&gt;,&lt;span class="s2"&gt;&amp;quot;4326&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;]]&lt;/span&gt;
+Name: String &lt;span class="o"&gt;(&lt;/span&gt;0.0&lt;span class="o"&gt;)&lt;/span&gt;
+Description: String &lt;span class="o"&gt;(&lt;/span&gt;0.0&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="nv"&gt;$ &lt;/span&gt;ogrinfo -al -so my_box_wgs84.shp
+INFO: Open of &lt;span class="sb"&gt;`&lt;/span&gt;my_box_wgs84.shp&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;
+&lt;span class="s1"&gt;      using driver `ESRI Shapefile&amp;#39;&lt;/span&gt; successful.
+
+Layer name: my_box_wgs84
+Geometry: Polygon
+Feature Count: 1
+Extent: &lt;span class="o"&gt;(&lt;/span&gt;11.414887, -0.214953&lt;span class="o"&gt;)&lt;/span&gt; - &lt;span class="o"&gt;(&lt;/span&gt;11.504683, -0.124552&lt;span class="o"&gt;)&lt;/span&gt;
+Layer SRS WKT:
+GEOGCS&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;GCS_WGS_1984&amp;quot;&lt;/span&gt;,
+    DATUM&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;WGS_1984&amp;quot;&lt;/span&gt;,
+        SPHEROID&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;WGS_84&amp;quot;&lt;/span&gt;,6378137,298.257223563&lt;span class="o"&gt;]]&lt;/span&gt;,
+    PRIMEM&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Greenwich&amp;quot;&lt;/span&gt;,0&lt;span class="o"&gt;]&lt;/span&gt;,
+    UNIT&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Degree&amp;quot;&lt;/span&gt;,0.017453292519943295&lt;span class="o"&gt;]]&lt;/span&gt;
+fid: String &lt;span class="o"&gt;(&lt;/span&gt;80.0&lt;span class="o"&gt;)&lt;/span&gt;
+Name: String &lt;span class="o"&gt;(&lt;/span&gt;7.0&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+</summary><category term="GDAL"></category><category term="tips"></category></entry><entry><title>Downloading MODIS data with Python</title><link href="/downloading-modis-data-with-python.html" rel="alternate"></link><updated>2013-06-17T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-06-17:downloading-modis-data-with-python.html</id><summary type="html">&lt;p&gt;Recently, the USGS has closed their FTP download service for MODIS
 products, such as LAI, surface reflectance, etc. This is quite annoying,
 because I had a nice &lt;tt class="docutils literal"&gt;wget&lt;/tt&gt; script that no longer works... So I decided
 to code a simple downloader in python that woud supersede my previous

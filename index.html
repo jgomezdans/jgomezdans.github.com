@@ -62,8 +62,147 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="./downloading-modis-data-with-python.html">Downloading MODIS data with Python</a></h1> 
+                    <h1 class="entry-title"><a href="./getting-a-box.html">Getting a box</a></h1> 
                     <footer class="post-info">
+        <abbr class="published" title="2013-06-23T17:00:00">
+                Sun 23 June 2013
+        </abbr>
+
+        
+        <address class="vcard author">
+                By <a class="url fn" href="./author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+        
+<p>In <a href="./category/blog.html">Blog</a>. </p>
+<p>tags: <a href="./tag/gdal.html">GDAL</a><a href="./tag/tips.html">tips</a></p>
+
+
+</footer><!-- /.post-info --><p>Let's say one wants to find out a box around a given latitude/longitude point. How to do this
+without GIS software using an artisan UNIX approach? Hell, if it works for coffee! The steps
+are as follows:</p>
+<ol class="arabic simple">
+<li>Convert the centre point into UTM so we have meters rather than degrees</li>
+<li>Write a box (manual buffering)</li>
+<li>Convert the box corners back to WGS84</li>
+</ol>
+<p>We need to know the projection we want to use as degrees are not constant at all latitudes. To know what UTM zone you need you could go <a class="reference external" href="http://www.dmap.co.uk/utmworld.htm">here</a></p>
+<img alt="From dmap.co.uk" class="align-center" src="http://www.dmap.co.uk/utmworld.gif" />
+<p>For the example above of Lopé National Park, we could use UTM zone 32S with the WGS84 datum. This, <a class="reference external" href="http://spatialreference.org/ref/epsg/32732/">according to spatialreference.org</a> is EPSG code 32732. Let' now use
+<a class="reference external" href="http://www.gdal.org/gdaltransform.html">gdaltransform</a> to reproject to UTM:</p>
+<div class="highlight"><pre><span class="nv">$ </span><span class="nb">echo </span>11.459789 -0.169737 | gdaltransform -s_srs <span class="s2">&quot;EPSG:4326&quot;</span> -t_srs <span class="s2">&quot;EPSG:32732&quot;</span>
+773796.421559477 9981221.54175601 0
+</pre></div>
+<p>So this gives us the coordinates of the centre poin in meters. We know that we need a 10km square box around it, so we do this by defining the edges as (x-5000, y-5000), (x-5000, y+5000), (x+5000, y+5000), (x-5000, y+5000), (x-5000, y-5000). We can quickly just create a GML file with these points using a template like this:</p>
+<div class="highlight"><pre><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
+<span class="nt">&lt;ogr:FeatureCollection</span>
+     <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+     <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://ogr.maptools.org/ gabon2.xsd&quot;</span>
+     <span class="na">xmlns:ogr=</span><span class="s">&quot;http://ogr.maptools.org/&quot;</span>
+     <span class="na">xmlns:gml=</span><span class="s">&quot;http://www.opengis.net/gml&quot;</span><span class="nt">&gt;</span>
+
+  <span class="nt">&lt;gml:featureMember&gt;</span>
+    <span class="nt">&lt;ogr:Site</span> <span class="na">fid=</span><span class="s">&quot;Site&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;ogr:geometryProperty&gt;&lt;gml:Polygon</span> <span class="na">srsName=</span><span class="s">&quot;EPSG:32732&quot;</span><span class="nt">&gt;&lt;gml:outerBoundaryIs&gt;&lt;gml:LinearRing&gt;&lt;gml:coordinates&gt;</span>%g,%g,0 %g,%g,0 %g,%g,0 %g,%g,0 %g,%g,0<span class="nt">&lt;/gml:coordinates&gt;&lt;/gml:LinearRing&gt;&lt;/gml:outerBoundaryIs&gt;&lt;/gml:Polygon&gt;&lt;/ogr:geometryProperty&gt;</span>
+      <span class="nt">&lt;ogr:Name&gt;</span>Shape 1<span class="nt">&lt;/ogr:Name&gt;</span>
+      <span class="nt">&lt;ogr:Description&gt;&lt;/ogr:Description&gt;</span>
+    <span class="nt">&lt;/ogr:Site&gt;</span>
+  <span class="nt">&lt;/gml:featureMember&gt;</span>
+<span class="nt">&lt;/ogr:FeatureCollection&gt;</span>
+</pre></div>
+<p>In Python, we can just use the above snippet to populate the box, save it to a text file and convert it to our desired output:</p>
+<div class="highlight"><pre><span class="n">gml</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
+<span class="s">    &lt;ogr:FeatureCollection</span>
+<span class="s">         xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+<span class="s">         xsi:schemaLocation=&quot;http://ogr.maptools.org/ gabon2.xsd&quot;</span>
+<span class="s">         xmlns:ogr=&quot;http://ogr.maptools.org/&quot;</span>
+<span class="s">         xmlns:gml=&quot;http://www.opengis.net/gml&quot;&gt;</span>
+
+<span class="s">      &lt;gml:featureMember&gt;</span>
+<span class="s">        &lt;ogr:Site fid=&quot;Site&quot;&gt;</span>
+<span class="s">          &lt;ogr:geometryProperty&gt;&lt;gml:Polygon srsName=&quot;EPSG:32732&quot;&gt;&lt;gml:outerBoundaryIs&gt;&lt;gml:LinearRing&gt;&lt;gml:coordinates&gt;</span><span class="si">%g</span><span class="s">,</span><span class="si">%g</span><span class="s">,0 </span><span class="si">%g</span><span class="s">,</span><span class="si">%g</span><span class="s">,0 </span><span class="si">%g</span><span class="s">,</span><span class="si">%g</span><span class="s">,0 </span><span class="si">%g</span><span class="s">,</span><span class="si">%g</span><span class="s">,0 </span><span class="si">%g</span><span class="s">,</span><span class="si">%g</span><span class="s">,0&lt;/gml:coordinates&gt;&lt;/gml:LinearRing&gt;&lt;/gml:outerBoundaryIs&gt;&lt;/gml:Polygon&gt;&lt;/ogr:geometryProperty&gt;</span>
+<span class="s">          &lt;ogr:Name&gt;Shape 1&lt;/ogr:Name&gt;</span>
+<span class="s">          &lt;ogr:Description&gt;&lt;/ogr:Description&gt;</span>
+<span class="s">        &lt;/ogr:Site&gt;</span>
+<span class="s">      &lt;/gml:featureMember&gt;</span>
+<span class="s">    &lt;/ogr:FeatureCollection&gt;&quot;&quot;&quot;</span>
+<span class="c"># The center location from gdaltransform</span>
+<span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="mf">773796.421559477</span><span class="p">,</span> <span class="mf">9981221.54175601</span>
+<span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span> <span class="p">(</span><span class="s">&quot;my_box.gml&quot;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span> <span class="p">)</span>
+<span class="n">fp</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span> <span class="n">gml</span> <span class="o">%</span> <span class="p">(</span> <span class="n">x</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="n">y</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="n">x</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mi">5000</span><span class="p">,</span> <span class="n">x</span><span class="o">+</span><span class="mi">5000</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mi">5000</span><span class="p">,</span> <span class="n">x</span><span class="o">+</span><span class="mi">5000</span><span class="p">,</span> <span class="n">y</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="n">x</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="n">y</span><span class="o">-</span><span class="mi">5000</span><span class="p">)</span> <span class="p">)</span>
+<span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+<p>Now, <tt class="docutils literal">my_box.gml</tt> contains our box in UTM. What we want is a Shapefile in WGS84. We can use <tt class="docutils literal">ogr2ogr</tt> for that:</p>
+<div class="highlight"><pre><span class="nv">$ </span>ogr2ogr -f <span class="s2">&quot;ESRI Shapefile&quot;</span> -t_srs <span class="s2">&quot;EPSG:4326&quot;</span> my_box_wgs84.shp my_box.gml
+<span class="nv">$ </span>ogr2ogr -f <span class="s2">&quot;KML&quot;</span> -t_srs <span class="s2">&quot;EPSG:4326&quot;</span> my_box_wgs84.kml my_box.gml
+</pre></div>
+<p>Check that we got something useful:</p>
+<div class="highlight"><pre><span class="nv">$ </span>ogrinfo -al -so my_box_wgs84.kml
+Had to open data <span class="nb">source read</span>-only.
+INFO: Open of <span class="sb">`</span>my_box_wgs84.kml<span class="s1">&#39;</span>
+<span class="s1">      using driver `KML&#39;</span> successful.
+
+Layer name: Site
+Geometry: Polygon
+Feature Count: 1
+Extent: <span class="o">(</span>11.414887, -0.214953<span class="o">)</span> - <span class="o">(</span>11.504683, -0.124552<span class="o">)</span>
+Layer SRS WKT:
+GEOGCS<span class="o">[</span><span class="s2">&quot;WGS 84&quot;</span>,
+    DATUM<span class="o">[</span><span class="s2">&quot;WGS_1984&quot;</span>,
+        SPHEROID<span class="o">[</span><span class="s2">&quot;WGS 84&quot;</span>,6378137,298.257223563,
+            AUTHORITY<span class="o">[</span><span class="s2">&quot;EPSG&quot;</span>,<span class="s2">&quot;7030&quot;</span><span class="o">]]</span>,
+        TOWGS84<span class="o">[</span>0,0,0,0,0,0,0<span class="o">]</span>,
+        AUTHORITY<span class="o">[</span><span class="s2">&quot;EPSG&quot;</span>,<span class="s2">&quot;6326&quot;</span><span class="o">]]</span>,
+    PRIMEM<span class="o">[</span><span class="s2">&quot;Greenwich&quot;</span>,0,
+        AUTHORITY<span class="o">[</span><span class="s2">&quot;EPSG&quot;</span>,<span class="s2">&quot;8901&quot;</span><span class="o">]]</span>,
+    UNIT<span class="o">[</span><span class="s2">&quot;degree&quot;</span>,0.0174532925199433,
+        AUTHORITY<span class="o">[</span><span class="s2">&quot;EPSG&quot;</span>,<span class="s2">&quot;9108&quot;</span><span class="o">]]</span>,
+    AUTHORITY<span class="o">[</span><span class="s2">&quot;EPSG&quot;</span>,<span class="s2">&quot;4326&quot;</span><span class="o">]]</span>
+Name: String <span class="o">(</span>0.0<span class="o">)</span>
+Description: String <span class="o">(</span>0.0<span class="o">)</span>
+
+<span class="nv">$ </span>ogrinfo -al -so my_box_wgs84.shp
+INFO: Open of <span class="sb">`</span>my_box_wgs84.shp<span class="s1">&#39;</span>
+<span class="s1">      using driver `ESRI Shapefile&#39;</span> successful.
+
+Layer name: my_box_wgs84
+Geometry: Polygon
+Feature Count: 1
+Extent: <span class="o">(</span>11.414887, -0.214953<span class="o">)</span> - <span class="o">(</span>11.504683, -0.124552<span class="o">)</span>
+Layer SRS WKT:
+GEOGCS<span class="o">[</span><span class="s2">&quot;GCS_WGS_1984&quot;</span>,
+    DATUM<span class="o">[</span><span class="s2">&quot;WGS_1984&quot;</span>,
+        SPHEROID<span class="o">[</span><span class="s2">&quot;WGS_84&quot;</span>,6378137,298.257223563<span class="o">]]</span>,
+    PRIMEM<span class="o">[</span><span class="s2">&quot;Greenwich&quot;</span>,0<span class="o">]</span>,
+    UNIT<span class="o">[</span><span class="s2">&quot;Degree&quot;</span>,0.017453292519943295<span class="o">]]</span>
+fid: String <span class="o">(</span>80.0<span class="o">)</span>
+Name: String <span class="o">(</span>7.0<span class="o">)</span>
+</pre></div>
+
+                </article>
+                
+            </aside><!-- /#featured -->
+            
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+            
+        
+        
+        
+            
+
+        
+         
+            
+            <li><article class="hentry">    
+                <header>
+                    <h1><a href="./downloading-modis-data-with-python.html" rel="bookmark"
+                           title="Permalink to Downloading MODIS data with Python">Downloading MODIS data with Python</a></h1>
+                </header>
+                
+                <div class="entry-content">
+                <footer class="post-info">
         <abbr class="published" title="2013-06-17T17:00:00">
                 Mon 17 June 2013
         </abbr>
@@ -77,95 +216,16 @@
 <p>tags: <a href="./tag/python.html">python</a><a href="./tag/modis.html">modis</a><a href="./tag/web.html">web</a></p>
 
 
-</footer><!-- /.post-info --><p>Recently, the USGS has closed their FTP download service for MODIS
+</footer><!-- /.post-info -->
+                <p>Recently, the USGS has closed their FTP download service for MODIS
 products, such as LAI, surface reflectance, etc. This is quite annoying,
 because I had a nice <tt class="docutils literal">wget</tt> script that no longer works... So I decided
 to code a simple downloader in python that woud supersede my previous
-hacked together bash script with <tt class="docutils literal">wget</tt> (you can still find it <a class="reference external" href="https://gist.github.com/jgomezdans/3145223#file-grab_modis-sh">here.</a>).</p>
-<div class="section" id="update">
-<h2>Update</h2>
-<p>An update to the software has taken place. The following new features have been added:</p>
-<dl class="docutils">
-<dt>Skip downloaded files</dt>
-<dd>The software is now able to detected already downloaded files and will only download if local and remote sizes are different</dd>
-<dt>Proxy support</dt>
-<dd>It is now possible to provide an HTTP proxy through the <tt class="docutils literal"><span class="pre">--proxy</span></tt> option.</dd>
-</dl>
-<p>You can fork the code on <a class="reference external" href="https://github.com/jgomezdans/get_modis">github</a>, or download the lates version as a <a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.3.0.tar.gz">tarball</a> or a <a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.3.0.zip">zip file</a>.</p>
-<p>The script is quite simple to use: you just call it with the <tt class="docutils literal"><span class="pre">-h</span></tt> option and you get
-some help text</p>
-<div class="highlight"><pre>$ ./get_modis.py -h
-Usage
-
-
-SYNOPSIS
-
-./get_modis.py [-h,--help] [--verbose, -v] [--platform=PLATFORM, -s PLATFORM]     [--product=PRODUCT, -p PRODUCT] [--tile=TILE, -t TILE] [--year=YEAR, -y YEAR]     [--output=DIR_OUT, -o DIR_OUT] [--begin=DOY_START, -b DOY_START] [--end=DOY_END, -e DOY_END]
-
-DESCRIPTION
-
-A program to download MODIS data from the USGS website using the HTTP
-transport. This program is able to download daily, monthly, 8-daily, etc products
-for a given year, it only requires the product names (including the collection number),
-the year, the MODIS reference tile and additionally, where to save the data to, and
-whether to verbose. The user may also select a temporal period in terms of days of year.
-
-EXAMPLES
-
-The following example downloads daily surface reflectance from the TERRA platform for
-tile h17v04 for 2004, between DoY 153 and 243:
-
-$ ./get_modis.py -v -p MOD09GA.005 -s MOLT -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243
-
-The script will also work with monthly or 8-daily composites. Here&#39;s how you
-download the monthly MCD45A1 (burned area) product for the same period:
-
-$./get_modis.py -v -p MCD45A1.005 -s MOTA -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243
-
-
-EXIT STATUS
-    No exit status yet, can&#39;t be bothered.
-
-AUTHOR
-
-    J Gomez-Dans &lt;j.gomez-dans@ucl.ac.uk&gt;
-    See also http://github.com/jgomezdans/get_modis/
-
-
-
-Options
-
---help, -h              show this help message and exit
---verbose, -v           verbose output
---platform=PLATFORM, -s PLATFORM
-                        Platfor type: MOLA, MOLT or MOTA
---prodcut=PRODUCT, -p PRODUCT
-                        MODIS product name with collection tag at the end
-                        (e.g. MOD09GA.005)
---tile=TILE, -t TILE    Required tile (h17v04, for example)
---year=YEAR, -y YEAR    Year of interest
---output=DIR_OUT, -o DIR_OUT
-                        Output directory
---begin=DOY_START, -b DOY_START
-                        Starting day of year (DoY)
---end=DOY_END, -e DOY_END
-                        Ending day of year (DoY)
-</pre></div>
-<p>So, you can see on the above examples that it is actually quite easy to use, and apparently it
-works for daily and composited products. At some point, I'd like to build a tool that gets the
-relevant data from the swath archive, but that's for when I grow up...</p>
-</div>
-
-                </article>
+hacked together ...</p>
+                <a class="readmore" href="./downloading-modis-data-with-python.html">read more</a>
                 
-            </aside><!-- /#featured -->
-            
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
-        
+                </div><!-- /.entry-content -->
+            </article></li>
         
         
             
