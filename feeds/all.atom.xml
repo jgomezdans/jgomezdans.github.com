@@ -8,7 +8,7 @@ are as follows:&lt;/p&gt;
 &lt;li&gt;Convert the box corners back to WGS84&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;We need to know the projection we want to use as degrees are not constant at all latitudes. To know what UTM zone you need you could go &lt;a class="reference external" href="http://www.dmap.co.uk/utmworld.htm"&gt;here&lt;/a&gt;&lt;/p&gt;
-&lt;img alt="From dmap.co.uk" class="align-center" src="http://www.dmap.co.uk/utmworld.gif" /&gt;
+&lt;img alt="From dmap.co.uk" class="align-center" src="http://www.dmap.co.uk/utmworld.gif" style="width: 90%;" /&gt;
 &lt;p&gt;For the example above of Lopé National Park, we could use UTM zone 32S with the WGS84 datum. This, &lt;a class="reference external" href="http://spatialreference.org/ref/epsg/32732/"&gt;according to spatialreference.org&lt;/a&gt; is EPSG code 32732. Let' now use
 &lt;a class="reference external" href="http://www.gdal.org/gdaltransform.html"&gt;gdaltransform&lt;/a&gt; to reproject to UTM:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;echo &lt;/span&gt;11.459789 -0.169737 | gdaltransform -s_srs &lt;span class="s2"&gt;&amp;quot;EPSG:4326&amp;quot;&lt;/span&gt; -t_srs &lt;span class="s2"&gt;&amp;quot;EPSG:32732&amp;quot;&lt;/span&gt;
