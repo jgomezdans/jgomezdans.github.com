@@ -1,5 +1,146 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/Blog.atom.xml" rel="self"></link><id>/</id><updated>2013-06-23T17:00:00+01:00</updated><entry><title>Getting a box</title><link href="/getting-a-box.html" rel="alternate"></link><updated>2013-06-23T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-06-23:getting-a-box.html</id><summary type="html">&lt;p&gt;Let's say one wants to find out a box around a given latitude/longitude point. How to do this
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/Blog.atom.xml" rel="self"></link><id>/</id><updated>2013-06-27T17:00:00+01:00</updated><entry><title>Stitching MODIS burned area datasets</title><link href="/stitching-modis-burned-area-datasets.html" rel="alternate"></link><updated>2013-06-27T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-06-27:stitching-modis-burned-area-datasets.html</id><summary type="html">&lt;p&gt;MODIS products are usually provided as data granules, representing the magnitude of interest
+(plus a number of different extra layers of metadata, quality assurance flags, etc) over a
+given temporal period for an area typically extending 1200 by 1200 km in the MODIS sinusoidal
+projection, around 10x10 degrees. Typically, your study site might extend over several tiles,
+or just happen to lie between two tiles. Consider Portugal, split (mostly, there are islands and other
+stuff, but we typically ignore them ;D) into two tiles, h17v04 and h17v05. In this post, we look at:&lt;/p&gt;
+&lt;ol class="arabic simple"&gt;
+&lt;li&gt;Downloading the data&lt;/li&gt;
+&lt;li&gt;Stitching together the data&lt;/li&gt;
+&lt;li&gt;Reprojecting&lt;/li&gt;
+&lt;li&gt;Applying a mask&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class="section" id="downloading-the-data"&gt;
+&lt;h2&gt;Downloading the data&lt;/h2&gt;
+&lt;p&gt;We are going to use the &lt;tt class="docutils literal"&gt;get_modis&lt;/tt&gt; script (you can get it from &lt;a class="reference external" href="https://github.com/jgomezdans/get_modis"&gt;here&lt;/a&gt;).
+It is a simple Python script that automatically downloads MODIS data. We shall download data for the year 2004. What
+we need is the following command&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+./get_modis.py --verbose --platform=MOTA --product=MCD45A1.051 --tile=h17v04 --year=2004 --output=.
+&lt;/pre&gt;
+&lt;p&gt;where&lt;/p&gt;
+&lt;dl class="docutils"&gt;
+&lt;dt&gt;&lt;tt class="docutils literal"&gt;platform=MOTA&lt;/tt&gt;&lt;/dt&gt;
+&lt;dd&gt;This is the &amp;quot;platform&amp;quot;. In this case, the MCD45A1 product uses data from TERRA and AQUA, so its code is &lt;tt class="docutils literal"&gt;MOTA&lt;/tt&gt;.&lt;/dd&gt;
+&lt;dt&gt;&lt;tt class="docutils literal"&gt;product=MCD45A1.051&lt;/tt&gt;&lt;/dt&gt;
+&lt;dd&gt;We want the MCD45A1 product, collection 5.1 (just released!).&lt;/dd&gt;
+&lt;dt&gt;&lt;tt class="docutils literal"&gt;tile=h17v04&lt;/tt&gt;&lt;/dt&gt;
+&lt;dd&gt;A tile for the Northern Iberian Peninsula.&lt;/dd&gt;
+&lt;dt&gt;&lt;tt class="docutils literal"&gt;year=2004&lt;/tt&gt;&lt;/dt&gt;
+&lt;dd&gt;The year of interest&lt;/dd&gt;
+&lt;dt&gt;&lt;tt class="docutils literal"&gt;output=.&lt;/tt&gt;&lt;/dt&gt;
+&lt;dd&gt;Use the current directory to save the downloaded files.&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;p&gt;Because we provided the &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;--verbose&lt;/span&gt;&lt;/tt&gt; flag, we get a running commentary on how all this proceeds. For the other tile (&lt;tt class="docutils literal"&gt;h17v05&lt;/tt&gt;),
+this is the output&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+   2013-06-27 13:31:58,898 Getting MCD45A1.A2004001.h17v05.051.2013070231310.hdf.....
+   2013-06-27 13:32:01,840 Done!
+   2013-06-27 13:32:04,604 Getting MCD45A1.A2004032.h17v05.051.2013062125251.hdf.....
+   2013-06-27 13:32:06,706 Done!
+   2013-06-27 13:32:08,207 Getting MCD45A1.A2004061.h17v05.051.2013071001320.hdf.....
+   2013-06-27 13:32:10,474 Done!
+   2013-06-27 13:32:12,046 Getting MCD45A1.A2004092.h17v05.051.2013062142742.hdf.....
+   2013-06-27 13:32:14,177 Done!
+   2013-06-27 13:32:15,909 Getting MCD45A1.A2004122.h17v05.051.2013062153940.hdf.....
+   2013-06-27 13:32:17,987 Done!
+   2013-06-27 13:32:19,521 Getting MCD45A1.A2004153.h17v05.051.2013062164329.hdf.....
+   2013-06-27 13:32:21,770 Done!
+   2013-06-27 13:32:24,424 Getting MCD45A1.A2004183.h17v05.051.2013062175918.hdf.....
+   2013-06-27 13:32:26,220 Done!
+   2013-06-27 13:32:28,791 Getting MCD45A1.A2004214.h17v05.051.2013062184842.hdf.....
+   2013-06-27 13:32:30,599 Done!
+   2013-06-27 13:32:32,367 Getting MCD45A1.A2004245.h17v05.051.2013062201148.hdf.....
+   2013-06-27 13:32:34,460 Done!
+   2013-06-27 13:32:36,893 Getting MCD45A1.A2004275.h17v05.051.2013062212709.hdf.....
+   2013-06-27 13:32:39,459 Done!
+   2013-06-27 13:32:41,015 Getting MCD45A1.A2004306.h17v05.051.2013062214733.hdf.....
+   2013-06-27 13:32:43,370 Done!
+   2013-06-27 13:32:45,977 Getting MCD45A1.A2004336.h17v05.051.2013062215105.hdf.....
+   2013-06-27 13:32:50,383 Done!
+   2013-06-27 13:32:50,383 Completely finished downlading all there was
+
+
+Stitching the data
+-------------------
+
+MCD45A1 granules do have a number of different datasets. You can have a peek inside using ``gdalinfo``:
+
+::
+
+    gdalinfo MCD45A1.A2004214.h17v04.051.2013062164342.hdf
+    [ Lots and lots and lots of metadata]
+    Subdatasets:
+     SUBDATASET_1_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&amp;quot;:MOD_GRID_Monthly_500km_BA:burndate
+     SUBDATASET_1_DESC=[2400x2400] burndate MOD_GRID_Monthly_500km_BA (16-bit integer)
+     SUBDATASET_2_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&amp;quot;:MOD_GRID_Monthly_500km_BA:ba_qa
+     SUBDATASET_2_DESC=[2400x2400] ba_qa MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
+     SUBDATASET_3_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&amp;quot;:MOD_GRID_Monthly_500km_BA:npasses
+     SUBDATASET_3_DESC=[2400x2400] npasses MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
+     SUBDATASET_4_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&amp;quot;:MOD_GRID_Monthly_500km_BA:nused
+     SUBDATASET_4_DESC=[2400x2400] nused MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
+     SUBDATASET_5_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&amp;quot;:MOD_GRID_Monthly_500km_BA:direction
+     SUBDATASET_5_DESC=[2400x2400] direction MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
+     SUBDATASET_6_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&amp;quot;:MOD_GRID_Monthly_500km_BA:surfacetype
+     SUBDATASET_6_DESC=[2400x2400] surfacetype MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
+     SUBDATASET_7_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&amp;quot;:MOD_GRID_Monthly_500km_BA:gap_range1
+     SUBDATASET_7_DESC=[2400x2400] gap_range1 MOD_GRID_Monthly_500km_BA (16-bit unsigned integer)
+     SUBDATASET_8_NAME=HDF4_EOS:EOS_GRID:&amp;quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&amp;quot;:MOD_GRID_Monthly_500km_BA:gap_range2
+     SUBDATASET_8_DESC=[2400x2400] gap_range2 MOD_GRID_Monthly_500km_BA (16-bit unsigned integer)
+   Corner Coordinates:
+   Upper Left  (    0.0,    0.0)
+   Lower Left  (    0.0,  512.0)
+   Upper Right (  512.0,    0.0)
+   Lower Right (  512.0,  512.0)
+   Center      (  256.0,  256.0)
+&lt;/pre&gt;
+&lt;p&gt;We are intersted (initially) in the first dataset &lt;tt class="docutils literal"&gt;burndate&lt;/tt&gt;. We want to, for each month, stich together the two tiles, or mosaic them. To
+make it easy and efficient, we will do it in two stages using virtual datasets. These are just text files that refer to the original datasets
+and allow fast modifications. Fist, we create VRTs for the &lt;tt class="docutils literal"&gt;burndate&lt;/tt&gt; layers for the two tiles. In BASH, this can be done easily with a
+loop&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;for &lt;/span&gt;fich in *h17v0*.hdf
+&lt;span class="k"&gt;do&lt;/span&gt;
+&lt;span class="k"&gt;    &lt;/span&gt;gdal_translate -of VRT &lt;span class="s1"&gt;&amp;#39;HDF4_EOS:EOS_GRID:&amp;quot;&amp;#39;&lt;/span&gt;&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;fich&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&amp;quot;:MOD_GRID_Monthly_500km_BA:burndate&amp;#39;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+        &lt;span class="sb"&gt;`&lt;/span&gt;basename &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;fich&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; .hdf&lt;span class="sb"&gt;`&lt;/span&gt;.vrt
+&lt;span class="k"&gt;done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We now have a number of files with the extension &lt;tt class="docutils literal"&gt;.vrt&lt;/tt&gt;. You can read their contents, these are just text files (XML actually) and point to the original
+datasets. We now use &lt;tt class="docutils literal"&gt;gdalwarp&lt;/tt&gt; to mosaic them, and to just get the Portugal mask. To this end, we use the &lt;tt class="docutils literal"&gt;world.shp&lt;/tt&gt; of &lt;a class="reference external" href="http://aprsworld.net/gisdata/world/world.tar.bz2"&gt;APRS world&lt;/a&gt;.
+Since this shapefile does not have a projection, we set it to WGS84 Lat/Long:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;ogr2ogr -a_srs &lt;span class="s2"&gt;&amp;quot;EPSG:4326&amp;quot;&lt;/span&gt; world_wgs84.shp world.shp
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This gives a new file, &lt;tt class="docutils literal"&gt;world_wgs84.shp&lt;/tt&gt; with a projection in it. We then just use &lt;tt class="docutils literal"&gt;gdalwarp&lt;/tt&gt; to reproject and cut, but
+for completenes, we shall also produce data for Spain.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;for &lt;/span&gt;fich in MCD45A1.A2004*h17v04*vrt
+&lt;span class="k"&gt;do&lt;/span&gt;
+&lt;span class="k"&gt;    &lt;/span&gt;&lt;span class="nv"&gt;other&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="nv"&gt;$fich&lt;/span&gt; | cut -d &lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt; -f 1,2,&lt;span class="sb"&gt;`&lt;/span&gt;.h17v05.*vrt
+    &lt;span class="nv"&gt;output_portugal&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="nv"&gt;$fich&lt;/span&gt; | cut -d &lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt; -f 1,2&lt;span class="sb"&gt;`&lt;/span&gt;.Portugal.tif
+    &lt;span class="nv"&gt;output_spain&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="nv"&gt;$fich&lt;/span&gt; | cut -d &lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt; -f 1,2&lt;span class="sb"&gt;`&lt;/span&gt;.Spain.tif
+    gdalwarp -of GTiff -co &lt;span class="s2"&gt;&amp;quot;COMPRESS=LZW&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+        -cutline world_wgs84.shp -cwhere &lt;span class="s2"&gt;&amp;quot;NAME=&amp;#39;PORTUGAL&amp;#39;&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+        &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;fich&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;other&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_portugal&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;
+    gdalwarp -of GTiff -co &lt;span class="s2"&gt;&amp;quot;COMPRESS=LZW&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+        -cutline world_wgs84.shp -cwhere &lt;span class="s2"&gt;&amp;quot;NAME=&amp;#39;SPAIN&amp;#39;&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+        &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;fich&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;other&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_spain&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;
+&lt;span class="k"&gt;done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We now have a number of GeoTIFF files, but these are in the MODIS projection. Let's say that we wanted them in UTM (UTM30N/ED50 for Portugal and UTM29N/ED50 for Spain). We'd go about it using the relevant &lt;a class="reference external" href="http://spatialreference.org/"&gt;EPSG codes&lt;/a&gt; as:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;for &lt;/span&gt;fich in MCD45A1.A2004*h17v04*vrt
+&lt;span class="k"&gt;do&lt;/span&gt;
+&lt;span class="k"&gt;    &lt;/span&gt;&lt;span class="nv"&gt;other&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="nv"&gt;$fich&lt;/span&gt; | cut -d &lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt; -f 1,2,&lt;span class="sb"&gt;`&lt;/span&gt;.h17v05.*vrt
+    &lt;span class="nv"&gt;output_portugal&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="nv"&gt;$fich&lt;/span&gt; | cut -d &lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt; -f 1,2&lt;span class="sb"&gt;`&lt;/span&gt;.Portugal.UTM.tif
+    &lt;span class="nv"&gt;output_spain&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="nv"&gt;$fich&lt;/span&gt; | cut -d &lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt; -f 1,2&lt;span class="sb"&gt;`&lt;/span&gt;.Spain.UTM.tif
+    gdalwarp -of GTiff -co &lt;span class="s2"&gt;&amp;quot;COMPRESS=LZW&amp;quot;&lt;/span&gt; -t_srs &lt;span class="s2"&gt;&amp;quot;EPSG:23030&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+        -cutline world_wgs84.shp -cwhere &lt;span class="s2"&gt;&amp;quot;NAME=&amp;#39;PORTUGAL&amp;#39;&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+        &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;fich&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;other&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_portugal&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;
+    gdalwarp -of GTiff -co &lt;span class="s2"&gt;&amp;quot;COMPRESS=LZW&amp;quot;&lt;/span&gt; -t_srs &lt;span class="s2"&gt;&amp;quot;EPSG:23029&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+        -cutline world_wgs84.shp -cwhere &lt;span class="s2"&gt;&amp;quot;NAME=&amp;#39;SPAIN&amp;#39;&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\&lt;/span&gt;
+        &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;fich&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;other&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;output_spain&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;
+&lt;span class="k"&gt;done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+</summary><category term="MODIS"></category><category term="GDAL"></category><category term="tips"></category></entry><entry><title>Getting a box</title><link href="/getting-a-box.html" rel="alternate"></link><updated>2013-06-23T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-06-23:getting-a-box.html</id><summary type="html">&lt;p&gt;Let's say one wants to find out a box around a given latitude/longitude point. How to do this
 without GIS software using an artisan UNIX approach? Hell, if it works for coffee! The steps
 are as follows:&lt;/p&gt;
 &lt;ol class="arabic simple"&gt;

@@ -14,9 +14,9 @@
 </script>
 
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-        <title>EO & DA ramblings - MODIS</title>
+        <title>Stitching MODIS burned area datasets</title>
         <meta charset="utf-8" />
-        <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
+        <link rel="stylesheet" href="./theme/css/main.css" type="text/css" />
         
         <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
         
@@ -26,11 +26,11 @@
                 <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
 
         <!--[if lte IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie.css"/>
-                <script src=".././js/IE8.js" type="text/javascript"></script><![endif]-->
+                <link rel="stylesheet" type="text/css" media="all" href="./css/ie.css"/>
+                <script src="./js/IE8.js" type="text/javascript"></script><![endif]-->
 
         <!--[if lt IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie6.css"/><![endif]-->
+                <link rel="stylesheet" type="text/css" media="all" href="./css/ie6.css"/><![endif]-->
 
 </head>
 
@@ -43,41 +43,44 @@
 </a>
 
         <header id="banner" class="body">
-                <h1><a href="../.">EO & DA ramblings </a></h1>
+                <h1><a href=".">EO & DA ramblings </a></h1>
                 <nav><ul>
                 
                 
                 
                 
                 
-                    <li ><a href=".././category/blog.html">Blog</a></li>
+                    <li class="active"><a href="./category/blog.html">Blog</a></li>
                 
                 </ul></nav>
         </header><!-- /#banner -->
-                
-
-            
-
         
-        
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href=".././stitching-modis-burned-area-datasets.html">Stitching MODIS burned area datasets</a></h1> 
-                    <footer class="post-info">
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="stitching-modis-burned-area-datasets.html" rel="bookmark"
+           title="Permalink to Stitching MODIS burned area datasets">Stitching MODIS burned area datasets</a></h1>
+      
+    </header>
+
+    <div class="entry-content">
+      <footer class="post-info">
         <abbr class="published" title="2013-06-27T17:00:00">
                 Thu 27 June 2013
         </abbr>
 
         
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="./author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
         
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/modis.html">MODIS</a><a href=".././tag/gdal.html">GDAL</a><a href=".././tag/tips.html">tips</a></p>
+<p>In <a href="./category/blog.html">Blog</a>. </p>
+<p>tags: <a href="./tag/modis.html">MODIS</a><a href="./tag/gdal.html">GDAL</a><a href="./tag/tips.html">tips</a></p>
 
 
-</footer><!-- /.post-info --><p>MODIS products are usually provided as data granules, representing the magnitude of interest
+</footer><!-- /.post-info -->
+      <p>MODIS products are usually provided as data granules, representing the magnitude of interest
 (plus a number of different extra layers of metadata, quality assurance flags, etc) over a
 given temporal period for an area typically extending 1200 by 1200 km in the MODIS sinusoidal
 projection, around 10x10 degrees. Typically, your study site might extend over several tiles,
@@ -219,21 +222,11 @@ for completenes, we shall also produce data for Spain.</p>
 </pre></div>
 </div>
 
-                </article>
-                
-                    
-                
-            </aside><!-- /#featured -->
-            
-        
-        
-        
-            </ol><!-- /#posts-list -->
-            
-            </section><!-- /#content -->
-        
+    </div><!-- /.entry-content -->
     
 
+  </article>
+</section>
 
         <section id="extras" class="body">
         
