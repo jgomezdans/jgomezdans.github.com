@@ -62,8 +62,162 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="./stitching-modis-burned-area-datasets.html">Stitching MODIS burned area datasets</a></h1> 
+                    <h1 class="entry-title"><a href="./ridelondon-data-download.html">RideLondon data download</a></h1> 
                     <footer class="post-info">
+        <abbr class="published" title="2013-08-05T17:00:00">
+                Mon 05 August 2013
+        </abbr>
+
+        
+        <address class="vcard author">
+                By <a class="url fn" href="./author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+        
+<p>In <a href="./category/blog.html">Blog</a>. </p>
+<p>tags: <a href="./tag/python.html">python</a></p>
+
+
+</footer><!-- /.post-info --><p>So a quick post on how to get access the web-based data on rider timings for the <a class="reference external" href="http://www.prudentialridelondon.co.uk/">RideLondon event</a>. The idea is that you can access the cyclist timings, and then
+maybe do some statistics (or boost/depress your morale by looking at how your time compares to the wider
+population taking part in the event!).</p>
+<div class="section" id="pre-requisites">
+<h2>Pre-requisites</h2>
+<p>We'll be using <tt class="docutils literal">requests</tt> and <tt class="docutils literal">BeautifulSoup</tt> to access the website
+and extract the data. You can install them easily by</p>
+<pre class="literal-block">
+::
+</pre>
+<blockquote>
+pip install requests
+pip install beautifulsoup4</blockquote>
+<p>or the may already be installed on your system.</p>
+<pre class="code python literal-block">
+<span class="keyword namespace">from</span> <span class="name namespace">bs4</span> <span class="keyword namespace">import</span> <span class="name">BeautifulSoup</span>
+<span class="keyword namespace">import</span> <span class="name namespace">requests</span>
+<span class="keyword namespace">import</span> <span class="name namespace">numpy</span> <span class="keyword namespace">as</span> <span class="name namespace">np</span>
+<span class="keyword namespace">import</span> <span class="name namespace">matplotlib.pyplot</span> <span class="keyword namespace">as</span> <span class="name namespace">plt</span>
+</pre>
+<p>In fact, you don't even need <tt class="docutils literal">requests</tt>, as good old <a class="reference external" href="http://docs.python.org/2/library/urllib2.html">urllib2</a> will work as well. Also, since we are not doing any complicated parsing, it's likely that you could also forego BeautifulSoup and just use a couple of regular expressions!</p>
+</div>
+<div class="section" id="the-rationale">
+<h2>The rationale</h2>
+<p>The rationales of this is to access the database rider by rider, using
+the rider number as the unique rider indicator. To this end, we need to
+concoct the individual URL for each rider. This is given by
+<tt class="docutils literal"><span class="pre">http://results.prudentialridelondon.co.uk/2013/?num_results=100&amp;pid=search&amp;search%5Bstart_no%5D=RIDER_ID&amp;search%5Bsex%5D=%25&amp;search%5Bnation%5D=%25&amp;search_sort=name&amp;event=I</span></tt>
+Basically, the query to the system's database is encoded in the URL,
+with fields either set to blank, or set to some value. Typically, we
+want to loop over the rider number (to get a &quot;dump&quot; of the database),
+but also might want to be crafty and check whether the rider is a male
+or a female, or even splice and dice the data including country of
+registration, that sort of thing.</p>
+<p>In the following example, we split the URL field in two terms: a first
+term that is common to all queries, and can be thought of as the
+<em>prefix</em>, and an extra term that can be used to include different query
+terms, the <em>suffix</em>. In the middle, the rider number sits. To compose
+the URL then, we concatenate the prefix <tt class="docutils literal">url1</tt>, the rider number and
+the suffix <tt class="docutils literal">url_search</tt>.</p>
+<p>We can loop over rider numbers, and add a nested loop that will request
+a given rider number <strong>and</strong> a particular sex. If the returned HTML
+contains the string <tt class="docutils literal">No results found'</tt>, it means that that particular
+rider will have to be of the oppossite sex. If we don't get this string,
+we can proceed to using BeautifulSoup to harvest the data.</p>
+<p>In this particular case, we select all the <tt class="docutils literal">td</tt> (table datum) elements
+in the page. For simplicity (and &quot;upon inspection&quot;), fields 13, 15 and
+21 contain the name, the final distance and final time (you can get all
+the other fields in a similar fashion). We just build a string and and
+write it out to a file.</p>
+<pre class="code python literal-block">
+<span class="name">url1</span> <span class="operator">=</span> <span class="literal string">'http://results.prudentialridelondon.co.uk/2013/?index.html?num_results=100&amp;pid=search&amp;search[start_no]='</span>
+<span class="name">url_search</span> <span class="operator">=</span> <span class="punctuation">{</span> <span class="literal string">'men'</span><span class="punctuation">:</span> <span class="literal string">'&amp;search[sex]=M&amp;search[nation]=%&amp;search_sort=name&amp;event=I'</span><span class="punctuation">,</span> \
+                <span class="literal string">'women'</span><span class="punctuation">:</span> <span class="literal string">'&amp;search[sex]=W&amp;search[nation]=%&amp;search_sort=name&amp;event=I'</span> <span class="punctuation">}</span>
+<span class="name">fps</span> <span class="operator">=</span> <span class="punctuation">{</span> <span class="literal string">'men'</span><span class="punctuation">:</span> <span class="name builtin">open</span> <span class="punctuation">(</span><span class="literal string">&quot;bike_ride_men.csv&quot;</span><span class="punctuation">,</span> <span class="literal string">'w'</span> <span class="punctuation">),</span> \
+         <span class="literal string">'women'</span><span class="punctuation">:</span> <span class="name builtin">open</span><span class="punctuation">(</span><span class="literal string">&quot;bike_ride_women.csv&quot;</span><span class="punctuation">,</span> <span class="literal string">'w'</span> <span class="punctuation">)</span> <span class="punctuation">}</span>
+<span class="keyword">for</span> <span class="name">rider_no</span> <span class="operator word">in</span> <span class="name builtin">xrange</span><span class="punctuation">(</span><span class="literal number integer">3000</span><span class="punctuation">,</span><span class="literal number integer">5001</span><span class="punctuation">):</span>
+    <span class="keyword">for</span> <span class="name">sex</span> <span class="operator word">in</span> <span class="punctuation">[</span><span class="literal string">&quot;men&quot;</span><span class="punctuation">,</span> <span class="literal string">&quot;women&quot;</span><span class="punctuation">]:</span>
+        <span class="name">r</span>  <span class="operator">=</span> <span class="name">requests</span><span class="operator">.</span><span class="name">get</span><span class="punctuation">(</span> <span class="name">url1</span> <span class="operator">+</span> <span class="literal string">&quot;</span><span class="literal string interpol">%d</span><span class="literal string">&quot;</span><span class="operator">%</span><span class="name">rider_no</span> <span class="operator">+</span> <span class="name">url_search</span><span class="punctuation">[</span><span class="name">sex</span><span class="punctuation">])</span>
+        <span class="name">html</span> <span class="operator">=</span> <span class="name">r</span><span class="operator">.</span><span class="name">text</span>
+        <span class="keyword">if</span> <span class="name">html</span><span class="operator">.</span><span class="name">find</span> <span class="punctuation">(</span> <span class="literal string">&quot;No results found.&quot;</span><span class="punctuation">)</span> <span class="operator">&lt;</span> <span class="literal number integer">0</span><span class="punctuation">:</span>
+            <span class="name">the_sex</span> <span class="operator">=</span> <span class="name">sex</span>
+            <span class="name">tree</span> <span class="operator">=</span> <span class="name">BeautifulSoup</span><span class="punctuation">(</span> <span class="name">html</span> <span class="punctuation">)</span>
+            <span class="name">stringo</span> <span class="operator">=</span> <span class="literal string">&quot;</span><span class="literal string interpol">%d</span><span class="literal string">; &quot;</span> <span class="operator">%</span> <span class="name">rider_no</span>
+            <span class="keyword">for</span> <span class="name">i</span><span class="punctuation">,</span> <span class="name">s</span> <span class="operator word">in</span> <span class="name builtin">enumerate</span><span class="punctuation">(</span> <span class="name">tree</span><span class="operator">.</span><span class="name">findAll</span><span class="punctuation">(</span> <span class="literal string">&quot;td&quot;</span><span class="punctuation">)</span> <span class="punctuation">):</span>
+                <span class="keyword">if</span> <span class="name">i</span> <span class="operator">==</span> <span class="literal number integer">12</span><span class="punctuation">:</span>
+                    <span class="name">stringo</span> <span class="operator">+=</span> <span class="literal string">&quot;'</span><span class="literal string interpol">%s</span><span class="literal string">'; &quot;</span> <span class="operator">%</span> <span class="name">s</span><span class="operator">.</span><span class="name">find</span><span class="punctuation">(</span><span class="literal string">&quot;a&quot;</span><span class="punctuation">)</span><span class="operator">.</span><span class="name">contents</span><span class="punctuation">[</span><span class="literal number integer">0</span><span class="punctuation">]</span>
+                <span class="keyword">elif</span> <span class="name">i</span> <span class="operator">==</span> <span class="literal number integer">14</span><span class="punctuation">:</span>
+                    <span class="name">stringo</span> <span class="operator">+=</span> <span class="literal string">&quot;</span><span class="literal string interpol">%s</span><span class="literal string">; &quot;</span> <span class="operator">%</span> <span class="name">s</span><span class="operator">.</span><span class="name">contents</span><span class="punctuation">[</span><span class="literal number integer">0</span><span class="punctuation">]</span><span class="operator">.</span><span class="name">split</span><span class="punctuation">()[</span><span class="literal number integer">0</span><span class="punctuation">]</span>
+                <span class="keyword">elif</span> <span class="name">i</span> <span class="operator">==</span> <span class="literal number integer">20</span><span class="punctuation">:</span>
+                    <span class="name">stringo</span> <span class="operator">+=</span> <span class="literal string">&quot;</span><span class="literal string interpol">%s</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="name">s</span><span class="operator">.</span><span class="name">contents</span><span class="punctuation">[</span><span class="literal number integer">0</span><span class="punctuation">]</span>
+            <span class="name">stringo</span> <span class="operator">+=</span> <span class="literal string">&quot;</span><span class="literal string escape">\n</span><span class="literal string">&quot;</span>
+            <span class="name">fps</span><span class="punctuation">[</span><span class="name">sex</span><span class="punctuation">]</span><span class="operator">.</span><span class="name">write</span> <span class="punctuation">(</span> <span class="name">stringo</span><span class="operator">.</span><span class="name">encode</span><span class="punctuation">(</span><span class="literal string">'utf-8'</span><span class="punctuation">)</span> <span class="punctuation">)</span>
+            <span class="name">fps</span><span class="punctuation">[</span><span class="name">sex</span><span class="punctuation">]</span><span class="operator">.</span><span class="name">flush</span><span class="punctuation">()</span>
+            <span class="keyword">break</span>
+
+<span class="keyword">for</span> <span class="name">q</span> <span class="operator word">in</span> <span class="name">fps</span><span class="operator">.</span><span class="name">iterkeys</span><span class="punctuation">():</span>
+    <span class="name">fps</span><span class="punctuation">[</span><span class="name">q</span><span class="punctuation">]</span><span class="operator">.</span><span class="name">close</span><span class="punctuation">()</span>
+</pre>
+</div>
+<div class="section" id="playing-around-with-the-data">
+<h2>Playing around with the data</h2>
+<p>So the previous process takes a while for retrieving up to 2000 riders.
+We have saved the data to disk, so let's have a little play around!</p>
+<p>First, we need a function to conver the hours, minutes and seconds to minutes. In some cases, if
+the field is empty, we return the value -1 to indicate no data. A simple function like <tt class="docutils literal">hhmmsss_to_mins</tt> below does the job well and is easy to follow:</p>
+<pre class="code python literal-block">
+<span class="keyword">def</span> <span class="name function">hhmmss_to_mins</span> <span class="punctuation">(</span> <span class="name">hhmmss</span> <span class="punctuation">):</span>
+    <span class="keyword">try</span><span class="punctuation">:</span>
+        <span class="name">hh</span><span class="punctuation">,</span> <span class="name">mm</span><span class="punctuation">,</span> <span class="name">ss</span> <span class="operator">=</span> <span class="name">hhmmss</span><span class="operator">.</span><span class="name">split</span> <span class="punctuation">(</span> <span class="literal string">&quot;:&quot;</span> <span class="punctuation">)</span>
+        <span class="keyword">return</span> <span class="name builtin">float</span><span class="punctuation">(</span><span class="name">hh</span><span class="punctuation">)</span><span class="operator">*</span><span class="literal number float">60.</span> <span class="operator">+</span> <span class="name builtin">float</span><span class="punctuation">(</span><span class="name">mm</span><span class="punctuation">)</span> <span class="operator">+</span> <span class="name builtin">float</span><span class="punctuation">(</span><span class="name">ss</span><span class="punctuation">)</span><span class="operator">/</span><span class="literal number float">60.</span>
+    <span class="keyword">except</span> <span class="name exception">ValueError</span><span class="punctuation">:</span>
+        <span class="keyword">return</span> <span class="operator">-</span><span class="literal number integer">1</span>
+</pre>
+<p>Now, let's load up the data we conveniently saved up beforehand as a CSV file (lesser mortals would be reaching for Excel here, but we know better!). We only really need columns 3 and 4 (unless you are looking
+for your name, or are curious about somebody else). <tt class="docutils literal">np.loadtxt</tt> allows us to set delimiters, to only deal with two columns, and also to apply a converter to column 4 (that converts the hours, minutes and seconds to minutes using <tt class="docutils literal">hhmmss_to_mins</tt>. We also have split the data into ladies and gentlemen, so we can load up each population individually.</p>
+<pre class="code python literal-block">
+<span class="name">blokes</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">loadtxt</span><span class="punctuation">(</span><span class="literal string">&quot;bike_ride_men.csv&quot;</span><span class="punctuation">,</span> <span class="name">delimiter</span><span class="operator">=</span><span class="literal string">&quot;;&quot;</span><span class="punctuation">,</span> <span class="name">usecols</span><span class="operator">=</span><span class="punctuation">[</span><span class="literal number integer">2</span><span class="punctuation">,</span><span class="literal number integer">3</span><span class="punctuation">],</span> <span class="name">converters</span><span class="operator">=</span><span class="punctuation">{</span><span class="literal number integer">3</span><span class="punctuation">:</span><span class="name">hhmmss_to_mins</span><span class="punctuation">})</span>
+<span class="name">birds</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">loadtxt</span><span class="punctuation">(</span><span class="literal string">&quot;bike_ride_women.csv&quot;</span><span class="punctuation">,</span> <span class="name">delimiter</span><span class="operator">=</span><span class="literal string">&quot;;&quot;</span><span class="punctuation">,</span> <span class="name">usecols</span><span class="operator">=</span><span class="punctuation">[</span><span class="literal number integer">2</span><span class="punctuation">,</span><span class="literal number integer">3</span><span class="punctuation">],</span> <span class="name">converters</span><span class="operator">=</span><span class="punctuation">{</span><span class="literal number integer">3</span><span class="punctuation">:</span><span class="name">hhmmss_to_mins</span><span class="punctuation">})</span>
+</pre>
+<p>So far so good, why don't we just plot some histograms? Let's bin the data in 10minute arrival intervals</p>
+<pre class="code python literal-block">
+<span class="name">plt</span><span class="operator">.</span><span class="name">hist</span> <span class="punctuation">(</span> <span class="name">blokes</span><span class="punctuation">[</span><span class="name">blokes</span><span class="punctuation">[:,</span><span class="literal number integer">1</span><span class="punctuation">]</span> <span class="operator">&gt;</span> <span class="literal number integer">0</span><span class="punctuation">,</span> <span class="literal number integer">1</span><span class="punctuation">],</span> <span class="name">bins</span><span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">arange</span><span class="punctuation">(</span><span class="literal number integer">200</span><span class="punctuation">,</span><span class="literal number integer">600</span><span class="punctuation">,</span><span class="literal number integer">10</span><span class="punctuation">),</span> <span class="name">label</span><span class="operator">=</span><span class="literal string">&quot;Men&quot;</span> <span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">hist</span> <span class="punctuation">(</span> <span class="name">birds</span><span class="punctuation">[</span><span class="name">birds</span><span class="punctuation">[:,</span><span class="literal number integer">1</span><span class="punctuation">]</span> <span class="operator">&gt;</span> <span class="literal number integer">0</span><span class="punctuation">,</span> <span class="literal number integer">1</span><span class="punctuation">],</span> <span class="name">bins</span><span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">arange</span><span class="punctuation">(</span><span class="literal number integer">200</span><span class="punctuation">,</span><span class="literal number integer">600</span><span class="punctuation">,</span><span class="literal number integer">10</span><span class="punctuation">),</span> <span class="name">label</span><span class="operator">=</span><span class="literal string">&quot;Female&quot;</span> <span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">legend</span><span class="punctuation">(</span><span class="name">loc</span><span class="operator">=</span><span class="literal string">'best'</span><span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">xlabel</span><span class="punctuation">(</span><span class="literal string">&quot;Total time [min]&quot;</span><span class="punctuation">)</span>
+</pre>
+<div class="figure">
+<img alt="images/BicycleBicycle_13_1.png" src="static/images/BicycleBicycle_13_1.png" style="width: 90%;" />
+</div>
+</div>
+<div class="section" id="the-ipython-workbook">
+<h2>The IPython workbook</h2>
+<p>If you fancy, you can get the IPython notebook from <a class="reference external" href="http://www.wakari.io">wakari</a> here: <a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BicycleBicycle">https://www.wakari.io/sharing/bundle/jgomezdans/BicycleBicycle</a>. Feel free to play with the code!</p>
+</div>
+
+                </article>
+                
+            </aside><!-- /#featured -->
+            
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+            
+        
+        
+        
+            
+
+        
+         
+            
+            <li><article class="hentry">    
+                <header>
+                    <h1><a href="./stitching-modis-burned-area-datasets.html" rel="bookmark"
+                           title="Permalink to Stitching MODIS burned area datasets">Stitching MODIS burned area datasets</a></h1>
+                </header>
+                
+                <div class="entry-content">
+                <footer class="post-info">
         <abbr class="published" title="2013-06-27T17:00:00">
                 Thu 27 June 2013
         </abbr>
@@ -77,158 +231,15 @@
 <p>tags: <a href="./tag/modis.html">MODIS</a><a href="./tag/gdal.html">GDAL</a><a href="./tag/tips.html">tips</a></p>
 
 
-</footer><!-- /.post-info --><p>MODIS products are usually provided as data granules, representing the magnitude of interest
+</footer><!-- /.post-info -->
+                <p>MODIS products are usually provided as data granules, representing the magnitude of interest
 (plus a number of different extra layers of metadata, quality assurance flags, etc) over a
 given temporal period for an area typically extending 1200 by 1200 km in the MODIS sinusoidal
-projection, around 10x10 degrees. Typically, your study site might extend over several tiles,
-or just happen to lie between two tiles. Consider Portugal, split (mostly, there are islands and other
-stuff, but we typically ignore them ;D) into two tiles, h17v04 and h17v05. In this post, we look at:</p>
-<ol class="arabic simple">
-<li>Downloading the data</li>
-<li>Stitching together the data</li>
-<li>Reprojecting</li>
-<li>Applying a mask</li>
-</ol>
-<div class="section" id="downloading-the-data">
-<h2>Downloading the data</h2>
-<p>We are going to use the <tt class="docutils literal">get_modis</tt> script (you can get it from <a class="reference external" href="https://github.com/jgomezdans/get_modis">here</a>).
-It is a simple Python script that automatically downloads MODIS data. We shall download data for the year 2004. What
-we need is the following command</p>
-<pre class="literal-block">
-./get_modis.py --verbose --platform=MOTA --product=MCD45A1.051 --tile=h17v04 --year=2004 --output=.
-</pre>
-<p>where</p>
-<dl class="docutils">
-<dt><tt class="docutils literal">platform=MOTA</tt></dt>
-<dd>This is the &quot;platform&quot;. In this case, the MCD45A1 product uses data from TERRA and AQUA, so its code is <tt class="docutils literal">MOTA</tt>.</dd>
-<dt><tt class="docutils literal">product=MCD45A1.051</tt></dt>
-<dd>We want the MCD45A1 product, collection 5.1 (just released!).</dd>
-<dt><tt class="docutils literal">tile=h17v04</tt></dt>
-<dd>A tile for the Northern Iberian Peninsula.</dd>
-<dt><tt class="docutils literal">year=2004</tt></dt>
-<dd>The year of interest</dd>
-<dt><tt class="docutils literal">output=.</tt></dt>
-<dd>Use the current directory to save the downloaded files.</dd>
-</dl>
-<p>Because we provided the <tt class="docutils literal"><span class="pre">--verbose</span></tt> flag, we get a running commentary on how all this proceeds. For the other tile (<tt class="docutils literal">h17v05</tt>),
-this is the output</p>
-<pre class="literal-block">
-   2013-06-27 13:31:58,898 Getting MCD45A1.A2004001.h17v05.051.2013070231310.hdf.....
-   2013-06-27 13:32:01,840 Done!
-   2013-06-27 13:32:04,604 Getting MCD45A1.A2004032.h17v05.051.2013062125251.hdf.....
-   2013-06-27 13:32:06,706 Done!
-   2013-06-27 13:32:08,207 Getting MCD45A1.A2004061.h17v05.051.2013071001320.hdf.....
-   2013-06-27 13:32:10,474 Done!
-   2013-06-27 13:32:12,046 Getting MCD45A1.A2004092.h17v05.051.2013062142742.hdf.....
-   2013-06-27 13:32:14,177 Done!
-   2013-06-27 13:32:15,909 Getting MCD45A1.A2004122.h17v05.051.2013062153940.hdf.....
-   2013-06-27 13:32:17,987 Done!
-   2013-06-27 13:32:19,521 Getting MCD45A1.A2004153.h17v05.051.2013062164329.hdf.....
-   2013-06-27 13:32:21,770 Done!
-   2013-06-27 13:32:24,424 Getting MCD45A1.A2004183.h17v05.051.2013062175918.hdf.....
-   2013-06-27 13:32:26,220 Done!
-   2013-06-27 13:32:28,791 Getting MCD45A1.A2004214.h17v05.051.2013062184842.hdf.....
-   2013-06-27 13:32:30,599 Done!
-   2013-06-27 13:32:32,367 Getting MCD45A1.A2004245.h17v05.051.2013062201148.hdf.....
-   2013-06-27 13:32:34,460 Done!
-   2013-06-27 13:32:36,893 Getting MCD45A1.A2004275.h17v05.051.2013062212709.hdf.....
-   2013-06-27 13:32:39,459 Done!
-   2013-06-27 13:32:41,015 Getting MCD45A1.A2004306.h17v05.051.2013062214733.hdf.....
-   2013-06-27 13:32:43,370 Done!
-   2013-06-27 13:32:45,977 Getting MCD45A1.A2004336.h17v05.051.2013062215105.hdf.....
-   2013-06-27 13:32:50,383 Done!
-   2013-06-27 13:32:50,383 Completely finished downlading all there was
-
-
-Stitching the data
--------------------
-
-MCD45A1 granules do have a number of different datasets. You can have a peek inside using ``gdalinfo``:
-
-::
-
-    gdalinfo MCD45A1.A2004214.h17v04.051.2013062164342.hdf
-    [ Lots and lots and lots of metadata]
-    Subdatasets:
-     SUBDATASET_1_NAME=HDF4_EOS:EOS_GRID:&quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&quot;:MOD_GRID_Monthly_500km_BA:burndate
-     SUBDATASET_1_DESC=[2400x2400] burndate MOD_GRID_Monthly_500km_BA (16-bit integer)
-     SUBDATASET_2_NAME=HDF4_EOS:EOS_GRID:&quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&quot;:MOD_GRID_Monthly_500km_BA:ba_qa
-     SUBDATASET_2_DESC=[2400x2400] ba_qa MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
-     SUBDATASET_3_NAME=HDF4_EOS:EOS_GRID:&quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&quot;:MOD_GRID_Monthly_500km_BA:npasses
-     SUBDATASET_3_DESC=[2400x2400] npasses MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
-     SUBDATASET_4_NAME=HDF4_EOS:EOS_GRID:&quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&quot;:MOD_GRID_Monthly_500km_BA:nused
-     SUBDATASET_4_DESC=[2400x2400] nused MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
-     SUBDATASET_5_NAME=HDF4_EOS:EOS_GRID:&quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&quot;:MOD_GRID_Monthly_500km_BA:direction
-     SUBDATASET_5_DESC=[2400x2400] direction MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
-     SUBDATASET_6_NAME=HDF4_EOS:EOS_GRID:&quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&quot;:MOD_GRID_Monthly_500km_BA:surfacetype
-     SUBDATASET_6_DESC=[2400x2400] surfacetype MOD_GRID_Monthly_500km_BA (8-bit unsigned integer)
-     SUBDATASET_7_NAME=HDF4_EOS:EOS_GRID:&quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&quot;:MOD_GRID_Monthly_500km_BA:gap_range1
-     SUBDATASET_7_DESC=[2400x2400] gap_range1 MOD_GRID_Monthly_500km_BA (16-bit unsigned integer)
-     SUBDATASET_8_NAME=HDF4_EOS:EOS_GRID:&quot;MCD45A1.A2004214.h17v04.051.2013062164342.hdf&quot;:MOD_GRID_Monthly_500km_BA:gap_range2
-     SUBDATASET_8_DESC=[2400x2400] gap_range2 MOD_GRID_Monthly_500km_BA (16-bit unsigned integer)
-   Corner Coordinates:
-   Upper Left  (    0.0,    0.0)
-   Lower Left  (    0.0,  512.0)
-   Upper Right (  512.0,    0.0)
-   Lower Right (  512.0,  512.0)
-   Center      (  256.0,  256.0)
-</pre>
-<p>We are intersted (initially) in the first dataset <tt class="docutils literal">burndate</tt>. We want to, for each month, stich together the two tiles, or mosaic them. To
-make it easy and efficient, we will do it in two stages using virtual datasets. These are just text files that refer to the original datasets
-and allow fast modifications. Fist, we create VRTs for the <tt class="docutils literal">burndate</tt> layers for the two tiles. In BASH, this can be done easily with a
-loop</p>
-<div class="highlight"><pre><span class="k">for </span>fich in *h17v0*.hdf
-<span class="k">do</span>
-<span class="k">    </span>gdal_translate -of VRT <span class="s1">&#39;HDF4_EOS:EOS_GRID:&quot;&#39;</span><span class="k">${</span><span class="nv">fich</span><span class="k">}</span><span class="s1">&#39;&quot;:MOD_GRID_Monthly_500km_BA:burndate&#39;</span> <span class="se">\</span>
-        <span class="sb">`</span>basename <span class="k">${</span><span class="nv">fich</span><span class="k">}</span> .hdf<span class="sb">`</span>.vrt
-<span class="k">done</span>
-</pre></div>
-<p>We now have a number of files with the extension <tt class="docutils literal">.vrt</tt>. You can read their contents, these are just text files (XML actually) and point to the original
-datasets. We now use <tt class="docutils literal">gdalwarp</tt> to mosaic them, and to just get the Portugal mask. To this end, we use the <tt class="docutils literal">world.shp</tt> of <a class="reference external" href="http://aprsworld.net/gisdata/world/world.tar.bz2">APRS world</a>.
-Since this shapefile does not have a projection, we set it to WGS84 Lat/Long:</p>
-<div class="highlight"><pre>ogr2ogr -a_srs <span class="s2">&quot;EPSG:4326&quot;</span> world_wgs84.shp world.shp
-</pre></div>
-<p>This gives a new file, <tt class="docutils literal">world_wgs84.shp</tt> with a projection in it. We then just use <tt class="docutils literal">gdalwarp</tt> to reproject and cut, but
-for completenes, we shall also produce data for Spain.</p>
-<div class="highlight"><pre><span class="k">for </span>fich in MCD45A1.A2004*h17v04*vrt
-<span class="k">do</span>
-<span class="k">    </span><span class="nv">other</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$fich</span> | cut -d <span class="s2">&quot;.&quot;</span> -f 1,2,<span class="sb">`</span>.h17v05.*vrt
-    <span class="nv">output_portugal</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$fich</span> | cut -d <span class="s2">&quot;.&quot;</span> -f 1,2<span class="sb">`</span>.Portugal.tif
-    <span class="nv">output_spain</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$fich</span> | cut -d <span class="s2">&quot;.&quot;</span> -f 1,2<span class="sb">`</span>.Spain.tif
-    gdalwarp -of GTiff -co <span class="s2">&quot;COMPRESS=LZW&quot;</span> <span class="se">\</span>
-        -cutline world_wgs84.shp -cwhere <span class="s2">&quot;NAME=&#39;PORTUGAL&#39;&quot;</span> <span class="se">\</span>
-        <span class="k">${</span><span class="nv">fich</span><span class="k">}</span> <span class="k">${</span><span class="nv">other</span><span class="k">}</span> <span class="k">${</span><span class="nv">output_portugal</span><span class="k">}</span>
-    gdalwarp -of GTiff -co <span class="s2">&quot;COMPRESS=LZW&quot;</span> <span class="se">\</span>
-        -cutline world_wgs84.shp -cwhere <span class="s2">&quot;NAME=&#39;SPAIN&#39;&quot;</span> <span class="se">\</span>
-        <span class="k">${</span><span class="nv">fich</span><span class="k">}</span> <span class="k">${</span><span class="nv">other</span><span class="k">}</span> <span class="k">${</span><span class="nv">output_spain</span><span class="k">}</span>
-<span class="k">done</span>
-</pre></div>
-<p>We now have a number of GeoTIFF files, but these are in the MODIS projection. Let's say that we wanted them in UTM (UTM30N/ED50 for Portugal and UTM29N/ED50 for Spain). We'd go about it using the relevant <a class="reference external" href="http://spatialreference.org/">EPSG codes</a> as:</p>
-<div class="highlight"><pre><span class="k">for </span>fich in MCD45A1.A2004*h17v04*vrt
-<span class="k">do</span>
-<span class="k">    </span><span class="nv">other</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$fich</span> | cut -d <span class="s2">&quot;.&quot;</span> -f 1,2,<span class="sb">`</span>.h17v05.*vrt
-    <span class="nv">output_portugal</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$fich</span> | cut -d <span class="s2">&quot;.&quot;</span> -f 1,2<span class="sb">`</span>.Portugal.UTM.tif
-    <span class="nv">output_spain</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$fich</span> | cut -d <span class="s2">&quot;.&quot;</span> -f 1,2<span class="sb">`</span>.Spain.UTM.tif
-    gdalwarp -of GTiff -co <span class="s2">&quot;COMPRESS=LZW&quot;</span> -t_srs <span class="s2">&quot;EPSG:23030&quot;</span> <span class="se">\</span>
-        -cutline world_wgs84.shp -cwhere <span class="s2">&quot;NAME=&#39;PORTUGAL&#39;&quot;</span> <span class="se">\</span>
-        <span class="k">${</span><span class="nv">fich</span><span class="k">}</span> <span class="k">${</span><span class="nv">other</span><span class="k">}</span> <span class="k">${</span><span class="nv">output_portugal</span><span class="k">}</span>
-    gdalwarp -of GTiff -co <span class="s2">&quot;COMPRESS=LZW&quot;</span> -t_srs <span class="s2">&quot;EPSG:23029&quot;</span> <span class="se">\</span>
-        -cutline world_wgs84.shp -cwhere <span class="s2">&quot;NAME=&#39;SPAIN&#39;&quot;</span> <span class="se">\</span>
-        <span class="k">${</span><span class="nv">fich</span><span class="k">}</span> <span class="k">${</span><span class="nv">other</span><span class="k">}</span> <span class="k">${</span><span class="nv">output_spain</span><span class="k">}</span>
-<span class="k">done</span>
-</pre></div>
-</div>
-
-                </article>
+projection, around 10x10 degrees. Typically, your ...</p>
+                <a class="readmore" href="./stitching-modis-burned-area-datasets.html">read more</a>
                 
-            </aside><!-- /#featured -->
-            
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
-        
+                </div><!-- /.entry-content -->
+            </article></li>
         
         
             

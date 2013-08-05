@@ -62,8 +62,162 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././downloading-modis-data-with-python.html">Downloading MODIS data with Python</a></h1> 
+                    <h1 class="entry-title"><a href=".././ridelondon-data-download.html">RideLondon data download</a></h1> 
                     <footer class="post-info">
+        <abbr class="published" title="2013-08-05T17:00:00">
+                Mon 05 August 2013
+        </abbr>
+
+        
+        <address class="vcard author">
+                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+        
+<p>In <a href=".././category/blog.html">Blog</a>. </p>
+<p>tags: <a href=".././tag/python.html">python</a></p>
+
+
+</footer><!-- /.post-info --><p>So a quick post on how to get access the web-based data on rider timings for the <a class="reference external" href="http://www.prudentialridelondon.co.uk/">RideLondon event</a>. The idea is that you can access the cyclist timings, and then
+maybe do some statistics (or boost/depress your morale by looking at how your time compares to the wider
+population taking part in the event!).</p>
+<div class="section" id="pre-requisites">
+<h2>Pre-requisites</h2>
+<p>We'll be using <tt class="docutils literal">requests</tt> and <tt class="docutils literal">BeautifulSoup</tt> to access the website
+and extract the data. You can install them easily by</p>
+<pre class="literal-block">
+::
+</pre>
+<blockquote>
+pip install requests
+pip install beautifulsoup4</blockquote>
+<p>or the may already be installed on your system.</p>
+<pre class="code python literal-block">
+<span class="keyword namespace">from</span> <span class="name namespace">bs4</span> <span class="keyword namespace">import</span> <span class="name">BeautifulSoup</span>
+<span class="keyword namespace">import</span> <span class="name namespace">requests</span>
+<span class="keyword namespace">import</span> <span class="name namespace">numpy</span> <span class="keyword namespace">as</span> <span class="name namespace">np</span>
+<span class="keyword namespace">import</span> <span class="name namespace">matplotlib.pyplot</span> <span class="keyword namespace">as</span> <span class="name namespace">plt</span>
+</pre>
+<p>In fact, you don't even need <tt class="docutils literal">requests</tt>, as good old <a class="reference external" href="http://docs.python.org/2/library/urllib2.html">urllib2</a> will work as well. Also, since we are not doing any complicated parsing, it's likely that you could also forego BeautifulSoup and just use a couple of regular expressions!</p>
+</div>
+<div class="section" id="the-rationale">
+<h2>The rationale</h2>
+<p>The rationales of this is to access the database rider by rider, using
+the rider number as the unique rider indicator. To this end, we need to
+concoct the individual URL for each rider. This is given by
+<tt class="docutils literal"><span class="pre">http://results.prudentialridelondon.co.uk/2013/?num_results=100&amp;pid=search&amp;search%5Bstart_no%5D=RIDER_ID&amp;search%5Bsex%5D=%25&amp;search%5Bnation%5D=%25&amp;search_sort=name&amp;event=I</span></tt>
+Basically, the query to the system's database is encoded in the URL,
+with fields either set to blank, or set to some value. Typically, we
+want to loop over the rider number (to get a &quot;dump&quot; of the database),
+but also might want to be crafty and check whether the rider is a male
+or a female, or even splice and dice the data including country of
+registration, that sort of thing.</p>
+<p>In the following example, we split the URL field in two terms: a first
+term that is common to all queries, and can be thought of as the
+<em>prefix</em>, and an extra term that can be used to include different query
+terms, the <em>suffix</em>. In the middle, the rider number sits. To compose
+the URL then, we concatenate the prefix <tt class="docutils literal">url1</tt>, the rider number and
+the suffix <tt class="docutils literal">url_search</tt>.</p>
+<p>We can loop over rider numbers, and add a nested loop that will request
+a given rider number <strong>and</strong> a particular sex. If the returned HTML
+contains the string <tt class="docutils literal">No results found'</tt>, it means that that particular
+rider will have to be of the oppossite sex. If we don't get this string,
+we can proceed to using BeautifulSoup to harvest the data.</p>
+<p>In this particular case, we select all the <tt class="docutils literal">td</tt> (table datum) elements
+in the page. For simplicity (and &quot;upon inspection&quot;), fields 13, 15 and
+21 contain the name, the final distance and final time (you can get all
+the other fields in a similar fashion). We just build a string and and
+write it out to a file.</p>
+<pre class="code python literal-block">
+<span class="name">url1</span> <span class="operator">=</span> <span class="literal string">'http://results.prudentialridelondon.co.uk/2013/?index.html?num_results=100&amp;pid=search&amp;search[start_no]='</span>
+<span class="name">url_search</span> <span class="operator">=</span> <span class="punctuation">{</span> <span class="literal string">'men'</span><span class="punctuation">:</span> <span class="literal string">'&amp;search[sex]=M&amp;search[nation]=%&amp;search_sort=name&amp;event=I'</span><span class="punctuation">,</span> \
+                <span class="literal string">'women'</span><span class="punctuation">:</span> <span class="literal string">'&amp;search[sex]=W&amp;search[nation]=%&amp;search_sort=name&amp;event=I'</span> <span class="punctuation">}</span>
+<span class="name">fps</span> <span class="operator">=</span> <span class="punctuation">{</span> <span class="literal string">'men'</span><span class="punctuation">:</span> <span class="name builtin">open</span> <span class="punctuation">(</span><span class="literal string">&quot;bike_ride_men.csv&quot;</span><span class="punctuation">,</span> <span class="literal string">'w'</span> <span class="punctuation">),</span> \
+         <span class="literal string">'women'</span><span class="punctuation">:</span> <span class="name builtin">open</span><span class="punctuation">(</span><span class="literal string">&quot;bike_ride_women.csv&quot;</span><span class="punctuation">,</span> <span class="literal string">'w'</span> <span class="punctuation">)</span> <span class="punctuation">}</span>
+<span class="keyword">for</span> <span class="name">rider_no</span> <span class="operator word">in</span> <span class="name builtin">xrange</span><span class="punctuation">(</span><span class="literal number integer">3000</span><span class="punctuation">,</span><span class="literal number integer">5001</span><span class="punctuation">):</span>
+    <span class="keyword">for</span> <span class="name">sex</span> <span class="operator word">in</span> <span class="punctuation">[</span><span class="literal string">&quot;men&quot;</span><span class="punctuation">,</span> <span class="literal string">&quot;women&quot;</span><span class="punctuation">]:</span>
+        <span class="name">r</span>  <span class="operator">=</span> <span class="name">requests</span><span class="operator">.</span><span class="name">get</span><span class="punctuation">(</span> <span class="name">url1</span> <span class="operator">+</span> <span class="literal string">&quot;</span><span class="literal string interpol">%d</span><span class="literal string">&quot;</span><span class="operator">%</span><span class="name">rider_no</span> <span class="operator">+</span> <span class="name">url_search</span><span class="punctuation">[</span><span class="name">sex</span><span class="punctuation">])</span>
+        <span class="name">html</span> <span class="operator">=</span> <span class="name">r</span><span class="operator">.</span><span class="name">text</span>
+        <span class="keyword">if</span> <span class="name">html</span><span class="operator">.</span><span class="name">find</span> <span class="punctuation">(</span> <span class="literal string">&quot;No results found.&quot;</span><span class="punctuation">)</span> <span class="operator">&lt;</span> <span class="literal number integer">0</span><span class="punctuation">:</span>
+            <span class="name">the_sex</span> <span class="operator">=</span> <span class="name">sex</span>
+            <span class="name">tree</span> <span class="operator">=</span> <span class="name">BeautifulSoup</span><span class="punctuation">(</span> <span class="name">html</span> <span class="punctuation">)</span>
+            <span class="name">stringo</span> <span class="operator">=</span> <span class="literal string">&quot;</span><span class="literal string interpol">%d</span><span class="literal string">; &quot;</span> <span class="operator">%</span> <span class="name">rider_no</span>
+            <span class="keyword">for</span> <span class="name">i</span><span class="punctuation">,</span> <span class="name">s</span> <span class="operator word">in</span> <span class="name builtin">enumerate</span><span class="punctuation">(</span> <span class="name">tree</span><span class="operator">.</span><span class="name">findAll</span><span class="punctuation">(</span> <span class="literal string">&quot;td&quot;</span><span class="punctuation">)</span> <span class="punctuation">):</span>
+                <span class="keyword">if</span> <span class="name">i</span> <span class="operator">==</span> <span class="literal number integer">12</span><span class="punctuation">:</span>
+                    <span class="name">stringo</span> <span class="operator">+=</span> <span class="literal string">&quot;'</span><span class="literal string interpol">%s</span><span class="literal string">'; &quot;</span> <span class="operator">%</span> <span class="name">s</span><span class="operator">.</span><span class="name">find</span><span class="punctuation">(</span><span class="literal string">&quot;a&quot;</span><span class="punctuation">)</span><span class="operator">.</span><span class="name">contents</span><span class="punctuation">[</span><span class="literal number integer">0</span><span class="punctuation">]</span>
+                <span class="keyword">elif</span> <span class="name">i</span> <span class="operator">==</span> <span class="literal number integer">14</span><span class="punctuation">:</span>
+                    <span class="name">stringo</span> <span class="operator">+=</span> <span class="literal string">&quot;</span><span class="literal string interpol">%s</span><span class="literal string">; &quot;</span> <span class="operator">%</span> <span class="name">s</span><span class="operator">.</span><span class="name">contents</span><span class="punctuation">[</span><span class="literal number integer">0</span><span class="punctuation">]</span><span class="operator">.</span><span class="name">split</span><span class="punctuation">()[</span><span class="literal number integer">0</span><span class="punctuation">]</span>
+                <span class="keyword">elif</span> <span class="name">i</span> <span class="operator">==</span> <span class="literal number integer">20</span><span class="punctuation">:</span>
+                    <span class="name">stringo</span> <span class="operator">+=</span> <span class="literal string">&quot;</span><span class="literal string interpol">%s</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="name">s</span><span class="operator">.</span><span class="name">contents</span><span class="punctuation">[</span><span class="literal number integer">0</span><span class="punctuation">]</span>
+            <span class="name">stringo</span> <span class="operator">+=</span> <span class="literal string">&quot;</span><span class="literal string escape">\n</span><span class="literal string">&quot;</span>
+            <span class="name">fps</span><span class="punctuation">[</span><span class="name">sex</span><span class="punctuation">]</span><span class="operator">.</span><span class="name">write</span> <span class="punctuation">(</span> <span class="name">stringo</span><span class="operator">.</span><span class="name">encode</span><span class="punctuation">(</span><span class="literal string">'utf-8'</span><span class="punctuation">)</span> <span class="punctuation">)</span>
+            <span class="name">fps</span><span class="punctuation">[</span><span class="name">sex</span><span class="punctuation">]</span><span class="operator">.</span><span class="name">flush</span><span class="punctuation">()</span>
+            <span class="keyword">break</span>
+
+<span class="keyword">for</span> <span class="name">q</span> <span class="operator word">in</span> <span class="name">fps</span><span class="operator">.</span><span class="name">iterkeys</span><span class="punctuation">():</span>
+    <span class="name">fps</span><span class="punctuation">[</span><span class="name">q</span><span class="punctuation">]</span><span class="operator">.</span><span class="name">close</span><span class="punctuation">()</span>
+</pre>
+</div>
+<div class="section" id="playing-around-with-the-data">
+<h2>Playing around with the data</h2>
+<p>So the previous process takes a while for retrieving up to 2000 riders.
+We have saved the data to disk, so let's have a little play around!</p>
+<p>First, we need a function to conver the hours, minutes and seconds to minutes. In some cases, if
+the field is empty, we return the value -1 to indicate no data. A simple function like <tt class="docutils literal">hhmmsss_to_mins</tt> below does the job well and is easy to follow:</p>
+<pre class="code python literal-block">
+<span class="keyword">def</span> <span class="name function">hhmmss_to_mins</span> <span class="punctuation">(</span> <span class="name">hhmmss</span> <span class="punctuation">):</span>
+    <span class="keyword">try</span><span class="punctuation">:</span>
+        <span class="name">hh</span><span class="punctuation">,</span> <span class="name">mm</span><span class="punctuation">,</span> <span class="name">ss</span> <span class="operator">=</span> <span class="name">hhmmss</span><span class="operator">.</span><span class="name">split</span> <span class="punctuation">(</span> <span class="literal string">&quot;:&quot;</span> <span class="punctuation">)</span>
+        <span class="keyword">return</span> <span class="name builtin">float</span><span class="punctuation">(</span><span class="name">hh</span><span class="punctuation">)</span><span class="operator">*</span><span class="literal number float">60.</span> <span class="operator">+</span> <span class="name builtin">float</span><span class="punctuation">(</span><span class="name">mm</span><span class="punctuation">)</span> <span class="operator">+</span> <span class="name builtin">float</span><span class="punctuation">(</span><span class="name">ss</span><span class="punctuation">)</span><span class="operator">/</span><span class="literal number float">60.</span>
+    <span class="keyword">except</span> <span class="name exception">ValueError</span><span class="punctuation">:</span>
+        <span class="keyword">return</span> <span class="operator">-</span><span class="literal number integer">1</span>
+</pre>
+<p>Now, let's load up the data we conveniently saved up beforehand as a CSV file (lesser mortals would be reaching for Excel here, but we know better!). We only really need columns 3 and 4 (unless you are looking
+for your name, or are curious about somebody else). <tt class="docutils literal">np.loadtxt</tt> allows us to set delimiters, to only deal with two columns, and also to apply a converter to column 4 (that converts the hours, minutes and seconds to minutes using <tt class="docutils literal">hhmmss_to_mins</tt>. We also have split the data into ladies and gentlemen, so we can load up each population individually.</p>
+<pre class="code python literal-block">
+<span class="name">blokes</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">loadtxt</span><span class="punctuation">(</span><span class="literal string">&quot;bike_ride_men.csv&quot;</span><span class="punctuation">,</span> <span class="name">delimiter</span><span class="operator">=</span><span class="literal string">&quot;;&quot;</span><span class="punctuation">,</span> <span class="name">usecols</span><span class="operator">=</span><span class="punctuation">[</span><span class="literal number integer">2</span><span class="punctuation">,</span><span class="literal number integer">3</span><span class="punctuation">],</span> <span class="name">converters</span><span class="operator">=</span><span class="punctuation">{</span><span class="literal number integer">3</span><span class="punctuation">:</span><span class="name">hhmmss_to_mins</span><span class="punctuation">})</span>
+<span class="name">birds</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">loadtxt</span><span class="punctuation">(</span><span class="literal string">&quot;bike_ride_women.csv&quot;</span><span class="punctuation">,</span> <span class="name">delimiter</span><span class="operator">=</span><span class="literal string">&quot;;&quot;</span><span class="punctuation">,</span> <span class="name">usecols</span><span class="operator">=</span><span class="punctuation">[</span><span class="literal number integer">2</span><span class="punctuation">,</span><span class="literal number integer">3</span><span class="punctuation">],</span> <span class="name">converters</span><span class="operator">=</span><span class="punctuation">{</span><span class="literal number integer">3</span><span class="punctuation">:</span><span class="name">hhmmss_to_mins</span><span class="punctuation">})</span>
+</pre>
+<p>So far so good, why don't we just plot some histograms? Let's bin the data in 10minute arrival intervals</p>
+<pre class="code python literal-block">
+<span class="name">plt</span><span class="operator">.</span><span class="name">hist</span> <span class="punctuation">(</span> <span class="name">blokes</span><span class="punctuation">[</span><span class="name">blokes</span><span class="punctuation">[:,</span><span class="literal number integer">1</span><span class="punctuation">]</span> <span class="operator">&gt;</span> <span class="literal number integer">0</span><span class="punctuation">,</span> <span class="literal number integer">1</span><span class="punctuation">],</span> <span class="name">bins</span><span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">arange</span><span class="punctuation">(</span><span class="literal number integer">200</span><span class="punctuation">,</span><span class="literal number integer">600</span><span class="punctuation">,</span><span class="literal number integer">10</span><span class="punctuation">),</span> <span class="name">label</span><span class="operator">=</span><span class="literal string">&quot;Men&quot;</span> <span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">hist</span> <span class="punctuation">(</span> <span class="name">birds</span><span class="punctuation">[</span><span class="name">birds</span><span class="punctuation">[:,</span><span class="literal number integer">1</span><span class="punctuation">]</span> <span class="operator">&gt;</span> <span class="literal number integer">0</span><span class="punctuation">,</span> <span class="literal number integer">1</span><span class="punctuation">],</span> <span class="name">bins</span><span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">arange</span><span class="punctuation">(</span><span class="literal number integer">200</span><span class="punctuation">,</span><span class="literal number integer">600</span><span class="punctuation">,</span><span class="literal number integer">10</span><span class="punctuation">),</span> <span class="name">label</span><span class="operator">=</span><span class="literal string">&quot;Female&quot;</span> <span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">legend</span><span class="punctuation">(</span><span class="name">loc</span><span class="operator">=</span><span class="literal string">'best'</span><span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">xlabel</span><span class="punctuation">(</span><span class="literal string">&quot;Total time [min]&quot;</span><span class="punctuation">)</span>
+</pre>
+<div class="figure">
+<img alt="images/BicycleBicycle_13_1.png" src="../static/images/BicycleBicycle_13_1.png" style="width: 90%;" />
+</div>
+</div>
+<div class="section" id="the-ipython-workbook">
+<h2>The IPython workbook</h2>
+<p>If you fancy, you can get the IPython notebook from <a class="reference external" href="http://www.wakari.io">wakari</a> here: <a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BicycleBicycle">https://www.wakari.io/sharing/bundle/jgomezdans/BicycleBicycle</a>. Feel free to play with the code!</p>
+</div>
+
+                </article>
+                
+            </aside><!-- /#featured -->
+            
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+            
+        
+        
+        
+            
+
+        
+         
+            
+            <li><article class="hentry">    
+                <header>
+                    <h1><a href=".././downloading-modis-data-with-python.html" rel="bookmark"
+                           title="Permalink to Downloading MODIS data with Python">Downloading MODIS data with Python</a></h1>
+                </header>
+                
+                <div class="entry-content">
+                <footer class="post-info">
         <abbr class="published" title="2013-06-17T17:00:00">
                 Mon 17 June 2013
         </abbr>
@@ -77,95 +231,16 @@
 <p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/modis.html">modis</a><a href=".././tag/web.html">web</a></p>
 
 
-</footer><!-- /.post-info --><p>Recently, the USGS has closed their FTP download service for MODIS
+</footer><!-- /.post-info -->
+                <p>Recently, the USGS has closed their FTP download service for MODIS
 products, such as LAI, surface reflectance, etc. This is quite annoying,
 because I had a nice <tt class="docutils literal">wget</tt> script that no longer works... So I decided
 to code a simple downloader in python that woud supersede my previous
-hacked together bash script with <tt class="docutils literal">wget</tt> (you can still find it <a class="reference external" href="https://gist.github.com/jgomezdans/3145223#file-grab_modis-sh">here.</a>).</p>
-<div class="section" id="update">
-<h2>Update</h2>
-<p>An update to the software has taken place. The following new features have been added:</p>
-<dl class="docutils">
-<dt>Skip downloaded files</dt>
-<dd>The software is now able to detected already downloaded files and will only download if local and remote sizes are different</dd>
-<dt>Proxy support</dt>
-<dd>It is now possible to provide an HTTP proxy through the <tt class="docutils literal"><span class="pre">--proxy</span></tt> option.</dd>
-</dl>
-<p>You can fork the code on <a class="reference external" href="https://github.com/jgomezdans/get_modis">github</a>, or download the lates version as a <a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.3.0.tar.gz">tarball</a> or a <a class="reference external" href="https://github.com/jgomezdans/get_modis/archive/v1.3.0.zip">zip file</a>.</p>
-<p>The script is quite simple to use: you just call it with the <tt class="docutils literal"><span class="pre">-h</span></tt> option and you get
-some help text</p>
-<div class="highlight"><pre>$ ./get_modis.py -h
-Usage
-
-
-SYNOPSIS
-
-./get_modis.py [-h,--help] [--verbose, -v] [--platform=PLATFORM, -s PLATFORM]     [--product=PRODUCT, -p PRODUCT] [--tile=TILE, -t TILE] [--year=YEAR, -y YEAR]     [--output=DIR_OUT, -o DIR_OUT] [--begin=DOY_START, -b DOY_START] [--end=DOY_END, -e DOY_END]
-
-DESCRIPTION
-
-A program to download MODIS data from the USGS website using the HTTP
-transport. This program is able to download daily, monthly, 8-daily, etc products
-for a given year, it only requires the product names (including the collection number),
-the year, the MODIS reference tile and additionally, where to save the data to, and
-whether to verbose. The user may also select a temporal period in terms of days of year.
-
-EXAMPLES
-
-The following example downloads daily surface reflectance from the TERRA platform for
-tile h17v04 for 2004, between DoY 153 and 243:
-
-$ ./get_modis.py -v -p MOD09GA.005 -s MOLT -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243
-
-The script will also work with monthly or 8-daily composites. Here&#39;s how you
-download the monthly MCD45A1 (burned area) product for the same period:
-
-$./get_modis.py -v -p MCD45A1.005 -s MOTA -y 2004 -t h17v04 -o /tmp/ -b 153 -e 243
-
-
-EXIT STATUS
-    No exit status yet, can&#39;t be bothered.
-
-AUTHOR
-
-    J Gomez-Dans &lt;j.gomez-dans@ucl.ac.uk&gt;
-    See also http://github.com/jgomezdans/get_modis/
-
-
-
-Options
-
---help, -h              show this help message and exit
---verbose, -v           verbose output
---platform=PLATFORM, -s PLATFORM
-                        Platfor type: MOLA, MOLT or MOTA
---prodcut=PRODUCT, -p PRODUCT
-                        MODIS product name with collection tag at the end
-                        (e.g. MOD09GA.005)
---tile=TILE, -t TILE    Required tile (h17v04, for example)
---year=YEAR, -y YEAR    Year of interest
---output=DIR_OUT, -o DIR_OUT
-                        Output directory
---begin=DOY_START, -b DOY_START
-                        Starting day of year (DoY)
---end=DOY_END, -e DOY_END
-                        Ending day of year (DoY)
-</pre></div>
-<p>So, you can see on the above examples that it is actually quite easy to use, and apparently it
-works for daily and composited products. At some point, I'd like to build a tool that gets the
-relevant data from the swath archive, but that's for when I grow up...</p>
-</div>
-
-                </article>
+hacked together ...</p>
+                <a class="readmore" href=".././downloading-modis-data-with-python.html">read more</a>
                 
-            </aside><!-- /#featured -->
-            
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
-        
+                </div><!-- /.entry-content -->
+            </article></li>
         
         
             
