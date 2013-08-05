@@ -85,11 +85,9 @@ population taking part in the event!).</p>
 <p>We'll be using <tt class="docutils literal">requests</tt> and <tt class="docutils literal">BeautifulSoup</tt> to access the website
 and extract the data. You can install them easily by</p>
 <pre class="literal-block">
-::
-</pre>
-<blockquote>
 pip install requests
-pip install beautifulsoup4</blockquote>
+pip install beautifulsoup4
+</pre>
 <p>or the may already be installed on your system.</p>
 <div class="highlight"><pre><span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
 <span class="kn">import</span> <span class="nn">requests</span>
@@ -128,9 +126,9 @@ the other fields in a similar fashion). We just build a string and and
 write it out to a file.</p>
 <div class="highlight"><pre><span class="n">url1</span> <span class="o">=</span> <span class="s">&#39;http://results.prudentialridelondon.co.uk/2013/?index.html?num_results=100&amp;pid=search&amp;search[start_no]=&#39;</span>
 <span class="n">url_search</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;men&#39;</span><span class="p">:</span> <span class="s">&#39;&amp;search[sex]=M&amp;search[nation]=%&amp;search_sort=name&amp;event=I&#39;</span><span class="p">,</span> \
-                <span class="s">&#39;women&#39;</span><span class="p">:</span> <span class="s">&#39;&amp;search[sex]=W&amp;search[nation]=%&amp;search_sort=name&amp;event=I&#39;</span> <span class="p">}</span>
+                 <span class="s">&#39;women&#39;</span><span class="p">:</span> <span class="s">&#39;&amp;search[sex]=W&amp;search[nation]=%&amp;search_sort=name&amp;event=I&#39;</span> <span class="p">}</span>
 <span class="n">fps</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;men&#39;</span><span class="p">:</span> <span class="nb">open</span> <span class="p">(</span><span class="s">&quot;bike_ride_men.csv&quot;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span> <span class="p">),</span> \
-         <span class="s">&#39;women&#39;</span><span class="p">:</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;bike_ride_women.csv&quot;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span> <span class="p">)</span> <span class="p">}</span>
+          <span class="s">&#39;women&#39;</span><span class="p">:</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;bike_ride_women.csv&quot;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span> <span class="p">)</span> <span class="p">}</span>
 <span class="k">for</span> <span class="n">rider_no</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">3000</span><span class="p">,</span><span class="mi">5001</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">sex</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;men&quot;</span><span class="p">,</span> <span class="s">&quot;women&quot;</span><span class="p">]:</span>
         <span class="n">r</span>  <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">url1</span> <span class="o">+</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">rider_no</span> <span class="o">+</span> <span class="n">url_search</span><span class="p">[</span><span class="n">sex</span><span class="p">])</span>
@@ -162,11 +160,11 @@ We have saved the data to disk, so let's have a little play around!</p>
 <p>First, we need a function to conver the hours, minutes and seconds to minutes. In some cases, if
 the field is empty, we return the value -1 to indicate no data. A simple function like <tt class="docutils literal">hhmmsss_to_mins</tt> below does the job well and is easy to follow:</p>
 <div class="highlight"><pre><span class="k">def</span> <span class="nf">hhmmss_to_mins</span> <span class="p">(</span> <span class="n">hhmmss</span> <span class="p">):</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">hh</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">ss</span> <span class="o">=</span> <span class="n">hhmmss</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span> <span class="s">&quot;:&quot;</span> <span class="p">)</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">hh</span><span class="p">)</span><span class="o">*</span><span class="mf">60.</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">mm</span><span class="p">)</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">ss</span><span class="p">)</span><span class="o">/</span><span class="mf">60.</span>
-    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+  <span class="k">try</span><span class="p">:</span>
+    <span class="n">hh</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">ss</span> <span class="o">=</span> <span class="n">hhmmss</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span> <span class="s">&quot;:&quot;</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">hh</span><span class="p">)</span><span class="o">*</span><span class="mf">60.</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">mm</span><span class="p">)</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">ss</span><span class="p">)</span><span class="o">/</span><span class="mf">60.</span>
+  <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
 </pre></div>
 <p>Now, let's load up the data we conveniently saved up beforehand as a CSV file (lesser mortals would be reaching for Excel here, but we know better!). We only really need columns 3 and 4 (unless you are looking
 for your name, or are curious about somebody else). <tt class="docutils literal">np.loadtxt</tt> allows us to set delimiters, to only deal with two columns, and also to apply a converter to column 4 (that converts the hours, minutes and seconds to minutes using <tt class="docutils literal">hhmmss_to_mins</tt>. We also have split the data into ladies and gentlemen, so we can load up each population individually.</p>
