@@ -20,33 +20,8 @@
 
         <!--[if lt IE 7]>
                 <link rel="stylesheet" type="text/css" media="all" href=".././css/ie6.css"/><![endif]-->
-<!-- Using MathJax, with the delimiters $ -->
-<!-- Conflict with pygments for the .mo and .mi -->
-<script type="text/x-mathjax-config">
-  MathJax.Hub.Config({
-  "HTML-CSS": {
-  styles: {
-  ".MathJax .mo, .MathJax .mi": {color: "black ! important"}}
-  },
-  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']],processEscapes: true}
-  });
-  MathJax.Hub.Register.StartupHook("HTML-CSS Jax Ready",function () {
-  var VARIANT = MathJax.OutputJax["HTML-CSS"].FONTDATA.VARIANT;
-  VARIANT["normal"].fonts.unshift("MathJax_SansSerif");
-  VARIANT["bold"].fonts.unshift("MathJax_SansSerif-bold");
-  VARIANT["italic"].fonts.unshift("MathJax_SansSerif-italic");
-  VARIANT["-tex-mathit"].fonts.unshift("MathJax_SansSerif-italic");
-  });
-  MathJax.Hub.Register.StartupHook("SVG Jax Ready",function () {
-  var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;
-  VARIANT["normal"].fonts.unshift("MathJax_SansSerif");
-  VARIANT["bold"].fonts.unshift("MathJax_SansSerif-bold");
-  VARIANT["italic"].fonts.unshift("MathJax_SansSerif-italic");
-  VARIANT["-tex-mathit"].fonts.unshift("MathJax_SansSerif-italic");
-  });
-</script>
 
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+
 </head>
 
 <body id="index" class="home">
