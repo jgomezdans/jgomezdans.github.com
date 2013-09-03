@@ -213,10 +213,8 @@ used for this:</p>
 </pre></div>
 <p>Now we can just solve our system. First with brute force: let's take 8
 days worth of data, and invert the kernel weights to see what we get.
-This is a straightforward least linear squares problem. The forward
-problem is:</p>
-<blockquote>
-For this, we can use <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html">lstsq</a></blockquote>
+This is a straightforward least linear squares problem, and we can use <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html">lstsq</a> to
+solve it.</p>
 <div class="highlight"><pre><span class="n">passer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span> <span class="p">(</span> <span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span> <span class="n">doys</span> <span class="o">&gt;</span> <span class="mi">200</span><span class="p">,</span> <span class="n">doys</span> <span class="o">&lt;=</span><span class="mi">209</span><span class="p">))</span>
 <span class="n">obs</span> <span class="o">=</span> <span class="n">rho</span><span class="p">[</span><span class="n">passer</span><span class="p">]</span>
 <span class="n">K</span> <span class="o">=</span> <span class="n">kern</span><span class="p">[</span> <span class="n">passer</span><span class="p">,</span> <span class="p">:]</span>
