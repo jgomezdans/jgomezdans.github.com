@@ -14,9 +14,9 @@
 </script>
 
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-        <title>EO & DA ramblings - MODIS</title>
+        <title>BRDF_modelling</title>
         <meta charset="utf-8" />
-        <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
+        <link rel="stylesheet" href="./theme/css/main.css" type="text/css" />
         
         <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
         
@@ -26,11 +26,11 @@
                 <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
 
         <!--[if lte IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie.css"/>
-                <script src=".././js/IE8.js" type="text/javascript"></script><![endif]-->
+                <link rel="stylesheet" type="text/css" media="all" href="./css/ie.css"/>
+                <script src="./js/IE8.js" type="text/javascript"></script><![endif]-->
 
         <!--[if lt IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie6.css"/><![endif]-->
+                <link rel="stylesheet" type="text/css" media="all" href="./css/ie6.css"/><![endif]-->
 
 </head>
 
@@ -43,41 +43,44 @@
 </a>
 
         <header id="banner" class="body">
-                <h1><a href="../.">EO & DA ramblings </a></h1>
+                <h1><a href=".">EO & DA ramblings </a></h1>
                 <nav><ul>
                 
                 
                 
                 
                 
-                    <li ><a href=".././category/blog.html">Blog</a></li>
+                    <li class="active"><a href="./category/blog.html">Blog</a></li>
                 
                 </ul></nav>
         </header><!-- /#banner -->
-                
-
-            
-
         
-        
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href=".././brdf_modelling.html">BRDF_modelling</a></h1> 
-                    <footer class="post-info">
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="brdf_modelling.html" rel="bookmark"
+           title="Permalink to BRDF_modelling">BRDF_modelling</a></h1>
+      
+    </header>
+
+    <div class="entry-content">
+      <footer class="post-info">
         <abbr class="published" title="2013-09-03T17:00:00">
                 Tue 03 September 2013
         </abbr>
 
         
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="./author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
         
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/modis.html">MODIS</a><a href=".././tag/python.html">python</a><a href=".././tag/remote-sensing.html">remote-sensing</a></p>
+<p>In <a href="./category/blog.html">Blog</a>. </p>
+<p>tags: <a href="./tag/modis.html">MODIS</a><a href="./tag/python.html">python</a><a href="./tag/remote-sensing.html">remote-sensing</a></p>
 
 
-</footer><!-- /.post-info --><p>This post introduces simple BRDF modelling (i.e. how can we account
+</footer><!-- /.post-info -->
+      <p>This post introduces simple BRDF modelling (i.e. how can we account
 for the variation in surface reflectance due to acquisition geometry?)
 using some MODIS data. You can find the whole post in <a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling">wakari</a>. If you
 accept to not escape the HTML &amp; JS, you will find a link to the data file
@@ -199,7 +202,7 @@ In[3]:</p>
 <pre class="literal-block">
 &lt;matplotlib.text.Text at 0x2c844d0&gt;
 </pre>
-<img alt="BRDF_modelling_12_1.png" src="../static/BRDF_modelling_12_1.png" />
+<img alt="BRDF_modelling_12_1.png" src="static/BRDF_modelling_12_1.png" />
 <p>The high frequency variation is quite high, and over a fairly short
 period, where we only expect a smooth variability of reflectance, we
 interpret it as BRDF effects. There's a big dip on DoY 228, due to a
@@ -216,7 +219,7 @@ In[4]:</p>
 <pre class="literal-block">
 &lt;matplotlib.text.Text at 0x2e79b50&gt;
 </pre>
-<img alt="BRDF_modelling_14_1.png" src="../static/BRDF_modelling_14_1.png" />
+<img alt="BRDF_modelling_14_1.png" src="static/BRDF_modelling_14_1.png" />
 <p>We see a large scatter in reflectance for larger values of VZA. Now,
 let's try to model this. We need to calculate the kernel weights for the
 Ross and Li-Thick kernels for each individual observation. We have a
@@ -282,7 +285,7 @@ R2: 0.445343
 <pre class="literal-block">
 (0.2, 0.25)
 </pre>
-<img alt="BRDF_modelling_20_2.png" src="../static/BRDF_modelling_20_2.png" />
+<img alt="BRDF_modelling_20_2.png" src="static/BRDF_modelling_20_2.png" />
 <p>So, not a great fit! Maybe if we use a larger window? Let's create a
 function to the the above conveniently:
 In[8]:</p>
@@ -327,7 +330,7 @@ R2: 0.386086
 <pre class="literal-block">
 &lt;matplotlib.text.Text at 0x3346c90&gt;
 </pre>
-<img alt="BRDF_modelling_23_2.png" src="../static/BRDF_modelling_23_2.png" />
+<img alt="BRDF_modelling_23_2.png" src="static/BRDF_modelling_23_2.png" />
 <p>In[10]:</p>
 <pre class="code python literal-block">
 <span class="name">retval</span> <span class="operator">=</span> <span class="name">invert_composite</span> <span class="punctuation">(</span> <span class="name">qa</span><span class="punctuation">,</span> <span class="name">doys</span><span class="punctuation">,</span> <span class="name">rho</span><span class="punctuation">,</span> <span class="name">kern</span><span class="punctuation">,</span> <span class="literal number integer">180</span><span class="punctuation">,</span> <span class="literal number integer">227</span> <span class="punctuation">)</span>
@@ -344,7 +347,7 @@ R2: 0.05195
 <pre class="literal-block">
 &lt;matplotlib.text.Text at 0x3351bd0&gt;
 </pre>
-<img alt="BRDF_modelling_24_2.png" src="../static/BRDF_modelling_24_2.png" />
+<img alt="BRDF_modelling_24_2.png" src="static/BRDF_modelling_24_2.png" />
 <p>Clearly, this window is too big: changes <strong>are</strong> happening. Also note
 the difference of adding just 1 observation to the 10 day period: the
 parameters change perceivably, the sign of ill-posedness. Let's see how
@@ -399,7 +402,7 @@ Ross                               -0.062851
 LiThick                             0.063866
 R2: 0.646983
 </pre>
-<img alt="BRDF_modelling_26_1.png" src="../static/BRDF_modelling_26_1.png" />
+<img alt="BRDF_modelling_26_1.png" src="static/BRDF_modelling_26_1.png" />
 <p>In[12]:</p>
 <pre class="code python literal-block">
 <span class="name">retvals</span> <span class="operator">=</span> <span class="punctuation">[]</span>
@@ -476,7 +479,7 @@ Ross                               -0.146072
 LiThick                             0.076207
 R2: 0.74752
 </pre>
-<img alt="BRDF_modelling_27_1.png" src="../static/BRDF_modelling_27_1.png" />
+<img alt="BRDF_modelling_27_1.png" src="static/BRDF_modelling_27_1.png" />
 <p>We see that the kernel weights change substantially from one period to
 the next. The 16 day window seems quite poor, whereas the 8 day one is
 remarkably better. This means that fast changes are occurring in the
@@ -490,7 +493,7 @@ In[13]:</p>
     <span class="name">plt</span><span class="operator">.</span><span class="name">plot</span><span class="punctuation">(</span> <span class="name">doys</span><span class="punctuation">[</span><span class="name">retvals</span><span class="punctuation">[</span><span class="name">period</span><span class="punctuation">][</span><span class="literal number integer">2</span><span class="punctuation">]],</span> <span class="name">retvals</span><span class="punctuation">[</span><span class="name">period</span><span class="punctuation">][</span><span class="literal number integer">1</span><span class="punctuation">],</span> <span class="literal string">'-'</span><span class="punctuation">,</span> <span class="name">lw</span><span class="operator">=</span><span class="literal number float">1.8</span><span class="punctuation">)</span>
     <span class="name">plt</span><span class="operator">.</span><span class="name">ylim</span><span class="punctuation">(</span><span class="literal number float">0.18</span><span class="punctuation">,</span> <span class="literal number float">0.3</span><span class="punctuation">)</span>
 </pre>
-<img alt="BRDF_modelling_29_0.png" src="../static/BRDF_modelling_29_0.png" />
+<img alt="BRDF_modelling_29_0.png" src="static/BRDF_modelling_29_0.png" />
 </div>
 <div class="section" id="stuff-missing">
 <h2>Stuff missing</h2>
@@ -515,63 +518,11 @@ and albedo over land from EOS MODIS and MISR data: Theory and algorithm,
 J. Geophys. Res., 102, 17143-17161, 1997.</p>
 </div>
 
-                </article>
-                
-            </aside><!-- /#featured -->
-            
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
-        
-        
-        
-            
-
-        
-         
-            
-            <li><article class="hentry">    
-                <header>
-                    <h1><a href=".././stitching-modis-burned-area-datasets.html" rel="bookmark"
-                           title="Permalink to Stitching MODIS burned area datasets">Stitching MODIS burned area datasets</a></h1>
-                </header>
-                
-                <div class="entry-content">
-                <footer class="post-info">
-        <abbr class="published" title="2013-06-27T17:00:00">
-                Thu 27 June 2013
-        </abbr>
-
-        
-        <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/modis.html">MODIS</a><a href=".././tag/gdal.html">GDAL</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>MODIS products are usually provided as data granules, representing the magnitude of interest
-(plus a number of different extra layers of metadata, quality assurance flags, etc) over a
-given temporal period for an area typically extending 1200 by 1200 km in the MODIS sinusoidal
-projection, around 10x10 degrees. Typically, your ...</p>
-                <a class="readmore" href=".././stitching-modis-burned-area-datasets.html">read more</a>
-                
-                </div><!-- /.entry-content -->
-            </article></li>
-        
-        
-            </ol><!-- /#posts-list -->
-            
-                
-            
-            </section><!-- /#content -->
-        
+    </div><!-- /.entry-content -->
     
 
+  </article>
+</section>
 
         <section id="extras" class="body">
         

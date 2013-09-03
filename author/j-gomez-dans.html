@@ -62,8 +62,484 @@
         
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././creating-a-country-raster-mask-using-gdal.html">Creating a country raster mask using GDAL</a></h1> 
+                    <h1 class="entry-title"><a href=".././brdf_modelling.html">BRDF_modelling</a></h1> 
                     <footer class="post-info">
+        <abbr class="published" title="2013-09-03T17:00:00">
+                Tue 03 September 2013
+        </abbr>
+
+        
+        <address class="vcard author">
+                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+        
+<p>In <a href=".././category/blog.html">Blog</a>. </p>
+<p>tags: <a href=".././tag/modis.html">MODIS</a><a href=".././tag/python.html">python</a><a href=".././tag/remote-sensing.html">remote-sensing</a></p>
+
+
+</footer><!-- /.post-info --><p>This post introduces simple BRDF modelling (i.e. how can we account
+for the variation in surface reflectance due to acquisition geometry?)
+using some MODIS data. You can find the whole post in <a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling">wakari</a>. If you
+accept to not escape the HTML &amp; JS, you will find a link to the data file
+there too.</p>
+<p>A particularly simple way of dealing with BRDF effects is by using
+linear kernel models. These models are reduced physics versions of more
+complex radiative tranfer models with some empirical considerations to
+further simplify things. Since we are only interested in the shape of
+the BRDF, we can lump the parameters into some constants of limited
+physical explanatory value, and do a few simplifications so that we can
+write the the observed reflectance at band <span class="formula"><i>λ</i><sub><i>i</i></sub></span>
+ as:</p>
+<div class="formula">
+<i>ρ</i><sup><i>λ</i><sub><i>i</i></sub></sup>(Ω, <i>Omega</i>’) = <span class="limits"><sup class="limit"><i>N</i><sub><i>kern</i></sub></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><i>f</i><sub><i>i</i></sub><i>K</i><sub><i>i</i></sub>(Ω, Ω’), 
+</div>
+<p>where we have <span class="formula"><i>N</i><sub><i>kern</i></sub></span>
+kernels, typically 3, and the
+acquisition geometry is given by <span class="formula">(Ω, <i>Omega</i>’)</span>
+. The three
+kernels that are typically used are those that have been popularised by
+the MODIS albedo product (MCD43):</p>
+<ul class="simple">
+<li>An isotropic kernel, (<span class="formula"><i>K</i><sub><i>iso</i></sub> = 1</span>
+), accounting for isotropic
+BRDF effects</li>
+<li>A volumetric scattering kernel (<span class="formula"><i>K</i><sub><i>vol</i></sub></span>
+), a simplified
+version of volume scattering as seen in Ross (1981)</li>
+<li>A geometric scattering that aims to mimick surface scattering and
+shadowing.</li>
+</ul>
+<p>While different families of these kernels are used, we use the
+Ross-ThickLiSparse-Reciprocal kernels (these have been evaluated and
+found to be quite good).</p>
+<p>The problem stated above cannot be solved on a daily basis (or whenever
+an observation becomes available): there are 3 parameters per band, and
+only one observation, so the system is underdetermined. If we assume
+that the parameters can be related to land surface parameters, and we
+assume that change is slow, a way around this is temporal compositing,
+where all the observations within a given period are inverted together.
+It is important to take uncertainty in the observations into account, as
+we don't measure <span class="formula"><i>ρ</i><sup><i>λ</i><sub><i>i</i></sub></sup></span>
+, but rather
+<span class="formula"><i>ρ̂</i><sup><i>λ</i><sub><i>i</i></sub></sup> = <i>ρ</i><sup><i>λ</i><sub><i>i</i></sub></sup> + <i>ϵ</i><sup><i>λ</i><sub><i>i</i></sub></sup></span>
+,
+where <span class="formula"><i>ϵ</i><sup><i>λ</i><sub><i>i</i></sub></sup></span>
+ is additive noise, typically modelled
+as zero mean and with a known variance (see Roy et al for a table with
+typical values for MODIS).</p>
+<div class="section" id="ill-posedness">
+<h2>Ill-posedness</h2>
+<p>The problem of inverting RT models (be they linear or not) is typically
+<em>ill-posed</em>. By contrast, a well-posed problem (in the Hadamard sense)
+is one where:</p>
+<ol class="arabic simple">
+<li>A solution exists</li>
+<li>The solution is unique</li>
+<li>The solution's behavior hardly changes when there's a slight change
+in the initial condition</li>
+</ol>
+<p>In this case, due to the uncertainty introduced by the noise (and
+limited angular sampling), point 2 is not typically met, resulting in
+many configurations of kernel weights that provide an adequate
+representation of the observations. Compositing is a good way of
+increasing the angular sampling and reducing the noise, but it can only
+be taken that far: too long a compositing window, and the assumption of
+static land surface properties weakens.</p>
+</div>
+<div class="section" id="reading-the-data">
+<h2>Reading the data</h2>
+<p>Let's look at some data. The data is stored in a text file, and belongs
+to a pixel somewhere in Angola. We only have band 2 data here. The first
+ten lines of the file show the format. The first line is a header,
+telling us that there are 92 observations, with 7 bands, as well as
+their centre wavelengths. After the first line, we have individual
+records with the following format:</p>
+<ul class="simple">
+<li>day of year (DoY)</li>
+<li>QA flag (1=use, 2=don't use)</li>
+<li><tt class="docutils literal">vza</tt>, the view zenith angle (in degrees)</li>
+<li><tt class="docutils literal">vaa</tt>, the view azimuth angle (in degrees)</li>
+<li><tt class="docutils literal">sza</tt>, the solar/illumiation zenith angle (in degrees)</li>
+<li><tt class="docutils literal">saa</tt>, the solar/illumiation azimuth angle (in degrees)</li>
+<li>the reflectance</li>
+</ul>
+<p>Typically, we will use <tt class="docutils literal">sza</tt>, <tt class="docutils literal">vza</tt> and <tt class="docutils literal">raa</tt>. <tt class="docutils literal"><span class="pre">raa``=``vaa</span></tt> -
+<tt class="docutils literal">saa</tt>.</p>
+<p>First, we need to get the data. The next code snippet will provide you
+with a link to the datafile that you can download (hopefully) from <a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling">wakari</a></p>
+<pre class="code python literal-block">
+<span class="error">!</span><span class="name">head</span> <span class="operator">-</span><span class="name">n</span> <span class="literal number integer">10</span> <span class="name">data</span><span class="operator">.</span><span class="name">r2023</span><span class="operator">.</span><span class="name">c87</span><span class="operator">.</span><span class="name">dat</span>
+</pre>
+<pre class="literal-block">
+BRDF 92 7 648 858 470 555 1240 1640 2130
+181 1 65.419998 -84.470001 44.130001 20.090000 0.114600 0.243200 0.052800 0.087100 0.328300 0.302300 0.213400
+182 1 23.410000 98.290001 50.220001 35.310001 0.113900 0.218100 0.051100 0.084500 0.315900 0.339000 0.205500
+184 1 44.049999 100.730003 51.910000 38.360001 0.142900 0.269100 0.063400 0.107500 0.359300 0.375000 0.246500
+185 1 40.400002 -82.199997 46.310001 27.700001 0.107000 0.212100 0.051600 0.079900 0.310400 0.310400 0.214100
+186 1 57.720001 101.300003 53.700001 41.259998 0.152700 0.291400 0.064600 0.114800 0.395000 0.382700 0.258700
+187 1 17.770000 -81.010002 47.630001 31.260000 0.111000 0.217700 0.050500 0.081600 0.307600 0.318500 0.205500
+188 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+189 1 10.470000 96.879997 49.090000 34.650002 0.117500 0.225000 0.054200 0.087700 0.334600 0.334300 0.231400
+190 1 60.889999 -83.790001 44.070000 22.910000 0.100200 0.212100 0.045900 0.074100 0.296100 0.302100 0.188200
+</pre>
+<p>Let's read the data in and do some plots!
+In[3]:</p>
+<pre class="code python literal-block">
+<span class="name">data</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">loadtxt</span> <span class="punctuation">(</span> <span class="literal string">&quot;data.r2023.c87.dat&quot;</span><span class="punctuation">,</span> <span class="name">skiprows</span><span class="operator">=</span><span class="literal number integer">1</span><span class="punctuation">)</span> <span class="comment"># Read data in, but skip first line</span>
+<span class="name">doys</span> <span class="operator">=</span> <span class="name">data</span><span class="punctuation">[</span> <span class="punctuation">:,</span> <span class="literal number integer">0</span><span class="punctuation">]</span>
+<span class="name">qa</span> <span class="operator">=</span> <span class="name">data</span> <span class="punctuation">[</span> <span class="punctuation">:,</span> <span class="literal number integer">1</span> <span class="punctuation">]</span>
+<span class="name">vza</span> <span class="operator">=</span> <span class="name">data</span> <span class="punctuation">[</span> <span class="punctuation">:,</span> <span class="literal number integer">2</span> <span class="punctuation">]</span>
+<span class="name">sza</span> <span class="operator">=</span> <span class="name">data</span> <span class="punctuation">[</span> <span class="punctuation">:,</span> <span class="literal number integer">4</span> <span class="punctuation">]</span>
+<span class="name">raa</span> <span class="operator">=</span> <span class="name">data</span> <span class="punctuation">[</span> <span class="punctuation">:,</span> <span class="literal number integer">3</span> <span class="punctuation">]</span> <span class="operator">-</span> <span class="name">data</span> <span class="punctuation">[</span> <span class="punctuation">:,</span> <span class="literal number integer">5</span> <span class="punctuation">]</span>
+<span class="name">rho</span> <span class="operator">=</span> <span class="name">data</span><span class="punctuation">[:,</span><span class="literal number integer">7</span><span class="punctuation">]</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">plot</span> <span class="punctuation">(</span> <span class="name">doys</span><span class="punctuation">[</span><span class="name">qa</span><span class="operator">==</span><span class="literal number integer">1</span><span class="punctuation">],</span> <span class="name">rho</span><span class="punctuation">[</span><span class="name">qa</span><span class="operator">==</span><span class="literal number integer">1</span><span class="punctuation">],</span> <span class="literal string">'o-'</span><span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">xlabel</span><span class="punctuation">(</span><span class="literal string">&quot;DoY&quot;</span><span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">ylabel</span><span class="punctuation">(</span><span class="literal string">r'$\hat{\rho}^{NIR}$'</span><span class="punctuation">)</span>
+</pre>
+<pre class="literal-block">
+&lt;matplotlib.text.Text at 0x2c844d0&gt;
+</pre>
+<img alt="BRDF_modelling_12_1.png" src="../static/BRDF_modelling_12_1.png" />
+<p>The high frequency variation is quite high, and over a fairly short
+period, where we only expect a smooth variability of reflectance, we
+interpret it as BRDF effects. There's a big dip on DoY 228, due to a
+fire (there's a hotspot there too), and then we see recovery due to char
+&amp; ash dissipation processes. Let's look at the angular signal up to DoY
+228:
+In[4]:</p>
+<pre class="code python literal-block">
+<span class="name">passer</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">logical_and</span> <span class="punctuation">(</span> <span class="name">qa</span><span class="operator">==</span><span class="literal number integer">1</span><span class="punctuation">,</span> <span class="name">doys</span> <span class="operator">&lt;</span> <span class="literal number integer">228</span> <span class="punctuation">)</span> <span class="comment"># Select obs before the fire</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">plot</span> <span class="punctuation">(</span> <span class="name">vza</span><span class="punctuation">[</span><span class="name">passer</span><span class="punctuation">],</span> <span class="name">rho</span><span class="punctuation">[</span><span class="name">passer</span><span class="punctuation">],</span> <span class="literal string">'o'</span> <span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">xlabel</span><span class="punctuation">(</span><span class="literal string">&quot;VZA [deg]&quot;</span><span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">ylabel</span><span class="punctuation">(</span><span class="literal string">r'$\hat{\rho}^{NIR}$'</span><span class="punctuation">)</span>
+</pre>
+<pre class="literal-block">
+&lt;matplotlib.text.Text at 0x2e79b50&gt;
+</pre>
+<img alt="BRDF_modelling_14_1.png" src="../static/BRDF_modelling_14_1.png" />
+<p>We see a large scatter in reflectance for larger values of VZA. Now,
+let's try to model this. We need to calculate the kernel weights for the
+Ross and Li-Thick kernels for each individual observation. We have a
+Python class that does that, <tt class="docutils literal">kernels.py</tt>, which can be imported and
+used for this:
+In[5]:</p>
+<pre class="code python literal-block">
+<span class="keyword namespace">from</span> <span class="name namespace">kernels</span> <span class="keyword namespace">import</span> <span class="name">Kernels</span> <span class="comment"># Import ther kernels</span>
+<span class="comment"># Generate the kernels, only bother for obs where the QA is OK</span>
+<span class="name">K_obs</span> <span class="operator">=</span>  <span class="name">Kernels</span><span class="punctuation">(</span> <span class="name">vza</span><span class="punctuation">[</span><span class="name">qa</span><span class="operator">==</span><span class="literal number integer">1</span><span class="punctuation">],</span> <span class="name">sza</span><span class="punctuation">[</span><span class="name">qa</span><span class="operator">==</span><span class="literal number integer">1</span><span class="punctuation">],</span> <span class="name">raa</span><span class="punctuation">[</span><span class="name">qa</span><span class="operator">==</span><span class="literal number integer">1</span><span class="punctuation">],</span> \
+        <span class="name">LiType</span><span class="operator">=</span><span class="literal string">'Sparse'</span><span class="punctuation">,</span> <span class="name">doIntegrals</span><span class="operator">=</span><span class="name builtin pseudo">False</span><span class="punctuation">,</span> \
+        <span class="name">normalise</span><span class="operator">=</span><span class="literal number integer">1</span><span class="punctuation">,</span> <span class="name">RecipFlag</span><span class="operator">=</span><span class="name builtin pseudo">True</span><span class="punctuation">,</span> <span class="name">RossHS</span><span class="operator">=</span><span class="name builtin pseudo">False</span><span class="punctuation">,</span> <span class="name">MODISSPARSE</span><span class="operator">=</span><span class="name builtin pseudo">True</span><span class="punctuation">,</span> \
+        <span class="name">RossType</span><span class="operator">=</span><span class="literal string">'Thick'</span> <span class="punctuation">)</span>
+<span class="name">kern</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">ones</span> <span class="punctuation">((</span> <span class="name">np</span><span class="operator">.</span><span class="name">sum</span><span class="punctuation">(</span><span class="name">qa</span><span class="operator">==</span><span class="literal number integer">1</span><span class="punctuation">),</span> <span class="literal number integer">3</span> <span class="punctuation">))</span> <span class="comment"># Store the kernels in an array</span>
+<span class="name">kern</span><span class="punctuation">[</span> <span class="punctuation">:,</span> <span class="literal number integer">1</span> <span class="punctuation">]</span> <span class="operator">=</span> <span class="name">K_obs</span><span class="operator">.</span><span class="name">Ross</span>
+<span class="name">kern</span><span class="punctuation">[</span> <span class="punctuation">:,</span> <span class="literal number integer">2</span> <span class="punctuation">]</span> <span class="operator">=</span> <span class="name">K_obs</span><span class="operator">.</span><span class="name">Li</span>
+</pre>
+<p>Now we can just solve our system. First with brute force: let's take 8
+days worth of data, and invert the kernel weights to see what we get.
+This is a straightforward least linear squares problem. The forward
+problem is:</p>
+<div class="formula">
+<b>K</b><i>f</i> = <i>y</i>
+</div>
+<div class="formula">
+<i>and</i><i>the</i><i>inverse</i><i>problem</i><i>is</i><i>then</i><i>given</i><i>by</i>
+</div>
+<div class="formula">
+<i>f̂</i> = min<sub><i>f</i></sub>|<b>K</b><i>f</i> − <i>y</i>|<sup>2</sup>
+</div>
+<div class="formula">
+<i>For</i><i>this</i>, <i>we</i><i>can</i><i>use</i>`<i>lstsq</i> &lt; <i>http</i>: ⁄  ⁄ <i>docs</i>.<i>scipy</i>.<i>org</i> ⁄ <i>doc</i> ⁄ <i>numpy</i> ⁄ <i>reference</i> ⁄ <i>generated</i> ⁄ <i>numpy</i>.<i>linalg</i>.<i>lstsq</i>.<i>html</i> &gt; `<sub></sub>
+</div>
+<pre class="code python literal-block">
+<span class="name">passer</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">logical_and</span> <span class="punctuation">(</span> <span class="name">qa</span><span class="operator">==</span><span class="literal number integer">1</span><span class="punctuation">,</span> <span class="name">np</span><span class="operator">.</span><span class="name">logical_and</span><span class="punctuation">(</span> <span class="name">doys</span> <span class="operator">&gt;</span> <span class="literal number integer">200</span><span class="punctuation">,</span> <span class="name">doys</span> <span class="operator">&lt;=</span><span class="literal number integer">209</span><span class="punctuation">))</span>
+<span class="name">obs</span> <span class="operator">=</span> <span class="name">rho</span><span class="punctuation">[</span><span class="name">passer</span><span class="punctuation">]</span>
+<span class="name">K</span> <span class="operator">=</span> <span class="name">kern</span><span class="punctuation">[</span> <span class="name">passer</span><span class="punctuation">,</span> <span class="punctuation">:]</span>
+<span class="punctuation">(</span><span class="name">f</span><span class="punctuation">,</span> <span class="name">rmse</span><span class="punctuation">,</span> <span class="name">rank</span><span class="punctuation">,</span> <span class="name">svals</span> <span class="punctuation">)</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">linalg</span><span class="operator">.</span><span class="name">lstsq</span><span class="punctuation">(</span> <span class="name">K</span><span class="punctuation">,</span> <span class="name">obs</span> <span class="punctuation">)</span>
+<span class="keyword">print</span> <span class="literal string">&quot;</span><span class="literal string interpol">%-20s</span><span class="literal string escape">\t</span><span class="literal string interpol">%20s</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="punctuation">(</span> <span class="literal string">&quot;Kernel&quot;</span><span class="punctuation">,</span> <span class="literal string">&quot;Value&quot;</span><span class="punctuation">)</span>
+<span class="keyword">for</span> <span class="name">i</span><span class="punctuation">,</span> <span class="name">k</span> <span class="operator word">in</span> <span class="name builtin">enumerate</span><span class="punctuation">(</span> <span class="punctuation">[</span><span class="literal string">&quot;Isotropic&quot;</span><span class="punctuation">,</span> <span class="literal string">&quot;Ross&quot;</span><span class="punctuation">,</span> <span class="literal string">&quot;LiThick&quot;</span><span class="punctuation">]</span> <span class="punctuation">):</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;</span><span class="literal string interpol">%-20s</span><span class="literal string escape">\t</span><span class="literal string interpol">%20f</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="punctuation">(</span> <span class="name">k</span><span class="punctuation">,</span> <span class="name">f</span><span class="punctuation">[</span><span class="name">i</span><span class="punctuation">]</span> <span class="punctuation">)</span>
+</pre>
+<pre class="literal-block">
+Kernel                                 Value
+Isotropic                           0.242057
+Ross                               -0.065568
+LiThick                             0.075140
+</pre>
+<p>So we have a solution. How good is it? Let's try to forward model the
+observations:
+In[7]:</p>
+<pre class="code python literal-block">
+<span class="name">fwd</span> <span class="operator">=</span> <span class="name">K</span><span class="operator">.</span><span class="name">dot</span><span class="punctuation">(</span><span class="name">f</span><span class="operator">.</span><span class="name">T</span><span class="punctuation">)</span>
+<span class="keyword">print</span> <span class="literal string">&quot;R2: </span><span class="literal string interpol">%g</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="name">np</span><span class="operator">.</span><span class="name">corrcoef</span> <span class="punctuation">(</span> <span class="name">obs</span><span class="punctuation">,</span> <span class="name">fwd</span><span class="punctuation">)[</span><span class="literal number integer">1</span><span class="punctuation">,</span><span class="literal number integer">0</span><span class="punctuation">]</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">plot</span> <span class="punctuation">(</span> <span class="name">obs</span><span class="punctuation">,</span> <span class="name">fwd</span><span class="punctuation">,</span> <span class="literal string">'sk'</span><span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">plot</span> <span class="punctuation">(</span> <span class="punctuation">[</span><span class="literal number float">0.2</span><span class="punctuation">,</span> <span class="literal number float">0.25</span><span class="punctuation">],</span> <span class="punctuation">[</span><span class="literal number float">0.2</span><span class="punctuation">,</span> <span class="literal number float">0.25</span><span class="punctuation">],</span> <span class="literal string">'k--'</span><span class="punctuation">,</span> <span class="name">lw</span><span class="operator">=</span><span class="literal number float">0.5</span><span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">ylim</span><span class="punctuation">(</span><span class="literal number float">0.2</span><span class="punctuation">,</span> <span class="literal number float">0.25</span><span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">xlim</span><span class="punctuation">(</span><span class="literal number float">0.2</span><span class="punctuation">,</span> <span class="literal number float">0.25</span><span class="punctuation">)</span>
+</pre>
+<pre class="literal-block">
+R2: 0.445343
+</pre>
+<pre class="literal-block">
+(0.2, 0.25)
+</pre>
+<img alt="BRDF_modelling_20_2.png" src="../static/BRDF_modelling_20_2.png" />
+<p>So, not a great fit! Maybe if we use a larger window? Let's create a
+function to the the above conveniently:
+In[8]:</p>
+<pre class="code python literal-block">
+<span class="keyword">def</span> <span class="name function">invert_composite</span> <span class="punctuation">(</span> <span class="name">qa</span><span class="punctuation">,</span> <span class="name">doys</span><span class="punctuation">,</span> <span class="name">rho</span><span class="punctuation">,</span> <span class="name">kern</span><span class="punctuation">,</span> <span class="name">doy_min</span><span class="punctuation">,</span> <span class="name">doy_max</span> <span class="punctuation">):</span>
+    <span class="literal string doc">&quot;&quot;&quot;A function to invert reflectance assuming the kernels in `kern`,
+    `qa` holds the QA data, `doys` the dates, and `rho` the actual
+    observations. Will composite all observations between `doy_min` and
+    `doy_max`.&quot;&quot;&quot;</span>
+    <span class="name">passer</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">logical_and</span> <span class="punctuation">(</span> <span class="name">qa</span><span class="operator">==</span><span class="literal number integer">1</span><span class="punctuation">,</span> <span class="name">np</span><span class="operator">.</span><span class="name">logical_and</span><span class="punctuation">(</span> \
+        <span class="name">doys</span> <span class="operator">&gt;</span> <span class="name">doy_min</span><span class="punctuation">,</span> <span class="name">doys</span> <span class="operator">&lt;=</span> <span class="name">doy_max</span><span class="punctuation">))</span>
+    <span class="keyword">if</span> <span class="name">np</span><span class="operator">.</span><span class="name">sum</span><span class="punctuation">(</span><span class="name">passer</span><span class="punctuation">)</span> <span class="operator">&lt;</span> <span class="literal number integer">3</span><span class="punctuation">:</span>
+        <span class="keyword">raise</span> <span class="name">np</span><span class="operator">.</span><span class="name">linalg</span><span class="operator">.</span><span class="name">LinAlgError</span>
+    <span class="name">obs</span> <span class="operator">=</span> <span class="name">rho</span><span class="punctuation">[</span><span class="name">passer</span><span class="punctuation">]</span>
+    <span class="name">K</span> <span class="operator">=</span> <span class="name">kern</span><span class="punctuation">[</span> <span class="name">passer</span><span class="punctuation">,</span> <span class="punctuation">:]</span>
+    <span class="punctuation">(</span><span class="name">f</span><span class="punctuation">,</span> <span class="name">rmse</span><span class="punctuation">,</span> <span class="name">rank</span><span class="punctuation">,</span> <span class="name">svals</span> <span class="punctuation">)</span> <span class="operator">=</span> <span class="name">np</span><span class="operator">.</span><span class="name">linalg</span><span class="operator">.</span><span class="name">lstsq</span><span class="punctuation">(</span> <span class="name">K</span><span class="punctuation">,</span> <span class="name">obs</span> <span class="punctuation">)</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;N. Obs: </span><span class="literal string interpol">%d</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="name">np</span><span class="operator">.</span><span class="name">sum</span> <span class="punctuation">(</span> <span class="name">passer</span> <span class="punctuation">)</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;</span><span class="literal string interpol">%-20s</span><span class="literal string escape">\t</span><span class="literal string interpol">%20s</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="punctuation">(</span> <span class="literal string">&quot;Kernel&quot;</span><span class="punctuation">,</span> <span class="literal string">&quot;Value&quot;</span><span class="punctuation">)</span>
+    <span class="keyword">for</span> <span class="name">i</span><span class="punctuation">,</span> <span class="name">k</span> <span class="operator word">in</span> <span class="name builtin">enumerate</span><span class="punctuation">(</span> <span class="punctuation">[</span><span class="literal string">&quot;Isotropic&quot;</span><span class="punctuation">,</span> <span class="literal string">&quot;Ross&quot;</span><span class="punctuation">,</span> <span class="literal string">&quot;LiThick&quot;</span><span class="punctuation">]</span> <span class="punctuation">):</span>
+        <span class="keyword">print</span> <span class="literal string">&quot;</span><span class="literal string interpol">%-20s</span><span class="literal string escape">\t</span><span class="literal string interpol">%20f</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="punctuation">(</span> <span class="name">k</span><span class="punctuation">,</span> <span class="name">f</span><span class="punctuation">[</span><span class="name">i</span><span class="punctuation">]</span> <span class="punctuation">)</span>
+    <span class="name">fwd</span> <span class="operator">=</span> <span class="name">K</span><span class="operator">.</span><span class="name">dot</span><span class="punctuation">(</span><span class="name">f</span><span class="operator">.</span><span class="name">T</span><span class="punctuation">)</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;R2: </span><span class="literal string interpol">%g</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="name">np</span><span class="operator">.</span><span class="name">corrcoef</span> <span class="punctuation">(</span> <span class="name">obs</span><span class="punctuation">,</span> <span class="name">fwd</span><span class="punctuation">)[</span><span class="literal number integer">1</span><span class="punctuation">,</span><span class="literal number integer">0</span><span class="punctuation">]</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">plot</span> <span class="punctuation">(</span> <span class="name">obs</span><span class="punctuation">,</span> <span class="name">fwd</span><span class="punctuation">,</span> <span class="literal string">'sk'</span><span class="punctuation">)</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">plot</span> <span class="punctuation">(</span> <span class="punctuation">[</span><span class="literal number float">0.18</span><span class="punctuation">,</span> <span class="literal number float">0.3</span><span class="punctuation">],</span> <span class="punctuation">[</span><span class="literal number float">0.18</span><span class="punctuation">,</span> <span class="literal number float">0.3</span><span class="punctuation">],</span> <span class="literal string">'k--'</span><span class="punctuation">,</span> <span class="name">lw</span><span class="operator">=</span><span class="literal number float">0.5</span><span class="punctuation">)</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">ylim</span><span class="punctuation">(</span><span class="literal number float">0.18</span><span class="punctuation">,</span> <span class="literal number float">0.3</span><span class="punctuation">)</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">xlim</span><span class="punctuation">(</span><span class="literal number float">0.18</span><span class="punctuation">,</span> <span class="literal number float">0.3</span><span class="punctuation">)</span>
+    <span class="keyword">return</span> <span class="name">obs</span><span class="punctuation">,</span> <span class="name">fwd</span><span class="punctuation">,</span> <span class="name">passer</span><span class="punctuation">,</span> <span class="name">f</span><span class="punctuation">,</span> <span class="name">rmse</span>
+</pre>
+<p>In[9]:</p>
+<pre class="code python literal-block">
+<span class="name">retval</span> <span class="operator">=</span> <span class="name">invert_composite</span> <span class="punctuation">(</span> <span class="name">qa</span><span class="punctuation">,</span> <span class="name">doys</span><span class="punctuation">,</span> <span class="name">rho</span><span class="punctuation">,</span> <span class="name">kern</span><span class="punctuation">,</span> <span class="literal number integer">200</span><span class="punctuation">,</span> <span class="literal number integer">210</span> <span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">title</span><span class="punctuation">(</span><span class="literal string">&quot;Compositing between DoYs 200-210&quot;</span><span class="punctuation">)</span>
+</pre>
+<pre class="literal-block">
+N. Obs: 9
+Kernel                                 Value
+Isotropic                           0.235238
+Ross                               -0.033419
+LiThick                             0.054909
+R2: 0.386086
+</pre>
+<pre class="literal-block">
+&lt;matplotlib.text.Text at 0x3346c90&gt;
+</pre>
+<img alt="BRDF_modelling_23_2.png" src="../static/BRDF_modelling_23_2.png" />
+<p>In[10]:</p>
+<pre class="code python literal-block">
+<span class="name">retval</span> <span class="operator">=</span> <span class="name">invert_composite</span> <span class="punctuation">(</span> <span class="name">qa</span><span class="punctuation">,</span> <span class="name">doys</span><span class="punctuation">,</span> <span class="name">rho</span><span class="punctuation">,</span> <span class="name">kern</span><span class="punctuation">,</span> <span class="literal number integer">180</span><span class="punctuation">,</span> <span class="literal number integer">227</span> <span class="punctuation">)</span>
+<span class="name">plt</span><span class="operator">.</span><span class="name">title</span><span class="punctuation">(</span><span class="literal string">&quot;Compositing between DoYs 200-227&quot;</span><span class="punctuation">)</span>
+</pre>
+<pre class="literal-block">
+N. Obs: 41
+Kernel                                 Value
+Isotropic                           0.231309
+Ross                                0.009338
+LiThick                             0.000748
+R2: 0.05195
+</pre>
+<pre class="literal-block">
+&lt;matplotlib.text.Text at 0x3351bd0&gt;
+</pre>
+<img alt="BRDF_modelling_24_2.png" src="../static/BRDF_modelling_24_2.png" />
+<p>Clearly, this window is too big: changes <strong>are</strong> happening. Also note
+the difference of adding just 1 observation to the 10 day period: the
+parameters change perceivably, the sign of ill-posedness. Let's see how
+the compositing period affects the estimate: we'll try to invert the
+pre-fire observations using a 16 and an 8 day compositing period:
+In[11]:</p>
+<pre class="code python literal-block">
+<span class="name">retvals</span> <span class="operator">=</span> <span class="punctuation">[]</span>
+<span class="keyword">for</span> <span class="name">period</span> <span class="operator word">in</span> <span class="name builtin">xrange</span> <span class="punctuation">(</span> <span class="punctuation">(</span><span class="literal number integer">227</span><span class="operator">-</span><span class="literal number integer">180</span><span class="punctuation">)</span><span class="operator">/</span><span class="literal number integer">16</span> <span class="operator">+</span> <span class="literal number integer">1</span> <span class="punctuation">):</span>
+    <span class="name">doy_min</span> <span class="operator">=</span> <span class="literal number integer">180</span> <span class="operator">+</span> <span class="literal number integer">16</span><span class="operator">*</span><span class="name">period</span>
+    <span class="name">doy_max</span> <span class="operator">=</span> <span class="literal number integer">180</span> <span class="operator">+</span> <span class="literal number integer">16</span><span class="operator">*</span><span class="punctuation">(</span><span class="name">period</span><span class="operator">+</span><span class="literal number integer">1</span><span class="punctuation">)</span>
+    <span class="keyword">if</span> <span class="name">doy_max</span> <span class="operator">&gt;</span> <span class="literal number integer">227</span><span class="punctuation">:</span>
+        <span class="name">doy_max</span> <span class="operator">=</span> <span class="literal number integer">227</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">subplot</span> <span class="punctuation">(</span> <span class="literal number integer">1</span><span class="punctuation">,</span> <span class="literal number integer">3</span><span class="punctuation">,</span> <span class="name">period</span> <span class="operator">+</span> <span class="literal number integer">1</span> <span class="punctuation">)</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;==============================================================&quot;</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;DoY Min: </span><span class="literal string interpol">%d</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="name">doy_min</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;DoY Max: </span><span class="literal string interpol">%d</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="name">doy_max</span>
+    <span class="keyword">try</span><span class="punctuation">:</span>
+        <span class="name">retvals</span><span class="operator">.</span><span class="name">append</span> <span class="punctuation">(</span> <span class="name">invert_composite</span> <span class="punctuation">(</span> <span class="name">qa</span><span class="punctuation">,</span> <span class="name">doys</span><span class="punctuation">,</span> <span class="name">rho</span><span class="punctuation">,</span> <span class="name">kern</span><span class="punctuation">,</span> \
+            <span class="name">doy_min</span><span class="punctuation">,</span> <span class="name">doy_max</span><span class="punctuation">)</span> <span class="punctuation">)</span>
+    <span class="keyword">except</span> <span class="name">np</span><span class="operator">.</span><span class="name">linalg</span><span class="operator">.</span><span class="name">LinAlgError</span><span class="punctuation">:</span>
+        <span class="keyword">print</span> <span class="literal string">&quot;Not enough obs!&quot;</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">title</span><span class="punctuation">(</span><span class="literal string">&quot;Compositing </span><span class="literal string interpol">%d</span><span class="literal string">-</span><span class="literal string interpol">%d</span><span class="literal string">&quot;</span> <span class="operator">%</span> \
+        <span class="punctuation">(</span> <span class="name">doy_min</span><span class="punctuation">,</span> <span class="name">doy_max</span><span class="punctuation">)</span> <span class="punctuation">)</span>
+</pre>
+<pre class="literal-block">
+==============================================================
+DoY Min: 180
+DoY Max: 196
+N. Obs: 14
+Kernel                                 Value
+Isotropic                           0.238851
+Ross                               -0.006477
+LiThick                             0.009853
+R2: 0.100897
+==============================================================
+DoY Min: 196
+DoY Max: 212
+N. Obs: 15
+Kernel                                 Value
+Isotropic                           0.216249
+Ross                                0.066691
+LiThick                            -0.059062
+R2: 0.521575
+==============================================================
+DoY Min: 212
+DoY Max: 227
+N. Obs: 12
+Kernel                                 Value
+Isotropic                           0.243611
+Ross                               -0.062851
+LiThick                             0.063866
+R2: 0.646983
+</pre>
+<img alt="BRDF_modelling_26_1.png" src="../static/BRDF_modelling_26_1.png" />
+<p>In[12]:</p>
+<pre class="code python literal-block">
+<span class="name">retvals</span> <span class="operator">=</span> <span class="punctuation">[]</span>
+<span class="keyword">for</span> <span class="name">period</span> <span class="operator word">in</span> <span class="name builtin">xrange</span> <span class="punctuation">(</span> <span class="punctuation">(</span><span class="literal number integer">227</span><span class="operator">-</span><span class="literal number integer">180</span><span class="punctuation">)</span><span class="operator">/</span><span class="literal number integer">8</span> <span class="operator">+</span> <span class="literal number integer">1</span> <span class="punctuation">):</span>
+    <span class="name">doy_min</span> <span class="operator">=</span> <span class="literal number integer">180</span> <span class="operator">+</span> <span class="literal number integer">8</span><span class="operator">*</span><span class="name">period</span>
+    <span class="name">doy_max</span> <span class="operator">=</span> <span class="literal number integer">180</span> <span class="operator">+</span> <span class="literal number integer">8</span><span class="operator">*</span><span class="punctuation">(</span><span class="name">period</span><span class="operator">+</span><span class="literal number integer">1</span><span class="punctuation">)</span>
+    <span class="keyword">if</span> <span class="name">doy_max</span> <span class="operator">&gt;</span> <span class="literal number integer">227</span><span class="punctuation">:</span>
+        <span class="name">doy_max</span> <span class="operator">=</span> <span class="literal number integer">227</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">subplot</span> <span class="punctuation">(</span> <span class="literal number integer">2</span><span class="punctuation">,</span> <span class="literal number integer">3</span><span class="punctuation">,</span> <span class="name">period</span> <span class="operator">+</span> <span class="literal number integer">1</span> <span class="punctuation">)</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;==============================================================&quot;</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;DoY Min: </span><span class="literal string interpol">%d</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="name">doy_min</span>
+    <span class="keyword">print</span> <span class="literal string">&quot;DoY Max: </span><span class="literal string interpol">%d</span><span class="literal string">&quot;</span> <span class="operator">%</span> <span class="name">doy_max</span>
+    <span class="keyword">try</span><span class="punctuation">:</span>
+        <span class="name">retvals</span><span class="operator">.</span><span class="name">append</span> <span class="punctuation">(</span> <span class="name">invert_composite</span> <span class="punctuation">(</span> <span class="name">qa</span><span class="punctuation">,</span> <span class="name">doys</span><span class="punctuation">,</span> <span class="name">rho</span><span class="punctuation">,</span> <span class="name">kern</span><span class="punctuation">,</span> \
+            <span class="name">doy_min</span><span class="punctuation">,</span> <span class="name">doy_max</span><span class="punctuation">)</span> <span class="punctuation">)</span>
+    <span class="keyword">except</span> <span class="name">np</span><span class="operator">.</span><span class="name">linalg</span><span class="operator">.</span><span class="name">LinAlgError</span><span class="punctuation">:</span>
+        <span class="keyword">print</span> <span class="literal string">&quot;Not enough obs!&quot;</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">title</span><span class="punctuation">(</span><span class="literal string">&quot;Compositing </span><span class="literal string interpol">%d</span><span class="literal string">-</span><span class="literal string interpol">%d</span><span class="literal string">&quot;</span> <span class="operator">%</span> \
+        <span class="punctuation">(</span> <span class="name">doy_min</span><span class="punctuation">,</span> <span class="name">doy_max</span><span class="punctuation">)</span> <span class="punctuation">)</span>
+</pre>
+<pre class="literal-block">
+==============================================================
+DoY Min: 180
+DoY Max: 188
+N. Obs: 6
+Kernel                                 Value
+Isotropic                           0.215737
+Ross                                0.217461
+LiThick                             0.004699
+R2: 0.960286
+==============================================================
+DoY Min: 188
+DoY Max: 196
+N. Obs: 8
+Kernel                                 Value
+Isotropic                           0.256502
+Ross                               -0.148200
+LiThick                             0.022454
+R2: 0.641367
+==============================================================
+DoY Min: 196
+DoY Max: 204
+N. Obs: 7
+Kernel                                 Value
+Isotropic                           0.222352
+Ross                               -0.073762
+LiThick                            -0.074442
+R2: 0.825704
+==============================================================
+DoY Min: 204
+DoY Max: 212
+N. Obs: 8
+Kernel                                 Value
+Isotropic                           0.211300
+Ross                                0.154030
+LiThick                            -0.051295
+R2: 0.833228
+==============================================================
+DoY Min: 212
+DoY Max: 220
+N. Obs: 7
+Kernel                                 Value
+Isotropic                           0.241598
+Ross                                0.021193
+LiThick                             0.066551
+R2: 0.838989
+==============================================================
+DoY Min: 220
+DoY Max: 227
+N. Obs: 5
+Kernel                                 Value
+Isotropic                           0.247820
+Ross                               -0.146072
+LiThick                             0.076207
+R2: 0.74752
+</pre>
+<img alt="BRDF_modelling_27_1.png" src="../static/BRDF_modelling_27_1.png" />
+<p>We see that the kernel weights change substantially from one period to
+the next. The 16 day window seems quite poor, whereas the 8 day one is
+remarkably better. This means that fast changes are occurring in the
+ground, and the 8 day window is more appropriate.We can see how this
+works in time
+In[13]:</p>
+<pre class="code python literal-block">
+<span class="keyword">for</span> <span class="name">period</span> <span class="operator word">in</span> <span class="name builtin">xrange</span> <span class="punctuation">(</span> <span class="punctuation">(</span><span class="literal number integer">227</span><span class="operator">-</span><span class="literal number integer">180</span><span class="punctuation">)</span><span class="operator">/</span><span class="literal number integer">8</span> <span class="operator">+</span> <span class="literal number integer">1</span> <span class="punctuation">):</span>
+
+    <span class="name">plt</span><span class="operator">.</span><span class="name">plot</span><span class="punctuation">(</span> <span class="name">doys</span><span class="punctuation">[</span><span class="name">retvals</span><span class="punctuation">[</span><span class="name">period</span><span class="punctuation">][</span><span class="literal number integer">2</span><span class="punctuation">]],</span> <span class="name">retvals</span><span class="punctuation">[</span><span class="name">period</span><span class="punctuation">][</span><span class="literal number integer">0</span><span class="punctuation">],</span> <span class="literal string">'sk'</span><span class="punctuation">)</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">plot</span><span class="punctuation">(</span> <span class="name">doys</span><span class="punctuation">[</span><span class="name">retvals</span><span class="punctuation">[</span><span class="name">period</span><span class="punctuation">][</span><span class="literal number integer">2</span><span class="punctuation">]],</span> <span class="name">retvals</span><span class="punctuation">[</span><span class="name">period</span><span class="punctuation">][</span><span class="literal number integer">1</span><span class="punctuation">],</span> <span class="literal string">'-'</span><span class="punctuation">,</span> <span class="name">lw</span><span class="operator">=</span><span class="literal number float">1.8</span><span class="punctuation">)</span>
+    <span class="name">plt</span><span class="operator">.</span><span class="name">ylim</span><span class="punctuation">(</span><span class="literal number float">0.18</span><span class="punctuation">,</span> <span class="literal number float">0.3</span><span class="punctuation">)</span>
+</pre>
+<img alt="BRDF_modelling_29_0.png" src="../static/BRDF_modelling_29_0.png" />
+</div>
+<div class="section" id="stuff-missing">
+<h2>Stuff missing</h2>
+<ul class="simple">
+<li>Uncertainty</li>
+</ul>
+</div>
+<div class="section" id="refs">
+<h2>Refs</h2>
+<p>Schaaf, C. B., F. Gao, A. H. Strahler, W. Lucht, X. Li, T. Tsang, N. C.
+Strugnell, X. Zhang, Y. Jin, J.-P. Muller, P. Lewis, M. Barnsley, P.
+Hobson, M. Disney, G. Roberts, M. Dunderdale, C. Doll, R. d Entremont,
+B. Hu, S. Liang, and J. L. Privette, First Operational BRDF, Albedo and
+Nadir Reflectance Products from MODIS, Remote Sens. Environ., 83,
+135-148, 2002.</p>
+<p>Lucht, W., C.B. Schaaf, and A.H. Strahler. An Algorithm for the
+retrieval of albedo from space using semiempirical BRDF models, IEEE
+Trans. Geosci. Remote Sens., 38, 977-998, 2000.</p>
+<p>Wanner, W., A.H. Strahler, B. Hu, P. Lewis, J.-P Muller, X. Li, C.
+Schaaf, and M.J. Barnsley, Global retrieval of bidirectional reflectance
+and albedo over land from EOS MODIS and MISR data: Theory and algorithm,
+J. Geophys. Res., 102, 17143-17161, 1997.</p>
+</div>
+
+                </article>
+                
+            </aside><!-- /#featured -->
+            
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+            
+        
+        
+        
+            
+
+        
+         
+            
+            <li><article class="hentry">    
+                <header>
+                    <h1><a href=".././creating-a-country-raster-mask-using-gdal.html" rel="bookmark"
+                           title="Permalink to Creating a country raster mask using GDAL">Creating a country raster mask using GDAL</a></h1>
+                </header>
+                
+                <div class="entry-content">
+                <footer class="post-info">
         <abbr class="published" title="2012-08-02T10:00:00">
                 Thu 02 August 2012
         </abbr>
@@ -77,92 +553,15 @@
 <p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a></p>
 
 
-</footer><!-- /.post-info --><p>Usually, we remote sensing types ignore country boundaries: they don't really
+</footer><!-- /.post-info -->
+                <p>Usually, we remote sensing types ignore country boundaries: they don't really
 make much sense, as they are not aligned with MODIS pixels ;-) However, I was
 asked what's the easiest way to produce a global mask of countries, so that all
-th grid cells (say at 0.5 degree resolution) that fall within a country are
-given the same number. I guess the easiest thing would be to use QGIS, add a
-new layer with the offending name (<tt class="docutils literal">$id</tt> is the field you are looking for
-there!), and then rasterise the layer.</p>
-<p>But how do to you that with <a class="reference external" href="http://gdal.osegeo.org/">GDAL</a>? We can use
-<tt class="docutils literal">gdal_rasterize</tt> for this, and I assume that you are using 1.8.0 or later.
-Let's say we use the ubiquitous
-<a class="reference external" href="http://aprsworld.net/gisdata/world/">world shapefile</a>. We need to create a
-single integer tag for each feature or country. The best of doing this is to
-use GDAL's virtual variable <tt class="docutils literal">FID</tt>. However, you need to create the field on
-the fly, as it were: you use the <tt class="docutils literal"><span class="pre">-sql</span></tt> statement, and add the <tt class="docutils literal">FID</tt>
-variable that way (see
-<a class="reference external" href="http://lists.osgeo.org/pipermail/gdal-dev/2010-February/023485.html">this</a>.
-We also need to specify the extent of the raster output file. We'll oversample
-a bit to start with</p>
-<pre class="literal-block">
-gdal_rasterize -of GTiff  -a FID  -sql &quot;select FID, * from world&quot;  \
-  -te -180 -90 180 90 -tr 0.05 0.05 -a_srs &quot;EPSG:4326&quot; -a_nodata 0 \
-  -ot UInt16 world.shp world_grid.tif
-</pre>
-<p>So, that gives us <tt class="docutils literal">world_grid.tif</tt></p>
-<pre class="literal-block">
-$ gdalinfo world_grid.tif -stats
-Driver: GTiff/GeoTIFF
-Files: world_grid.tif
-Size is 7200, 3600
-Coordinate System is:
-GEOGCS[&quot;WGS 84&quot;,
-    DATUM[&quot;WGS_1984&quot;,
-        SPHEROID[&quot;WGS 84&quot;,6378137,298.257223563,
-            AUTHORITY[&quot;EPSG&quot;,&quot;7030&quot;]],
-        AUTHORITY[&quot;EPSG&quot;,&quot;6326&quot;]],
-    PRIMEM[&quot;Greenwich&quot;,0],
-    UNIT[&quot;degree&quot;,0.0174532925199433],
-    AUTHORITY[&quot;EPSG&quot;,&quot;4326&quot;]]
-Origin = (-180.000000000000000,90.000000000000000)
-Pixel Size = (0.050000000000000,-0.050000000000000)
-Metadata:
-  AREA_OR_POINT=Area
-Image Structure Metadata:
-  INTERLEAVE=BAND
-Corner Coordinates:
-Upper Left  (-180.0000000,  90.0000000) (180d 0' 0.00&quot;W, 90d 0' 0.00&quot;N)
-Lower Left  (-180.0000000, -90.0000000) (180d 0' 0.00&quot;W, 90d 0' 0.00&quot;S)
-Upper Right ( 180.0000000,  90.0000000) (180d 0' 0.00&quot;E, 90d 0' 0.00&quot;N)
-Lower Right ( 180.0000000, -90.0000000) (180d 0' 0.00&quot;E, 90d 0' 0.00&quot;S)
-Center      (   0.0000000,   0.0000000) (  0d 0' 0.01&quot;E,  0d 0' 0.01&quot;N)
-Band 1 Block=7200x1 Type=UInt16, ColorInterp=Gray
-  Minimum=1.000, Maximum=243.000, Mean=166.683, StdDev=76.175
-  NoData Value=0
-  Metadata:
-    STATISTICS_MINIMUM=1
-    STATISTICS_MAXIMUM=243
-    STATISTICS_MEAN=166.68288288267
-    STATISTICS_STDDEV=76.17549545167
-</pre>
-<p>Cool, so how do we create a say 0.5degree grid from our 0.05degree grid?
-<tt class="docutils literal">gdaladdo</tt> can help building overlays with a spatial resolution given as
-integer multiples of 0.05 degrees. Within that new resolution, we can take the
-mode of the 0.05 degree grid, and use that to label the new lower resolution
-grid. Further assume that we want a 0.5 degree and a 1 degree grid out</p>
-<pre class="literal-block">
-gdaladdo -r mode world_grid.tif 10 20
-gdal_translate -of GTiff -outsize 720 360 world_grid.tif world_grid_hd.tif
-gdal_translate -of GTiff -outsize 368 180 world_grid.tif world_grid_1d.tif
-</pre>
-<p>And here you have a picture of how it looks. I'm using a random colormap with
-matplotlib (see <a class="reference external" href="https://gist.github.com/402500">here</a>)</p>
-<div class="figure">
-<img alt="images/world_map.png" src="../static/images/world_map.png" style="width: 90%;" />
-<p class="caption">The map, in all its glory.</p>
-</div>
-
-                </article>
+th grid cells (say at 0.5 degree ...</p>
+                <a class="readmore" href=".././creating-a-country-raster-mask-using-gdal.html">read more</a>
                 
-            </aside><!-- /#featured -->
-            
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-            
-        
+                </div><!-- /.entry-content -->
+            </article></li>
         
         
             

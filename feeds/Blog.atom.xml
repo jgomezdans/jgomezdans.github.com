@@ -1,5 +1,442 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/Blog.atom.xml" rel="self"></link><id>/</id><updated>2013-08-05T17:00:00+01:00</updated><entry><title>RideLondon data download</title><link href="/ridelondon-data-download.html" rel="alternate"></link><updated>2013-08-05T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-08-05:ridelondon-data-download.html</id><summary type="html">&lt;p&gt;So a quick post on how to get access the web-based data on rider timings for the &lt;a class="reference external" href="http://www.prudentialridelondon.co.uk/"&gt;RideLondon event&lt;/a&gt;. The idea is that you can access the cyclist timings, and then
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/Blog.atom.xml" rel="self"></link><id>/</id><updated>2013-09-03T17:00:00+01:00</updated><entry><title>BRDF_modelling</title><link href="/brdf_modelling.html" rel="alternate"></link><updated>2013-09-03T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-09-03:brdf_modelling.html</id><summary type="html">&lt;p&gt;This post introduces simple BRDF modelling (i.e. how can we account
+for the variation in surface reflectance due to acquisition geometry?)
+using some MODIS data. You can find the whole post in &lt;a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling"&gt;wakari&lt;/a&gt;. If you
+accept to not escape the HTML &amp;amp; JS, you will find a link to the data file
+there too.&lt;/p&gt;
+&lt;p&gt;A particularly simple way of dealing with BRDF effects is by using
+linear kernel models. These models are reduced physics versions of more
+complex radiative tranfer models with some empirical considerations to
+further simplify things. Since we are only interested in the shape of
+the BRDF, we can lump the parameters into some constants of limited
+physical explanatory value, and do a few simplifications so that we can
+write the the observed reflectance at band &lt;span class="formula"&gt;&lt;i&gt;λ&lt;/i&gt;&lt;sub&gt;&lt;i&gt;i&lt;/i&gt;&lt;/sub&gt;&lt;/span&gt;
+ as:&lt;/p&gt;
+&lt;div class="formula"&gt;
+&lt;i&gt;ρ&lt;/i&gt;&lt;sup&gt;&lt;i&gt;λ&lt;/i&gt;&lt;sub&gt;&lt;i&gt;i&lt;/i&gt;&lt;/sub&gt;&lt;/sup&gt;(Ω, &lt;i&gt;Omega&lt;/i&gt;’) = &lt;span class="limits"&gt;&lt;sup class="limit"&gt;&lt;i&gt;N&lt;/i&gt;&lt;sub&gt;&lt;i&gt;kern&lt;/i&gt;&lt;/sub&gt;&lt;/sup&gt;&lt;span class="limit"&gt;&lt;span class="symbol"&gt;∑&lt;/span&gt;&lt;/span&gt;&lt;sub class="limit"&gt;&lt;i&gt;i&lt;/i&gt; = 1&lt;/sub&gt;&lt;/span&gt;&lt;i&gt;f&lt;/i&gt;&lt;sub&gt;&lt;i&gt;i&lt;/i&gt;&lt;/sub&gt;&lt;i&gt;K&lt;/i&gt;&lt;sub&gt;&lt;i&gt;i&lt;/i&gt;&lt;/sub&gt;(Ω, Ω’), 
+&lt;/div&gt;
+&lt;p&gt;where we have &lt;span class="formula"&gt;&lt;i&gt;N&lt;/i&gt;&lt;sub&gt;&lt;i&gt;kern&lt;/i&gt;&lt;/sub&gt;&lt;/span&gt;
+kernels, typically 3, and the
+acquisition geometry is given by &lt;span class="formula"&gt;(Ω, &lt;i&gt;Omega&lt;/i&gt;’)&lt;/span&gt;
+. The three
+kernels that are typically used are those that have been popularised by
+the MODIS albedo product (MCD43):&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;An isotropic kernel, (&lt;span class="formula"&gt;&lt;i&gt;K&lt;/i&gt;&lt;sub&gt;&lt;i&gt;iso&lt;/i&gt;&lt;/sub&gt; = 1&lt;/span&gt;
+), accounting for isotropic
+BRDF effects&lt;/li&gt;
+&lt;li&gt;A volumetric scattering kernel (&lt;span class="formula"&gt;&lt;i&gt;K&lt;/i&gt;&lt;sub&gt;&lt;i&gt;vol&lt;/i&gt;&lt;/sub&gt;&lt;/span&gt;
+), a simplified
+version of volume scattering as seen in Ross (1981)&lt;/li&gt;
+&lt;li&gt;A geometric scattering that aims to mimick surface scattering and
+shadowing.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;While different families of these kernels are used, we use the
+Ross-ThickLiSparse-Reciprocal kernels (these have been evaluated and
+found to be quite good).&lt;/p&gt;
+&lt;p&gt;The problem stated above cannot be solved on a daily basis (or whenever
+an observation becomes available): there are 3 parameters per band, and
+only one observation, so the system is underdetermined. If we assume
+that the parameters can be related to land surface parameters, and we
+assume that change is slow, a way around this is temporal compositing,
+where all the observations within a given period are inverted together.
+It is important to take uncertainty in the observations into account, as
+we don't measure &lt;span class="formula"&gt;&lt;i&gt;ρ&lt;/i&gt;&lt;sup&gt;&lt;i&gt;λ&lt;/i&gt;&lt;sub&gt;&lt;i&gt;i&lt;/i&gt;&lt;/sub&gt;&lt;/sup&gt;&lt;/span&gt;
+, but rather
+&lt;span class="formula"&gt;&lt;i&gt;ρ̂&lt;/i&gt;&lt;sup&gt;&lt;i&gt;λ&lt;/i&gt;&lt;sub&gt;&lt;i&gt;i&lt;/i&gt;&lt;/sub&gt;&lt;/sup&gt; = &lt;i&gt;ρ&lt;/i&gt;&lt;sup&gt;&lt;i&gt;λ&lt;/i&gt;&lt;sub&gt;&lt;i&gt;i&lt;/i&gt;&lt;/sub&gt;&lt;/sup&gt; + &lt;i&gt;ϵ&lt;/i&gt;&lt;sup&gt;&lt;i&gt;λ&lt;/i&gt;&lt;sub&gt;&lt;i&gt;i&lt;/i&gt;&lt;/sub&gt;&lt;/sup&gt;&lt;/span&gt;
+,
+where &lt;span class="formula"&gt;&lt;i&gt;ϵ&lt;/i&gt;&lt;sup&gt;&lt;i&gt;λ&lt;/i&gt;&lt;sub&gt;&lt;i&gt;i&lt;/i&gt;&lt;/sub&gt;&lt;/sup&gt;&lt;/span&gt;
+ is additive noise, typically modelled
+as zero mean and with a known variance (see Roy et al for a table with
+typical values for MODIS).&lt;/p&gt;
+&lt;div class="section" id="ill-posedness"&gt;
+&lt;h2&gt;Ill-posedness&lt;/h2&gt;
+&lt;p&gt;The problem of inverting RT models (be they linear or not) is typically
+&lt;em&gt;ill-posed&lt;/em&gt;. By contrast, a well-posed problem (in the Hadamard sense)
+is one where:&lt;/p&gt;
+&lt;ol class="arabic simple"&gt;
+&lt;li&gt;A solution exists&lt;/li&gt;
+&lt;li&gt;The solution is unique&lt;/li&gt;
+&lt;li&gt;The solution's behavior hardly changes when there's a slight change
+in the initial condition&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;In this case, due to the uncertainty introduced by the noise (and
+limited angular sampling), point 2 is not typically met, resulting in
+many configurations of kernel weights that provide an adequate
+representation of the observations. Compositing is a good way of
+increasing the angular sampling and reducing the noise, but it can only
+be taken that far: too long a compositing window, and the assumption of
+static land surface properties weakens.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="section" id="reading-the-data"&gt;
+&lt;h2&gt;Reading the data&lt;/h2&gt;
+&lt;p&gt;Let's look at some data. The data is stored in a text file, and belongs
+to a pixel somewhere in Angola. We only have band 2 data here. The first
+ten lines of the file show the format. The first line is a header,
+telling us that there are 92 observations, with 7 bands, as well as
+their centre wavelengths. After the first line, we have individual
+records with the following format:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;day of year (DoY)&lt;/li&gt;
+&lt;li&gt;QA flag (1=use, 2=don't use)&lt;/li&gt;
+&lt;li&gt;&lt;tt class="docutils literal"&gt;vza&lt;/tt&gt;, the view zenith angle (in degrees)&lt;/li&gt;
+&lt;li&gt;&lt;tt class="docutils literal"&gt;vaa&lt;/tt&gt;, the view azimuth angle (in degrees)&lt;/li&gt;
+&lt;li&gt;&lt;tt class="docutils literal"&gt;sza&lt;/tt&gt;, the solar/illumiation zenith angle (in degrees)&lt;/li&gt;
+&lt;li&gt;&lt;tt class="docutils literal"&gt;saa&lt;/tt&gt;, the solar/illumiation azimuth angle (in degrees)&lt;/li&gt;
+&lt;li&gt;the reflectance&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Typically, we will use &lt;tt class="docutils literal"&gt;sza&lt;/tt&gt;, &lt;tt class="docutils literal"&gt;vza&lt;/tt&gt; and &lt;tt class="docutils literal"&gt;raa&lt;/tt&gt;. &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;raa``=``vaa&lt;/span&gt;&lt;/tt&gt; -
+&lt;tt class="docutils literal"&gt;saa&lt;/tt&gt;.&lt;/p&gt;
+&lt;p&gt;First, we need to get the data. The next code snippet will provide you
+with a link to the datafile that you can download (hopefully) from &lt;a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling"&gt;wakari&lt;/a&gt;&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="error"&gt;!&lt;/span&gt;&lt;span class="name"&gt;head&lt;/span&gt; &lt;span class="operator"&gt;-&lt;/span&gt;&lt;span class="name"&gt;n&lt;/span&gt; &lt;span class="literal number integer"&gt;10&lt;/span&gt; &lt;span class="name"&gt;data&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;r2023&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;c87&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;dat&lt;/span&gt;
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+BRDF 92 7 648 858 470 555 1240 1640 2130
+181 1 65.419998 -84.470001 44.130001 20.090000 0.114600 0.243200 0.052800 0.087100 0.328300 0.302300 0.213400
+182 1 23.410000 98.290001 50.220001 35.310001 0.113900 0.218100 0.051100 0.084500 0.315900 0.339000 0.205500
+184 1 44.049999 100.730003 51.910000 38.360001 0.142900 0.269100 0.063400 0.107500 0.359300 0.375000 0.246500
+185 1 40.400002 -82.199997 46.310001 27.700001 0.107000 0.212100 0.051600 0.079900 0.310400 0.310400 0.214100
+186 1 57.720001 101.300003 53.700001 41.259998 0.152700 0.291400 0.064600 0.114800 0.395000 0.382700 0.258700
+187 1 17.770000 -81.010002 47.630001 31.260000 0.111000 0.217700 0.050500 0.081600 0.307600 0.318500 0.205500
+188 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+189 1 10.470000 96.879997 49.090000 34.650002 0.117500 0.225000 0.054200 0.087700 0.334600 0.334300 0.231400
+190 1 60.889999 -83.790001 44.070000 22.910000 0.100200 0.212100 0.045900 0.074100 0.296100 0.302100 0.188200
+&lt;/pre&gt;
+&lt;p&gt;Let's read the data in and do some plots!
+In[3]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="name"&gt;data&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;loadtxt&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;data.r2023.c87.dat&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;skiprows&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt; &lt;span class="comment"&gt;# Read data in, but skip first line&lt;/span&gt;
+&lt;span class="name"&gt;doys&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;data&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="punctuation"&gt;:,&lt;/span&gt; &lt;span class="literal number integer"&gt;0&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt;
+&lt;span class="name"&gt;qa&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;data&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="punctuation"&gt;:,&lt;/span&gt; &lt;span class="literal number integer"&gt;1&lt;/span&gt; &lt;span class="punctuation"&gt;]&lt;/span&gt;
+&lt;span class="name"&gt;vza&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;data&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="punctuation"&gt;:,&lt;/span&gt; &lt;span class="literal number integer"&gt;2&lt;/span&gt; &lt;span class="punctuation"&gt;]&lt;/span&gt;
+&lt;span class="name"&gt;sza&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;data&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="punctuation"&gt;:,&lt;/span&gt; &lt;span class="literal number integer"&gt;4&lt;/span&gt; &lt;span class="punctuation"&gt;]&lt;/span&gt;
+&lt;span class="name"&gt;raa&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;data&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="punctuation"&gt;:,&lt;/span&gt; &lt;span class="literal number integer"&gt;3&lt;/span&gt; &lt;span class="punctuation"&gt;]&lt;/span&gt; &lt;span class="operator"&gt;-&lt;/span&gt; &lt;span class="name"&gt;data&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="punctuation"&gt;:,&lt;/span&gt; &lt;span class="literal number integer"&gt;5&lt;/span&gt; &lt;span class="punctuation"&gt;]&lt;/span&gt;
+&lt;span class="name"&gt;rho&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;data&lt;/span&gt;&lt;span class="punctuation"&gt;[:,&lt;/span&gt;&lt;span class="literal number integer"&gt;7&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;plot&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="operator"&gt;==&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="name"&gt;rho&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="operator"&gt;==&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="literal string"&gt;'o-'&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;xlabel&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;DoY&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;ylabel&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal string"&gt;r'$\hat{\rho}^{NIR}$'&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+&amp;lt;matplotlib.text.Text at 0x2c844d0&amp;gt;
+&lt;/pre&gt;
+&lt;img alt="BRDF_modelling_12_1.png" src="BRDF_modelling_12_1.png" /&gt;
+&lt;p&gt;The high frequency variation is quite high, and over a fairly short
+period, where we only expect a smooth variability of reflectance, we
+interpret it as BRDF effects. There's a big dip on DoY 228, due to a
+fire (there's a hotspot there too), and then we see recovery due to char
+&amp;amp; ash dissipation processes. Let's look at the angular signal up to DoY
+228:
+In[4]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="name"&gt;passer&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;logical_and&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="operator"&gt;==&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt; &lt;span class="operator"&gt;&amp;lt;&lt;/span&gt; &lt;span class="literal number integer"&gt;228&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt; &lt;span class="comment"&gt;# Select obs before the fire&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;plot&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;vza&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;passer&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="name"&gt;rho&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;passer&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="literal string"&gt;'o'&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;xlabel&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;VZA [deg]&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;ylabel&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal string"&gt;r'$\hat{\rho}^{NIR}$'&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+&amp;lt;matplotlib.text.Text at 0x2e79b50&amp;gt;
+&lt;/pre&gt;
+&lt;img alt="BRDF_modelling_14_1.png" src="BRDF_modelling_14_1.png" /&gt;
+&lt;p&gt;We see a large scatter in reflectance for larger values of VZA. Now,
+let's try to model this. We need to calculate the kernel weights for the
+Ross and Li-Thick kernels for each individual observation. We have a
+Python class that does that, &lt;tt class="docutils literal"&gt;kernels.py&lt;/tt&gt;, which can be imported and
+used for this:
+In[5]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="keyword namespace"&gt;from&lt;/span&gt; &lt;span class="name namespace"&gt;kernels&lt;/span&gt; &lt;span class="keyword namespace"&gt;import&lt;/span&gt; &lt;span class="name"&gt;Kernels&lt;/span&gt; &lt;span class="comment"&gt;# Import ther kernels&lt;/span&gt;
+&lt;span class="comment"&gt;# Generate the kernels, only bother for obs where the QA is OK&lt;/span&gt;
+&lt;span class="name"&gt;K_obs&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt;  &lt;span class="name"&gt;Kernels&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;vza&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="operator"&gt;==&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="name"&gt;sza&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="operator"&gt;==&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="name"&gt;raa&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="operator"&gt;==&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; \
+        &lt;span class="name"&gt;LiType&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="literal string"&gt;'Sparse'&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doIntegrals&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="name builtin pseudo"&gt;False&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; \
+        &lt;span class="name"&gt;normalise&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;RecipFlag&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="name builtin pseudo"&gt;True&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;RossHS&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="name builtin pseudo"&gt;False&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;MODISSPARSE&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="name builtin pseudo"&gt;True&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; \
+        &lt;span class="name"&gt;RossType&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="literal string"&gt;'Thick'&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;kern&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;ones&lt;/span&gt; &lt;span class="punctuation"&gt;((&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;sum&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="operator"&gt;==&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;),&lt;/span&gt; &lt;span class="literal number integer"&gt;3&lt;/span&gt; &lt;span class="punctuation"&gt;))&lt;/span&gt; &lt;span class="comment"&gt;# Store the kernels in an array&lt;/span&gt;
+&lt;span class="name"&gt;kern&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="punctuation"&gt;:,&lt;/span&gt; &lt;span class="literal number integer"&gt;1&lt;/span&gt; &lt;span class="punctuation"&gt;]&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;K_obs&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;Ross&lt;/span&gt;
+&lt;span class="name"&gt;kern&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="punctuation"&gt;:,&lt;/span&gt; &lt;span class="literal number integer"&gt;2&lt;/span&gt; &lt;span class="punctuation"&gt;]&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;K_obs&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;Li&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;Now we can just solve our system. First with brute force: let's take 8
+days worth of data, and invert the kernel weights to see what we get.
+This is a straightforward least linear squares problem. The forward
+problem is:&lt;/p&gt;
+&lt;div class="formula"&gt;
+&lt;b&gt;K&lt;/b&gt;&lt;i&gt;f&lt;/i&gt; = &lt;i&gt;y&lt;/i&gt;
+&lt;/div&gt;
+&lt;div class="formula"&gt;
+&lt;i&gt;and&lt;/i&gt;&lt;i&gt;the&lt;/i&gt;&lt;i&gt;inverse&lt;/i&gt;&lt;i&gt;problem&lt;/i&gt;&lt;i&gt;is&lt;/i&gt;&lt;i&gt;then&lt;/i&gt;&lt;i&gt;given&lt;/i&gt;&lt;i&gt;by&lt;/i&gt;
+&lt;/div&gt;
+&lt;div class="formula"&gt;
+&lt;i&gt;f̂&lt;/i&gt; = min&lt;sub&gt;&lt;i&gt;f&lt;/i&gt;&lt;/sub&gt;|&lt;b&gt;K&lt;/b&gt;&lt;i&gt;f&lt;/i&gt; − &lt;i&gt;y&lt;/i&gt;|&lt;sup&gt;2&lt;/sup&gt;
+&lt;/div&gt;
+&lt;div class="formula"&gt;
+&lt;i&gt;For&lt;/i&gt;&lt;i&gt;this&lt;/i&gt;, &lt;i&gt;we&lt;/i&gt;&lt;i&gt;can&lt;/i&gt;&lt;i&gt;use&lt;/i&gt;`&lt;i&gt;lstsq&lt;/i&gt; &amp;lt; &lt;i&gt;http&lt;/i&gt;: ⁄  ⁄ &lt;i&gt;docs&lt;/i&gt;.&lt;i&gt;scipy&lt;/i&gt;.&lt;i&gt;org&lt;/i&gt; ⁄ &lt;i&gt;doc&lt;/i&gt; ⁄ &lt;i&gt;numpy&lt;/i&gt; ⁄ &lt;i&gt;reference&lt;/i&gt; ⁄ &lt;i&gt;generated&lt;/i&gt; ⁄ &lt;i&gt;numpy&lt;/i&gt;.&lt;i&gt;linalg&lt;/i&gt;.&lt;i&gt;lstsq&lt;/i&gt;.&lt;i&gt;html&lt;/i&gt; &amp;gt; `&lt;sub&gt;&lt;/sub&gt;
+&lt;/div&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="name"&gt;passer&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;logical_and&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="operator"&gt;==&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;logical_and&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt; &lt;span class="operator"&gt;&amp;gt;&lt;/span&gt; &lt;span class="literal number integer"&gt;200&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt; &lt;span class="operator"&gt;&amp;lt;=&lt;/span&gt;&lt;span class="literal number integer"&gt;209&lt;/span&gt;&lt;span class="punctuation"&gt;))&lt;/span&gt;
+&lt;span class="name"&gt;obs&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;rho&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;passer&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt;
+&lt;span class="name"&gt;K&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;kern&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="name"&gt;passer&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="punctuation"&gt;:]&lt;/span&gt;
+&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="name"&gt;f&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rmse&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rank&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;svals&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;linalg&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;lstsq&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;K&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;obs&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt;&lt;span class="literal string interpol"&gt;%-20s&lt;/span&gt;&lt;span class="literal string escape"&gt;\t&lt;/span&gt;&lt;span class="literal string interpol"&gt;%20s&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;Kernel&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;Value&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="keyword"&gt;for&lt;/span&gt; &lt;span class="name"&gt;i&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;k&lt;/span&gt; &lt;span class="operator word"&gt;in&lt;/span&gt; &lt;span class="name builtin"&gt;enumerate&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;Isotropic&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;Ross&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;LiThick&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt; &lt;span class="punctuation"&gt;):&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt;&lt;span class="literal string interpol"&gt;%-20s&lt;/span&gt;&lt;span class="literal string escape"&gt;\t&lt;/span&gt;&lt;span class="literal string interpol"&gt;%20f&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;k&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;f&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;i&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+Kernel                                 Value
+Isotropic                           0.242057
+Ross                               -0.065568
+LiThick                             0.075140
+&lt;/pre&gt;
+&lt;p&gt;So we have a solution. How good is it? Let's try to forward model the
+observations:
+In[7]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="name"&gt;fwd&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;K&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;dot&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="name"&gt;f&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;T&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;R2: &lt;/span&gt;&lt;span class="literal string interpol"&gt;%g&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;corrcoef&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;obs&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;fwd&lt;/span&gt;&lt;span class="punctuation"&gt;)[&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt;&lt;span class="literal number integer"&gt;0&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;plot&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;obs&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;fwd&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal string"&gt;'sk'&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;plot&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="literal number float"&gt;0.2&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number float"&gt;0.25&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="literal number float"&gt;0.2&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number float"&gt;0.25&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="literal string"&gt;'k--'&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;lw&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="literal number float"&gt;0.5&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;ylim&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal number float"&gt;0.2&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number float"&gt;0.25&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;xlim&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal number float"&gt;0.2&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number float"&gt;0.25&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+R2: 0.445343
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+(0.2, 0.25)
+&lt;/pre&gt;
+&lt;img alt="BRDF_modelling_20_2.png" src="BRDF_modelling_20_2.png" /&gt;
+&lt;p&gt;So, not a great fit! Maybe if we use a larger window? Let's create a
+function to the the above conveniently:
+In[8]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="keyword"&gt;def&lt;/span&gt; &lt;span class="name function"&gt;invert_composite&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rho&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;kern&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doy_min&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt; &lt;span class="punctuation"&gt;):&lt;/span&gt;
+    &lt;span class="literal string doc"&gt;&amp;quot;&amp;quot;&amp;quot;A function to invert reflectance assuming the kernels in `kern`,
+    `qa` holds the QA data, `doys` the dates, and `rho` the actual
+    observations. Will composite all observations between `doy_min` and
+    `doy_max`.&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="name"&gt;passer&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;logical_and&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="operator"&gt;==&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;logical_and&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt; \
+        &lt;span class="name"&gt;doys&lt;/span&gt; &lt;span class="operator"&gt;&amp;gt;&lt;/span&gt; &lt;span class="name"&gt;doy_min&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt; &lt;span class="operator"&gt;&amp;lt;=&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt;&lt;span class="punctuation"&gt;))&lt;/span&gt;
+    &lt;span class="keyword"&gt;if&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;sum&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="name"&gt;passer&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt; &lt;span class="operator"&gt;&amp;lt;&lt;/span&gt; &lt;span class="literal number integer"&gt;3&lt;/span&gt;&lt;span class="punctuation"&gt;:&lt;/span&gt;
+        &lt;span class="keyword"&gt;raise&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;linalg&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;LinAlgError&lt;/span&gt;
+    &lt;span class="name"&gt;obs&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;rho&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;passer&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt;
+    &lt;span class="name"&gt;K&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;kern&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt; &lt;span class="name"&gt;passer&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="punctuation"&gt;:]&lt;/span&gt;
+    &lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="name"&gt;f&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rmse&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rank&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;svals&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;linalg&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;lstsq&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;K&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;obs&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;N. Obs: &lt;/span&gt;&lt;span class="literal string interpol"&gt;%d&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;sum&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;passer&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt;&lt;span class="literal string interpol"&gt;%-20s&lt;/span&gt;&lt;span class="literal string escape"&gt;\t&lt;/span&gt;&lt;span class="literal string interpol"&gt;%20s&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;Kernel&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;Value&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;for&lt;/span&gt; &lt;span class="name"&gt;i&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;k&lt;/span&gt; &lt;span class="operator word"&gt;in&lt;/span&gt; &lt;span class="name builtin"&gt;enumerate&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;Isotropic&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;Ross&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;LiThick&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt; &lt;span class="punctuation"&gt;):&lt;/span&gt;
+        &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt;&lt;span class="literal string interpol"&gt;%-20s&lt;/span&gt;&lt;span class="literal string escape"&gt;\t&lt;/span&gt;&lt;span class="literal string interpol"&gt;%20f&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;k&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;f&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;i&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="name"&gt;fwd&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;K&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;dot&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="name"&gt;f&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;T&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;R2: &lt;/span&gt;&lt;span class="literal string interpol"&gt;%g&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;corrcoef&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;obs&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;fwd&lt;/span&gt;&lt;span class="punctuation"&gt;)[&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt;&lt;span class="literal number integer"&gt;0&lt;/span&gt;&lt;span class="punctuation"&gt;]&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;plot&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;obs&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;fwd&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal string"&gt;'sk'&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;plot&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="literal number float"&gt;0.18&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number float"&gt;0.3&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="literal number float"&gt;0.18&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number float"&gt;0.3&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="literal string"&gt;'k--'&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;lw&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="literal number float"&gt;0.5&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;ylim&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal number float"&gt;0.18&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number float"&gt;0.3&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;xlim&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal number float"&gt;0.18&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number float"&gt;0.3&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;return&lt;/span&gt; &lt;span class="name"&gt;obs&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;fwd&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;passer&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;f&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rmse&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;In[9]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="name"&gt;retval&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;invert_composite&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rho&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;kern&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number integer"&gt;200&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number integer"&gt;210&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;title&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;Compositing between DoYs 200-210&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+N. Obs: 9
+Kernel                                 Value
+Isotropic                           0.235238
+Ross                               -0.033419
+LiThick                             0.054909
+R2: 0.386086
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+&amp;lt;matplotlib.text.Text at 0x3346c90&amp;gt;
+&lt;/pre&gt;
+&lt;img alt="BRDF_modelling_23_2.png" src="BRDF_modelling_23_2.png" /&gt;
+&lt;p&gt;In[10]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="name"&gt;retval&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="name"&gt;invert_composite&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rho&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;kern&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number integer"&gt;180&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number integer"&gt;227&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;title&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;Compositing between DoYs 200-227&amp;quot;&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+N. Obs: 41
+Kernel                                 Value
+Isotropic                           0.231309
+Ross                                0.009338
+LiThick                             0.000748
+R2: 0.05195
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+&amp;lt;matplotlib.text.Text at 0x3351bd0&amp;gt;
+&lt;/pre&gt;
+&lt;img alt="BRDF_modelling_24_2.png" src="BRDF_modelling_24_2.png" /&gt;
+&lt;p&gt;Clearly, this window is too big: changes &lt;strong&gt;are&lt;/strong&gt; happening. Also note
+the difference of adding just 1 observation to the 10 day period: the
+parameters change perceivably, the sign of ill-posedness. Let's see how
+the compositing period affects the estimate: we'll try to invert the
+pre-fire observations using a 16 and an 8 day compositing period:
+In[11]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="name"&gt;retvals&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="punctuation"&gt;[]&lt;/span&gt;
+&lt;span class="keyword"&gt;for&lt;/span&gt; &lt;span class="name"&gt;period&lt;/span&gt; &lt;span class="operator word"&gt;in&lt;/span&gt; &lt;span class="name builtin"&gt;xrange&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal number integer"&gt;227&lt;/span&gt;&lt;span class="operator"&gt;-&lt;/span&gt;&lt;span class="literal number integer"&gt;180&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;&lt;span class="operator"&gt;/&lt;/span&gt;&lt;span class="literal number integer"&gt;16&lt;/span&gt; &lt;span class="operator"&gt;+&lt;/span&gt; &lt;span class="literal number integer"&gt;1&lt;/span&gt; &lt;span class="punctuation"&gt;):&lt;/span&gt;
+    &lt;span class="name"&gt;doy_min&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="literal number integer"&gt;180&lt;/span&gt; &lt;span class="operator"&gt;+&lt;/span&gt; &lt;span class="literal number integer"&gt;16&lt;/span&gt;&lt;span class="operator"&gt;*&lt;/span&gt;&lt;span class="name"&gt;period&lt;/span&gt;
+    &lt;span class="name"&gt;doy_max&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="literal number integer"&gt;180&lt;/span&gt; &lt;span class="operator"&gt;+&lt;/span&gt; &lt;span class="literal number integer"&gt;16&lt;/span&gt;&lt;span class="operator"&gt;*&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="name"&gt;period&lt;/span&gt;&lt;span class="operator"&gt;+&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;if&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt; &lt;span class="operator"&gt;&amp;gt;&lt;/span&gt; &lt;span class="literal number integer"&gt;227&lt;/span&gt;&lt;span class="punctuation"&gt;:&lt;/span&gt;
+        &lt;span class="name"&gt;doy_max&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="literal number integer"&gt;227&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;subplot&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number integer"&gt;3&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;period&lt;/span&gt; &lt;span class="operator"&gt;+&lt;/span&gt; &lt;span class="literal number integer"&gt;1&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;==============================================================&amp;quot;&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;DoY Min: &lt;/span&gt;&lt;span class="literal string interpol"&gt;%d&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="name"&gt;doy_min&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;DoY Max: &lt;/span&gt;&lt;span class="literal string interpol"&gt;%d&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt;
+    &lt;span class="keyword"&gt;try&lt;/span&gt;&lt;span class="punctuation"&gt;:&lt;/span&gt;
+        &lt;span class="name"&gt;retvals&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;append&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;invert_composite&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rho&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;kern&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; \
+            &lt;span class="name"&gt;doy_min&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;except&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;linalg&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;LinAlgError&lt;/span&gt;&lt;span class="punctuation"&gt;:&lt;/span&gt;
+        &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;Not enough obs!&amp;quot;&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;title&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;Compositing &lt;/span&gt;&lt;span class="literal string interpol"&gt;%d&lt;/span&gt;&lt;span class="literal string"&gt;-&lt;/span&gt;&lt;span class="literal string interpol"&gt;%d&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; \
+        &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;doy_min&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+==============================================================
+DoY Min: 180
+DoY Max: 196
+N. Obs: 14
+Kernel                                 Value
+Isotropic                           0.238851
+Ross                               -0.006477
+LiThick                             0.009853
+R2: 0.100897
+==============================================================
+DoY Min: 196
+DoY Max: 212
+N. Obs: 15
+Kernel                                 Value
+Isotropic                           0.216249
+Ross                                0.066691
+LiThick                            -0.059062
+R2: 0.521575
+==============================================================
+DoY Min: 212
+DoY Max: 227
+N. Obs: 12
+Kernel                                 Value
+Isotropic                           0.243611
+Ross                               -0.062851
+LiThick                             0.063866
+R2: 0.646983
+&lt;/pre&gt;
+&lt;img alt="BRDF_modelling_26_1.png" src="BRDF_modelling_26_1.png" /&gt;
+&lt;p&gt;In[12]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="name"&gt;retvals&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="punctuation"&gt;[]&lt;/span&gt;
+&lt;span class="keyword"&gt;for&lt;/span&gt; &lt;span class="name"&gt;period&lt;/span&gt; &lt;span class="operator word"&gt;in&lt;/span&gt; &lt;span class="name builtin"&gt;xrange&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal number integer"&gt;227&lt;/span&gt;&lt;span class="operator"&gt;-&lt;/span&gt;&lt;span class="literal number integer"&gt;180&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;&lt;span class="operator"&gt;/&lt;/span&gt;&lt;span class="literal number integer"&gt;8&lt;/span&gt; &lt;span class="operator"&gt;+&lt;/span&gt; &lt;span class="literal number integer"&gt;1&lt;/span&gt; &lt;span class="punctuation"&gt;):&lt;/span&gt;
+    &lt;span class="name"&gt;doy_min&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="literal number integer"&gt;180&lt;/span&gt; &lt;span class="operator"&gt;+&lt;/span&gt; &lt;span class="literal number integer"&gt;8&lt;/span&gt;&lt;span class="operator"&gt;*&lt;/span&gt;&lt;span class="name"&gt;period&lt;/span&gt;
+    &lt;span class="name"&gt;doy_max&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="literal number integer"&gt;180&lt;/span&gt; &lt;span class="operator"&gt;+&lt;/span&gt; &lt;span class="literal number integer"&gt;8&lt;/span&gt;&lt;span class="operator"&gt;*&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="name"&gt;period&lt;/span&gt;&lt;span class="operator"&gt;+&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;if&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt; &lt;span class="operator"&gt;&amp;gt;&lt;/span&gt; &lt;span class="literal number integer"&gt;227&lt;/span&gt;&lt;span class="punctuation"&gt;:&lt;/span&gt;
+        &lt;span class="name"&gt;doy_max&lt;/span&gt; &lt;span class="operator"&gt;=&lt;/span&gt; &lt;span class="literal number integer"&gt;227&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;subplot&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="literal number integer"&gt;2&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number integer"&gt;3&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;period&lt;/span&gt; &lt;span class="operator"&gt;+&lt;/span&gt; &lt;span class="literal number integer"&gt;1&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;==============================================================&amp;quot;&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;DoY Min: &lt;/span&gt;&lt;span class="literal string interpol"&gt;%d&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="name"&gt;doy_min&lt;/span&gt;
+    &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;DoY Max: &lt;/span&gt;&lt;span class="literal string interpol"&gt;%d&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt;
+    &lt;span class="keyword"&gt;try&lt;/span&gt;&lt;span class="punctuation"&gt;:&lt;/span&gt;
+        &lt;span class="name"&gt;retvals&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;append&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;invert_composite&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;qa&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;rho&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;kern&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; \
+            &lt;span class="name"&gt;doy_min&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="keyword"&gt;except&lt;/span&gt; &lt;span class="name"&gt;np&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;linalg&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;LinAlgError&lt;/span&gt;&lt;span class="punctuation"&gt;:&lt;/span&gt;
+        &lt;span class="keyword"&gt;print&lt;/span&gt; &lt;span class="literal string"&gt;&amp;quot;Not enough obs!&amp;quot;&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;title&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;Compositing &lt;/span&gt;&lt;span class="literal string interpol"&gt;%d&lt;/span&gt;&lt;span class="literal string"&gt;-&lt;/span&gt;&lt;span class="literal string interpol"&gt;%d&lt;/span&gt;&lt;span class="literal string"&gt;&amp;quot;&lt;/span&gt; &lt;span class="operator"&gt;%&lt;/span&gt; \
+        &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;doy_min&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;doy_max&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt; &lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;/pre&gt;
+&lt;pre class="literal-block"&gt;
+==============================================================
+DoY Min: 180
+DoY Max: 188
+N. Obs: 6
+Kernel                                 Value
+Isotropic                           0.215737
+Ross                                0.217461
+LiThick                             0.004699
+R2: 0.960286
+==============================================================
+DoY Min: 188
+DoY Max: 196
+N. Obs: 8
+Kernel                                 Value
+Isotropic                           0.256502
+Ross                               -0.148200
+LiThick                             0.022454
+R2: 0.641367
+==============================================================
+DoY Min: 196
+DoY Max: 204
+N. Obs: 7
+Kernel                                 Value
+Isotropic                           0.222352
+Ross                               -0.073762
+LiThick                            -0.074442
+R2: 0.825704
+==============================================================
+DoY Min: 204
+DoY Max: 212
+N. Obs: 8
+Kernel                                 Value
+Isotropic                           0.211300
+Ross                                0.154030
+LiThick                            -0.051295
+R2: 0.833228
+==============================================================
+DoY Min: 212
+DoY Max: 220
+N. Obs: 7
+Kernel                                 Value
+Isotropic                           0.241598
+Ross                                0.021193
+LiThick                             0.066551
+R2: 0.838989
+==============================================================
+DoY Min: 220
+DoY Max: 227
+N. Obs: 5
+Kernel                                 Value
+Isotropic                           0.247820
+Ross                               -0.146072
+LiThick                             0.076207
+R2: 0.74752
+&lt;/pre&gt;
+&lt;img alt="BRDF_modelling_27_1.png" src="BRDF_modelling_27_1.png" /&gt;
+&lt;p&gt;We see that the kernel weights change substantially from one period to
+the next. The 16 day window seems quite poor, whereas the 8 day one is
+remarkably better. This means that fast changes are occurring in the
+ground, and the 8 day window is more appropriate.We can see how this
+works in time
+In[13]:&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="keyword"&gt;for&lt;/span&gt; &lt;span class="name"&gt;period&lt;/span&gt; &lt;span class="operator word"&gt;in&lt;/span&gt; &lt;span class="name builtin"&gt;xrange&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal number integer"&gt;227&lt;/span&gt;&lt;span class="operator"&gt;-&lt;/span&gt;&lt;span class="literal number integer"&gt;180&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;&lt;span class="operator"&gt;/&lt;/span&gt;&lt;span class="literal number integer"&gt;8&lt;/span&gt; &lt;span class="operator"&gt;+&lt;/span&gt; &lt;span class="literal number integer"&gt;1&lt;/span&gt; &lt;span class="punctuation"&gt;):&lt;/span&gt;
+
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;plot&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;retvals&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;period&lt;/span&gt;&lt;span class="punctuation"&gt;][&lt;/span&gt;&lt;span class="literal number integer"&gt;2&lt;/span&gt;&lt;span class="punctuation"&gt;]],&lt;/span&gt; &lt;span class="name"&gt;retvals&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;period&lt;/span&gt;&lt;span class="punctuation"&gt;][&lt;/span&gt;&lt;span class="literal number integer"&gt;0&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="literal string"&gt;'sk'&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;plot&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt; &lt;span class="name"&gt;doys&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;retvals&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;period&lt;/span&gt;&lt;span class="punctuation"&gt;][&lt;/span&gt;&lt;span class="literal number integer"&gt;2&lt;/span&gt;&lt;span class="punctuation"&gt;]],&lt;/span&gt; &lt;span class="name"&gt;retvals&lt;/span&gt;&lt;span class="punctuation"&gt;[&lt;/span&gt;&lt;span class="name"&gt;period&lt;/span&gt;&lt;span class="punctuation"&gt;][&lt;/span&gt;&lt;span class="literal number integer"&gt;1&lt;/span&gt;&lt;span class="punctuation"&gt;],&lt;/span&gt; &lt;span class="literal string"&gt;'-'&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="name"&gt;lw&lt;/span&gt;&lt;span class="operator"&gt;=&lt;/span&gt;&lt;span class="literal number float"&gt;1.8&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+    &lt;span class="name"&gt;plt&lt;/span&gt;&lt;span class="operator"&gt;.&lt;/span&gt;&lt;span class="name"&gt;ylim&lt;/span&gt;&lt;span class="punctuation"&gt;(&lt;/span&gt;&lt;span class="literal number float"&gt;0.18&lt;/span&gt;&lt;span class="punctuation"&gt;,&lt;/span&gt; &lt;span class="literal number float"&gt;0.3&lt;/span&gt;&lt;span class="punctuation"&gt;)&lt;/span&gt;
+&lt;/pre&gt;
+&lt;img alt="BRDF_modelling_29_0.png" src="BRDF_modelling_29_0.png" /&gt;
+&lt;/div&gt;
+&lt;div class="section" id="stuff-missing"&gt;
+&lt;h2&gt;Stuff missing&lt;/h2&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Uncertainty&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="refs"&gt;
+&lt;h2&gt;Refs&lt;/h2&gt;
+&lt;p&gt;Schaaf, C. B., F. Gao, A. H. Strahler, W. Lucht, X. Li, T. Tsang, N. C.
+Strugnell, X. Zhang, Y. Jin, J.-P. Muller, P. Lewis, M. Barnsley, P.
+Hobson, M. Disney, G. Roberts, M. Dunderdale, C. Doll, R. d Entremont,
+B. Hu, S. Liang, and J. L. Privette, First Operational BRDF, Albedo and
+Nadir Reflectance Products from MODIS, Remote Sens. Environ., 83,
+135-148, 2002.&lt;/p&gt;
+&lt;p&gt;Lucht, W., C.B. Schaaf, and A.H. Strahler. An Algorithm for the
+retrieval of albedo from space using semiempirical BRDF models, IEEE
+Trans. Geosci. Remote Sens., 38, 977-998, 2000.&lt;/p&gt;
+&lt;p&gt;Wanner, W., A.H. Strahler, B. Hu, P. Lewis, J.-P Muller, X. Li, C.
+Schaaf, and M.J. Barnsley, Global retrieval of bidirectional reflectance
+and albedo over land from EOS MODIS and MISR data: Theory and algorithm,
+J. Geophys. Res., 102, 17143-17161, 1997.&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="MODIS"></category><category term="python"></category><category term="remote-sensing"></category></entry><entry><title>RideLondon data download</title><link href="/ridelondon-data-download.html" rel="alternate"></link><updated>2013-08-05T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-08-05:ridelondon-data-download.html</id><summary type="html">&lt;p&gt;So a quick post on how to get access the web-based data on rider timings for the &lt;a class="reference external" href="http://www.prudentialridelondon.co.uk/"&gt;RideLondon event&lt;/a&gt;. The idea is that you can access the cyclist timings, and then
 maybe do some statistics (or boost/depress your morale by looking at how your time compares to the wider
 population taking part in the event!).&lt;/p&gt;
 &lt;div class="section" id="pre-requisites"&gt;
