@@ -147,18 +147,8 @@ used for this:&lt;/p&gt;
 days worth of data, and invert the kernel weights to see what we get.
 This is a straightforward least linear squares problem. The forward
 problem is:&lt;/p&gt;
-&lt;div class="formula"&gt;
-&lt;b&gt;K&lt;/b&gt;&lt;i&gt;f&lt;/i&gt; = &lt;i&gt;y&lt;/i&gt;
-&lt;/div&gt;
-&lt;div class="formula"&gt;
-&lt;i&gt;and&lt;/i&gt;&lt;i&gt;the&lt;/i&gt;&lt;i&gt;inverse&lt;/i&gt;&lt;i&gt;problem&lt;/i&gt;&lt;i&gt;is&lt;/i&gt;&lt;i&gt;then&lt;/i&gt;&lt;i&gt;given&lt;/i&gt;&lt;i&gt;by&lt;/i&gt;
-&lt;/div&gt;
-&lt;div class="formula"&gt;
-&lt;i&gt;f̂&lt;/i&gt; = min&lt;sub&gt;&lt;i&gt;f&lt;/i&gt;&lt;/sub&gt;|&lt;b&gt;K&lt;/b&gt;&lt;i&gt;f&lt;/i&gt; − &lt;i&gt;y&lt;/i&gt;|&lt;sup&gt;2&lt;/sup&gt;
-&lt;/div&gt;
-&lt;div class="formula"&gt;
-&lt;i&gt;For&lt;/i&gt;&lt;i&gt;this&lt;/i&gt;, &lt;i&gt;we&lt;/i&gt;&lt;i&gt;can&lt;/i&gt;&lt;i&gt;use&lt;/i&gt;`&lt;i&gt;lstsq&lt;/i&gt; &amp;lt; &lt;i&gt;http&lt;/i&gt;: ⁄  ⁄ &lt;i&gt;docs&lt;/i&gt;.&lt;i&gt;scipy&lt;/i&gt;.&lt;i&gt;org&lt;/i&gt; ⁄ &lt;i&gt;doc&lt;/i&gt; ⁄ &lt;i&gt;numpy&lt;/i&gt; ⁄ &lt;i&gt;reference&lt;/i&gt; ⁄ &lt;i&gt;generated&lt;/i&gt; ⁄ &lt;i&gt;numpy&lt;/i&gt;.&lt;i&gt;linalg&lt;/i&gt;.&lt;i&gt;lstsq&lt;/i&gt;.&lt;i&gt;html&lt;/i&gt; &amp;gt; `&lt;sub&gt;&lt;/sub&gt;
-&lt;/div&gt;
+&lt;blockquote&gt;
+For this, we can use &lt;a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html"&gt;lstsq&lt;/a&gt;&lt;/blockquote&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;passer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;logical_and&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;qa&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;logical_and&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;doys&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;200&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;doys&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;=&lt;/span&gt;&lt;span class="mi"&gt;209&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
 &lt;span class="n"&gt;obs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rho&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;passer&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
 &lt;span class="n"&gt;K&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;kern&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="n"&gt;passer&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;:]&lt;/span&gt;

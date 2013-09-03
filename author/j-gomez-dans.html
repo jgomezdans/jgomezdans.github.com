@@ -215,18 +215,8 @@ used for this:</p>
 days worth of data, and invert the kernel weights to see what we get.
 This is a straightforward least linear squares problem. The forward
 problem is:</p>
-<div class="formula">
-<b>K</b><i>f</i> = <i>y</i>
-</div>
-<div class="formula">
-<i>and</i><i>the</i><i>inverse</i><i>problem</i><i>is</i><i>then</i><i>given</i><i>by</i>
-</div>
-<div class="formula">
-<i>f̂</i> = min<sub><i>f</i></sub>|<b>K</b><i>f</i> − <i>y</i>|<sup>2</sup>
-</div>
-<div class="formula">
-<i>For</i><i>this</i>, <i>we</i><i>can</i><i>use</i>`<i>lstsq</i> &lt; <i>http</i>: ⁄  ⁄ <i>docs</i>.<i>scipy</i>.<i>org</i> ⁄ <i>doc</i> ⁄ <i>numpy</i> ⁄ <i>reference</i> ⁄ <i>generated</i> ⁄ <i>numpy</i>.<i>linalg</i>.<i>lstsq</i>.<i>html</i> &gt; `<sub></sub>
-</div>
+<blockquote>
+For this, we can use <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html">lstsq</a></blockquote>
 <div class="highlight"><pre><span class="n">passer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span> <span class="p">(</span> <span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span> <span class="n">doys</span> <span class="o">&gt;</span> <span class="mi">200</span><span class="p">,</span> <span class="n">doys</span> <span class="o">&lt;=</span><span class="mi">209</span><span class="p">))</span>
 <span class="n">obs</span> <span class="o">=</span> <span class="n">rho</span><span class="p">[</span><span class="n">passer</span><span class="p">]</span>
 <span class="n">K</span> <span class="o">=</span> <span class="n">kern</span><span class="p">[</span> <span class="n">passer</span><span class="p">,</span> <span class="p">:]</span>
