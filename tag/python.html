@@ -1,72 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Using MathJax, with the delimiters $ -->
-<!-- Conflict with pygments for the .mo and .mi -->
-        <title>EO & DA ramblings - python</title>
         <meta charset="utf-8" />
-        <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
-        
+        <title>EO & DA ramblings - python</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
         <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
-        
-        
 
         <!--[if IE]>
-                <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-
-        <!--[if lte IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie.css"/>
-                <script src=".././js/IE8.js" type="text/javascript"></script><![endif]-->
-
-        <!--[if lt IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie6.css"/><![endif]-->
-
-
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
 </head>
 
 <body id="index" class="home">
-
 <a href="http://github.com/jgomezdans">
-
 <img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" />
-
 </a>
-
         <header id="banner" class="body">
-                <h1><a href="../.">EO & DA ramblings </a></h1>
+                <h1><a href="/">EO & DA ramblings </a></h1>
                 <nav><ul>
-                
-                
-                
-                
-                
-                    <li ><a href=".././category/blog.html">Blog</a></li>
-                
+                    <li><a href="/category/blog.html">Blog</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
-                
 
-            
-
-        
-        
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././brdf-modelling-of-modis-land-surface-data.html">BRDF modelling of MODIS land surface data</a></h1> 
-                    <footer class="post-info">
+                    <h1 class="entry-title"><a href="/brdf-modelling-of-modis-land-surface-data.html">BRDF modelling of MODIS land surface data</a></h1>
+<footer class="post-info">
         <abbr class="published" title="2013-09-03T17:00:00">
                 Tue 03 September 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/modis.html">MODIS</a><a href=".././tag/python.html">python</a><a href=".././tag/remote-sensing.html">remote-sensing</a></p>
-
-
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/modis.html">MODIS</a><a href="/tag/python.html">python</a><a href="/tag/remote-sensing.html">remote-sensing</a></p>
 </footer><!-- /.post-info --><p>This post introduces simple BRDF modelling (i.e. how can we account
 for the variation in surface reflectance due to acquisition geometry?)
 using some MODIS data. You can find the whole post in <a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling">wakari</a>. If you
@@ -183,7 +151,7 @@ BRDF 92 7 648 858 470 555 1240 1640 2130
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;DoY&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">r&#39;$\hat{\rho}^{NIR}$&#39;</span><span class="p">)</span>
 </pre></div>
-<img alt="images/BRDF_modelling_12_1.png" src="../static/images/BRDF_modelling_12_1.png" />
+<img alt="" src="images/BRDF_modelling_12_1.png" />
 <p>The high frequency variation is quite high, and over a fairly short
 period, where we only expect a smooth variability of reflectance, we
 interpret it as BRDF effects. There's a big dip on DoY 228, due to a
@@ -195,7 +163,7 @@ fire (there's a hotspot there too), and then we see recovery due to char
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;VZA [deg]&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">r&#39;$\hat{\rho}^{NIR}$&#39;</span><span class="p">)</span>
 </pre></div>
-<img alt="images/BRDF_modelling_14_1.png" src="../static/images/BRDF_modelling_14_1.png" />
+<img alt="" src="images/BRDF_modelling_14_1.png" />
 <p>We see a large scatter in reflectance for larger values of VZA. Now,
 let's try to model this. We need to calculate the kernel weights for the
 Ross and Li-Thick kernels for each individual observation. We have a
@@ -241,7 +209,7 @@ observations:</p>
 <pre class="literal-block">
 R2: 0.445343
 </pre>
-<img alt="images/BRDF_modelling_20_2.png" src="../static/images/BRDF_modelling_20_2.png" />
+<img alt="" src="images/BRDF_modelling_20_2.png" />
 <p>So, not a great fit! Maybe if we use a larger window? Let's create a
 function to the the above conveniently:</p>
 <div class="highlight"><pre><span class="k">def</span> <span class="nf">invert_composite</span> <span class="p">(</span> <span class="n">qa</span><span class="p">,</span> <span class="n">doys</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">kern</span><span class="p">,</span> <span class="n">doy_min</span><span class="p">,</span> <span class="n">doy_max</span> <span class="p">):</span>
@@ -279,7 +247,7 @@ Ross                               -0.033419
 LiThick                             0.054909
 R2: 0.386086
 </pre>
-<img alt="images/BRDF_modelling_23_2.png" src="../static/images/BRDF_modelling_23_2.png" />
+<img alt="" src="images/BRDF_modelling_23_2.png" />
 <div class="highlight"><pre><span class="n">retval</span> <span class="o">=</span> <span class="n">invert_composite</span> <span class="p">(</span> <span class="n">qa</span><span class="p">,</span> <span class="n">doys</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">kern</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">227</span> <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;Compositing between DoYs 200-227&quot;</span><span class="p">)</span>
 </pre></div>
@@ -291,7 +259,7 @@ Ross                                0.009338
 LiThick                             0.000748
 R2: 0.05195
 </pre>
-<img alt="images/BRDF_modelling_24_2.png" src="../static/images/BRDF_modelling_24_2.png" />
+<img alt="" src="images/BRDF_modelling_24_2.png" />
 <p>Clearly, this window is too big: changes <strong>are</strong> happening. Also note
 the difference of adding just 1 observation to the 10 day period: the
 parameters change perceivably, the sign of ill-posedness. Let's see how
@@ -344,7 +312,7 @@ Ross                               -0.062851
 LiThick                             0.063866
 R2: 0.646983
 </pre>
-<img alt="images/BRDF_modelling_26_1.png" src="../static/images/BRDF_modelling_26_1.png" />
+<img alt="" src="images/BRDF_modelling_26_1.png" />
 <div class="highlight"><pre><span class="n">retvals</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">period</span> <span class="ow">in</span> <span class="nb">xrange</span> <span class="p">(</span> <span class="p">(</span><span class="mi">227</span><span class="o">-</span><span class="mi">180</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">):</span>
     <span class="n">doy_min</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">+</span> <span class="mi">8</span><span class="o">*</span><span class="n">period</span>
@@ -419,7 +387,7 @@ Ross                               -0.146072
 LiThick                             0.076207
 R2: 0.74752
 </pre>
-<img alt="images/BRDF_modelling_27_1.png" src="../static/images/BRDF_modelling_27_1.png" />
+<img alt="" src="images/BRDF_modelling_27_1.png" />
 <p>We see that the kernel weights change substantially from one period to
 the next. The 16 day window seems quite poor, whereas the 8 day one is
 remarkably better. This means that fast changes are occurring in the
@@ -431,7 +399,7 @@ works in time</p>
     <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">doys</span><span class="p">[</span><span class="n">retvals</span><span class="p">[</span><span class="n">period</span><span class="p">][</span><span class="mi">2</span><span class="p">]],</span> <span class="n">retvals</span><span class="p">[</span><span class="n">period</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.8</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">0.18</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
 </pre></div>
-<img alt="images/BRDF_modelling_29_0.png" src="../static/images/BRDF_modelling_29_0.png" />
+<img alt="" src="images/BRDF_modelling_29_0.png" />
 </div>
 <div class="section" id="stuff-missing">
 <h2>Stuff missing</h2>
@@ -455,329 +423,284 @@ Schaaf, and M.J. Barnsley, Global retrieval of bidirectional reflectance
 and albedo over land from EOS MODIS and MISR data: Theory and algorithm,
 J. Geophys. Res., 102, 17143-17161, 1997.</p>
 </div>
-
+<script type= "text/javascript">
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+</script>
                 </article>
-                
             </aside><!-- /#featured -->
-            
                 <section id="content" class="body">
                     <h1>Other articles</h1>
                     <hr />
                     <ol id="posts-list" class="hfeed">
-            
-        
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././ridelondon-data-download.html" rel="bookmark"
+                    <h1><a href="/ridelondon-data-download.html" rel="bookmark"
                            title="Permalink to RideLondon data download">RideLondon data download</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-08-05T17:00:00">
                 Mon 05 August 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>So a quick post on how to get access the web-based data on rider timings for the <a class="reference external" href="http://www.prudentialridelondon.co.uk/">RideLondon event</a>. The idea is that you can access the cyclist timings, and then
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a></p>
+</footer><!-- /.post-info -->                <p>So a quick post on how to get access the web-based data on rider timings for the <a class="reference external" href="http://www.prudentialridelondon.co.uk/">RideLondon event</a>. The idea is that you can access the cyclist timings, and then
 maybe do some statistics (or boost/depress your morale by looking at how your time compares to the wider ...</p>
-                <a class="readmore" href=".././ridelondon-data-download.html">read more</a>
-                
+                <a class="readmore" href="/ridelondon-data-download.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././downloading-modis-data-with-python.html" rel="bookmark"
+                    <h1><a href="/downloading-modis-data-with-python.html" rel="bookmark"
                            title="Permalink to Downloading MODIS data with Python">Downloading MODIS data with Python</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-06-17T17:00:00">
                 Mon 17 June 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/modis.html">modis</a><a href=".././tag/web.html">web</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Recently, the USGS has closed their FTP download service for MODIS
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/modis.html">modis</a><a href="/tag/web.html">web</a></p>
+</footer><!-- /.post-info -->                <p>Recently, the USGS has closed their FTP download service for MODIS
 products, such as LAI, surface reflectance, etc. This is quite annoying,
 because I had a nice <tt class="docutils literal">wget</tt> script that no longer works... So I decided
 to code a simple downloader in python that woud supersede my previous
 hacked together ...</p>
-                <a class="readmore" href=".././downloading-modis-data-with-python.html">read more</a>
-                
+                <a class="readmore" href="/downloading-modis-data-with-python.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././smp-processing-with-multiprocessing.html" rel="bookmark"
+                    <h1><a href="/smp-processing-with-multiprocessing.html" rel="bookmark"
                            title="Permalink to SMP processing with multiprocessing">SMP processing with multiprocessing</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-05-23T17:00:00">
                 Thu 23 May 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/gdal.html">gdal</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>This note details how to use parallel processing in python accessing
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/gdal.html">gdal</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>This note details how to use parallel processing in python accessing
 shared memory. The usage case is when you have a process that reads in a
 lot of data, and where the data can be processed in parallel, such as
 when reading and processing images/stacks of images in a ...</p>
-                <a class="readmore" href=".././smp-processing-with-multiprocessing.html">read more</a>
-                
+                <a class="readmore" href="/smp-processing-with-multiprocessing.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././downloading-andalusian-meteo-data.html" rel="bookmark"
+                    <h1><a href="/downloading-andalusian-meteo-data.html" rel="bookmark"
                            title="Permalink to Downloading Andalusian meteo data">Downloading Andalusian meteo data</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-12-11T13:00:00">
                 Tue 11 December 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/tips.html">tips</a><a href=".././tag/meteo.html">meteo</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Many networks of automated meteo stations are around. In some places,
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/tips.html">tips</a><a href="/tag/meteo.html">meteo</a></p>
+</footer><!-- /.post-info -->                <p>Many networks of automated meteo stations are around. In some places,
 the data are easy to access and therefore use. In some others, you have
 to go through a number of hoops. In Andalusia, it's a mixed bag: a number
 of independent networks are available for agricultural and environmental ...</p>
-                <a class="readmore" href=".././downloading-andalusian-meteo-data.html">read more</a>
-                
+                <a class="readmore" href="/downloading-andalusian-meteo-data.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././downsampling-with-gdal-in-python.html" rel="bookmark"
+                    <h1><a href="/downsampling-with-gdal-in-python.html" rel="bookmark"
                            title="Permalink to Downsampling with GDAL in python">Downsampling with GDAL in python</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-10-04T13:00:00">
                 Thu 04 October 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/python.html">python</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Quite often, one wants to generate some data at high resolution (say
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/python.html">python</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>Quite often, one wants to generate some data at high resolution (say
 process some image or images) and then calculate some relevant spatial
 statistics at some other resolution. For example, you might want to
 process Landsat TM data at 30m resolution, and might want to aggregate
 it to a resolution ...</p>
-                <a class="readmore" href=".././downsampling-with-gdal-in-python.html">read more</a>
-                
+                <a class="readmore" href="/downsampling-with-gdal-in-python.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html" rel="bookmark"
+                    <h1><a href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html" rel="bookmark"
                            title="Permalink to How to extract spectra from image data using ground truth vector data">How to extract spectra from image data using ground truth vector data</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-08-15T16:00:00">
                 Wed 15 August 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Supervised classification of EO data uses a set of samples from known
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>Supervised classification of EO data uses a set of samples from known
 patterns (usually reflectance spectra) to decide whether a given pattern
 belongs to one class or another. In landcover applications, one goes to
 the field, and observes that a given location is indeed class $\omega_c$.
-These ground observations usually ...</p>
-                <a class="readmore" href=".././how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html">read more</a>
-                
+These ground observations usually ...</p><script type= "text/javascript">
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+</script>
+
+                <a class="readmore" href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././eoldas-talk-at-vu-amsterdam.html" rel="bookmark"
+                    <h1><a href="/eoldas-talk-at-vu-amsterdam.html" rel="bookmark"
                            title="Permalink to EOLDAS talk at VU Amsterdam">EOLDAS talk at VU Amsterdam</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-08-01T13:00:00">
                 Wed 01 August 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/eoldas.html">EOLDAS</a><a href=".././tag/data-assimilation.html">data assimilation</a><a href=".././tag/python.html">python</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>So I have just spent a week visiting at the <a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp">VU Amsterdam</a>.
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/eoldas.html">EOLDAS</a><a href="/tag/data-assimilation.html">data assimilation</a><a href="/tag/python.html">python</a></p>
+</footer><!-- /.post-info -->                <p>So I have just spent a week visiting at the <a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp">VU Amsterdam</a>.
 During this visit, I have also given a talk on EOLDAS. The slides are
 availabe from <a class="reference external" href="http://jgomezdans.github.com/eoldas_release/EOLDAS_VUA.pdf">here</a>.</p>
 
-                <a class="readmore" href=".././eoldas-talk-at-vu-amsterdam.html">read more</a>
-                
+                <a class="readmore" href="/eoldas-talk-at-vu-amsterdam.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././simple-time-series-modis-data-analysis.html" rel="bookmark"
+                    <h1><a href="/simple-time-series-modis-data-analysis.html" rel="bookmark"
                            title="Permalink to Simple time series MODIS data analysis">Simple time series MODIS data analysis</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-07-23T15:00:00">
                 Mon 23 July 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a><a href=".././tag/python.html">python</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>In a <a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html">previous post</a>,
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a><a href="/tag/python.html">python</a></p>
+</footer><!-- /.post-info -->                <p>In a <a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html">previous post</a>,
 I demonstrated how to stitch and put together a number of MODIS data
 files. This is useful and interesting, but in the end, we are interested
 in analysing the data we get out of the satellite. One first way around
 this might be to extract time ...</p>
-                <a class="readmore" href=".././simple-time-series-modis-data-analysis.html">read more</a>
-                
+                <a class="readmore" href="/simple-time-series-modis-data-analysis.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
             </ol><!-- /#posts-list -->
-            
-                
-            
             </section><!-- /#content -->
-        
-    
-
-
         <section id="extras" class="body">
-        
-        
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                        </ul>
+                </div><!-- /.social -->
         </section><!-- /#extras -->
 
         <footer id="contentinfo" class="body">
@@ -788,18 +711,15 @@ this might be to extract time ...</p>
                 <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
         </footer><!-- /#contentinfo -->
 
-
     <script type="text/javascript">
-    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-25702318-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
     </script>
-    <script type="text/javascript">
-    try {
-        var pageTracker = _gat._getTracker("UA-25702318-1");
-    pageTracker._trackPageview();
-    } catch(err) {}</script>
-
-
-
 </body>
 </html>

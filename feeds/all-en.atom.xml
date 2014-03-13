@@ -1,5 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2013-09-03T17:00:00+01:00</updated><entry><title>BRDF modelling of MODIS land surface data</title><link href="/brdf-modelling-of-modis-land-surface-data.html" rel="alternate"></link><updated>2013-09-03T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-09-03:brdf-modelling-of-modis-land-surface-data.html</id><summary type="html">&lt;p&gt;This post introduces simple BRDF modelling (i.e. how can we account
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2014-03-13T13:00:00+00:00</updated><entry><title>ogr2ogr geoprocessing</title><link href="/ogr2ogr-geoprocessing.html" rel="alternate"></link><updated>2014-03-13T13:00:00+00:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2014-03-13:ogr2ogr-geoprocessing.html</id><summary type="html">&lt;p&gt;Sometimes, one wants to do some really simple geoprocessing on a large numbers of shapefiles. While you could definitely use &lt;a class="reference external" href="www.gaia-gis.it/gaia-sins/‎"&gt;Spatialite&lt;/a&gt; for that, I would rather avoid this. &lt;tt class="docutils literal"&gt;ogr2ogr&lt;/tt&gt;, on the other hand, provides handy access to Spatialite-like functionality. Let's say you wanted to produce a text file which contained the X and Y coordinates of your many shapefiles as well as any other attributes that might have been there first. We can invoke the spatialite SQL dialect to do this simple geoprocessing and to stuff the output in a CSV file:&lt;/p&gt;
+&lt;pre class="code bash literal-block"&gt;
+ &lt;span class="k"&gt;for &lt;/span&gt;location in loc1 loc2
+ &lt;span class="k"&gt;do
+   for &lt;/span&gt;i in &lt;span class="sb"&gt;`&lt;/span&gt;find &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;ROOT&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;/&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;location&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; -iname &lt;span class="s2"&gt;&amp;quot;*shp&amp;quot;&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;
+   &lt;span class="k"&gt;do
+     &lt;/span&gt;&lt;span class="nv"&gt;fname&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;basename &lt;span class="nv"&gt;$i&lt;/span&gt; .shp&lt;span class="sb"&gt;`&lt;/span&gt;
+     touch /tmp/&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;location&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;.csv
+     ogr2ogr -f &lt;span class="s2"&gt;&amp;quot;CSV&amp;quot;&lt;/span&gt;  -append -dialect &lt;span class="s2"&gt;&amp;quot;sqlite&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\
+&lt;/span&gt;         -sql &lt;span class="s2"&gt;&amp;quot;SELECT id, month, doy_min, doy_max, n_pixels, ST_X(ST_Centroid(GEOMETRY)), ST_Y(ST_Centroid(GEOMETRY)) from $fname&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\
+&lt;/span&gt;         /tmp/&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;location&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;.csv &lt;span class="nv"&gt;$i&lt;/span&gt;
+   &lt;span class="k"&gt;done
+done&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;Note that you can do many things like this. In this particular case, you could subset a particular extent, transform coordinates etc etc using &lt;tt class="docutils literal"&gt;ogr2ogr&lt;/tt&gt; command line parameters. The process is fast and painless, and provided that you can come up with a suitable &lt;tt class="docutils literal"&gt;find&lt;/tt&gt; command, very flexible and easy!&lt;/p&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
+</summary><category term="gdal"></category><category term="ogr"></category><category term="geoprocessing"></category></entry><entry><title>BRDF modelling of MODIS land surface data</title><link href="/brdf-modelling-of-modis-land-surface-data.html" rel="alternate"></link><updated>2013-09-03T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-09-03:brdf-modelling-of-modis-land-surface-data.html</id><summary type="html">&lt;p&gt;This post introduces simple BRDF modelling (i.e. how can we account
 for the variation in surface reflectance due to acquisition geometry?)
 using some MODIS data. You can find the whole post in &lt;a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling"&gt;wakari&lt;/a&gt;. If you
 accept to not escape the HTML &amp;amp; JS, you will find a link to the data file
@@ -115,7 +160,7 @@ BRDF 92 7 648 858 470 555 1240 1640 2130
 &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xlabel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;DoY&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ylabel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;r&amp;#39;$\hat{\rho}^{NIR}$&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;img alt="images/BRDF_modelling_12_1.png" src="images/BRDF_modelling_12_1.png" /&gt;
+&lt;img alt="" src="images/BRDF_modelling_12_1.png" /&gt;
 &lt;p&gt;The high frequency variation is quite high, and over a fairly short
 period, where we only expect a smooth variability of reflectance, we
 interpret it as BRDF effects. There's a big dip on DoY 228, due to a
@@ -127,7 +172,7 @@ fire (there's a hotspot there too), and then we see recovery due to char
 &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xlabel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;VZA [deg]&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ylabel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;r&amp;#39;$\hat{\rho}^{NIR}$&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;img alt="images/BRDF_modelling_14_1.png" src="images/BRDF_modelling_14_1.png" /&gt;
+&lt;img alt="" src="images/BRDF_modelling_14_1.png" /&gt;
 &lt;p&gt;We see a large scatter in reflectance for larger values of VZA. Now,
 let's try to model this. We need to calculate the kernel weights for the
 Ross and Li-Thick kernels for each individual observation. We have a
@@ -173,7 +218,7 @@ observations:&lt;/p&gt;
 &lt;pre class="literal-block"&gt;
 R2: 0.445343
 &lt;/pre&gt;
-&lt;img alt="images/BRDF_modelling_20_2.png" src="images/BRDF_modelling_20_2.png" /&gt;
+&lt;img alt="" src="images/BRDF_modelling_20_2.png" /&gt;
 &lt;p&gt;So, not a great fit! Maybe if we use a larger window? Let's create a
 function to the the above conveniently:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;invert_composite&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;qa&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;doys&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rho&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;kern&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;doy_min&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;doy_max&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
@@ -211,7 +256,7 @@ Ross                               -0.033419
 LiThick                             0.054909
 R2: 0.386086
 &lt;/pre&gt;
-&lt;img alt="images/BRDF_modelling_23_2.png" src="images/BRDF_modelling_23_2.png" /&gt;
+&lt;img alt="" src="images/BRDF_modelling_23_2.png" /&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;retval&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;invert_composite&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;qa&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;doys&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rho&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;kern&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;180&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;227&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;title&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Compositing between DoYs 200-227&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
@@ -223,7 +268,7 @@ Ross                                0.009338
 LiThick                             0.000748
 R2: 0.05195
 &lt;/pre&gt;
-&lt;img alt="images/BRDF_modelling_24_2.png" src="images/BRDF_modelling_24_2.png" /&gt;
+&lt;img alt="" src="images/BRDF_modelling_24_2.png" /&gt;
 &lt;p&gt;Clearly, this window is too big: changes &lt;strong&gt;are&lt;/strong&gt; happening. Also note
 the difference of adding just 1 observation to the 10 day period: the
 parameters change perceivably, the sign of ill-posedness. Let's see how
@@ -276,7 +321,7 @@ Ross                               -0.062851
 LiThick                             0.063866
 R2: 0.646983
 &lt;/pre&gt;
-&lt;img alt="images/BRDF_modelling_26_1.png" src="images/BRDF_modelling_26_1.png" /&gt;
+&lt;img alt="" src="images/BRDF_modelling_26_1.png" /&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;retvals&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
 &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;period&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;227&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;180&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;):&lt;/span&gt;
     &lt;span class="n"&gt;doy_min&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;180&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;period&lt;/span&gt;
@@ -351,7 +396,7 @@ Ross                               -0.146072
 LiThick                             0.076207
 R2: 0.74752
 &lt;/pre&gt;
-&lt;img alt="images/BRDF_modelling_27_1.png" src="images/BRDF_modelling_27_1.png" /&gt;
+&lt;img alt="" src="images/BRDF_modelling_27_1.png" /&gt;
 &lt;p&gt;We see that the kernel weights change substantially from one period to
 the next. The 16 day window seems quite poor, whereas the 8 day one is
 remarkably better. This means that fast changes are occurring in the
@@ -363,7 +408,7 @@ works in time&lt;/p&gt;
     &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;plot&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;doys&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;retvals&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;period&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;]],&lt;/span&gt; &lt;span class="n"&gt;retvals&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;period&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;-&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lw&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mf"&gt;1.8&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
     &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ylim&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;0.18&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;0.3&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;img alt="images/BRDF_modelling_29_0.png" src="images/BRDF_modelling_29_0.png" /&gt;
+&lt;img alt="" src="images/BRDF_modelling_29_0.png" /&gt;
 &lt;/div&gt;
 &lt;div class="section" id="stuff-missing"&gt;
 &lt;h2&gt;Stuff missing&lt;/h2&gt;
@@ -387,6 +432,36 @@ Schaaf, and M.J. Barnsley, Global retrieval of bidirectional reflectance
 and albedo over land from EOS MODIS and MISR data: Theory and algorithm,
 J. Geophys. Res., 102, 17143-17161, 1997.&lt;/p&gt;
 &lt;/div&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
 </summary><category term="MODIS"></category><category term="python"></category><category term="remote-sensing"></category></entry><entry><title>RideLondon data download</title><link href="/ridelondon-data-download.html" rel="alternate"></link><updated>2013-08-05T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-08-05:ridelondon-data-download.html</id><summary type="html">&lt;p&gt;So a quick post on how to get access the web-based data on rider timings for the &lt;a class="reference external" href="http://www.prudentialridelondon.co.uk/"&gt;RideLondon event&lt;/a&gt;. The idea is that you can access the cyclist timings, and then
 maybe do some statistics (or boost/depress your morale by looking at how your time compares to the wider
 population taking part in the event!).&lt;/p&gt;
@@ -488,7 +563,7 @@ for your name, or are curious about somebody else). &lt;tt class="docutils liter
 &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xlabel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Total time [min]&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;div class="figure"&gt;
-&lt;img alt="images/BicycleBicycle_13_1.png" src="images/BicycleBicycle_13_1.png" style="width: 90%;" /&gt;
+&lt;img alt="" src="images/BicycleBicycle_13_1.png" style="width: 90%;" /&gt;
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;div class="section" id="the-ipython-workbook"&gt;
@@ -636,6 +711,36 @@ for completenes, we shall also produce data for Spain.&lt;/p&gt;
 &lt;span class="k"&gt;done&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;/div&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
 </summary><category term="MODIS"></category><category term="GDAL"></category><category term="tips"></category></entry><entry><title>Getting a box</title><link href="/getting-a-box.html" rel="alternate"></link><updated>2013-06-23T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-06-23:getting-a-box.html</id><summary type="html">&lt;p&gt;Let's say one wants to find out a box around a given latitude/longitude point. How to do this
 without GIS software using an artisan UNIX approach? Hell, if it works for coffee! The steps
 are as follows:&lt;/p&gt;
@@ -736,6 +841,36 @@ GEOGCS&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;GCS_W
 fid: String &lt;span class="o"&gt;(&lt;/span&gt;80.0&lt;span class="o"&gt;)&lt;/span&gt;
 Name: String &lt;span class="o"&gt;(&lt;/span&gt;7.0&lt;span class="o"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
 </summary><category term="GDAL"></category><category term="tips"></category></entry><entry><title>Downloading MODIS data with Python</title><link href="/downloading-modis-data-with-python.html" rel="alternate"></link><updated>2013-06-17T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-06-17:downloading-modis-data-with-python.html</id><summary type="html">&lt;p&gt;Recently, the USGS has closed their FTP download service for MODIS
 products, such as LAI, surface reflectance, etc. This is quite annoying,
 because I had a nice &lt;tt class="docutils literal"&gt;wget&lt;/tt&gt; script that no longer works... So I decided
@@ -814,6 +949,36 @@ Options
 works for daily and composited products. At some point, I'd like to build a tool that gets the
 relevant data from the swath archive, but that's for when I grow up...&lt;/p&gt;
 &lt;/div&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
 </summary><category term="python"></category><category term="modis"></category><category term="web"></category></entry><entry><title>SMP processing with multiprocessing</title><link href="/smp-processing-with-multiprocessing.html" rel="alternate"></link><updated>2013-05-23T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-05-23:smp-processing-with-multiprocessing.html</id><summary type="html">&lt;p&gt;This note details how to use parallel processing in python accessing
 shared memory. The usage case is when you have a process that reads in a
 lot of data, and where the data can be processed in parallel, such as
@@ -1078,7 +1243,7 @@ function to do the downsampling.&lt;/p&gt;
 &lt;p&gt;Here's how the above code works on resampling some 30m Landsat TM/ETM+
 data&lt;/p&gt;
 &lt;div class="figure"&gt;
-&lt;img alt="images/downsample_example.png" src="images/downsample_example.png" style="width: 90%;" /&gt;
+&lt;img alt="" src="images/downsample_example.png" style="width: 90%;" /&gt;
 &lt;p class="caption"&gt;The left handside plot shows the original 30m resolution dataset. The
 middle plot shows a 3km modal aggregation, whereas the right handside
 plot shows a 9km modal aggregate.&lt;/p&gt;
@@ -1234,7 +1399,7 @@ data, so that the mask file is a meagre ~840kb of data. We can also plot the res
         &lt;span class="n"&gt;extent&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;6380&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;5668&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;cmap&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cm&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Reds&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;div class="figure"&gt;
-&lt;img alt="images/roi_plot.png" src="images/roi_plot.png" style="width: 90%;" /&gt;
+&lt;img alt="" src="images/roi_plot.png" style="width: 90%;" /&gt;
 &lt;p class="caption"&gt;The selected polygons on top of the raster data using different colours.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt;
@@ -1263,10 +1428,40 @@ data, so that the mask file is a meagre ~840kb of data. We can also plot the res
 &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;savetxt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;spectra.txt&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;spectra&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fmt&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%8g&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;div class="figure"&gt;
-&lt;img alt="images/spectra_scatter.png" src="images/spectra_scatter.png" style="width: 90%;" /&gt;
+&lt;img alt="" src="images/spectra_scatter.png" style="width: 90%;" /&gt;
 &lt;p class="caption"&gt;The extracted pixels for classes 2 to 5 over feature dimensions 2, 3 and 4.
 Note how the different classes can be separated.&lt;/p&gt;
 &lt;/div&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
 </summary><category term="python"></category><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>Creating a country raster mask using GDAL</title><link href="/creating-a-country-raster-mask-using-gdal.html" rel="alternate"></link><updated>2012-08-02T10:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-02:creating-a-country-raster-mask-using-gdal.html</id><summary type="html">&lt;p&gt;Usually, we remote sensing types ignore country boundaries: they don't really
 make much sense, as they are not aligned with MODIS pixels ;-) However, I was
 asked what's the easiest way to produce a global mask of countries, so that all
@@ -1339,9 +1534,39 @@ gdal_translate -of GTiff -outsize 368 180 world_grid.tif world_grid_1d.tif
 &lt;p&gt;And here you have a picture of how it looks. I'm using a random colormap with
 matplotlib (see &lt;a class="reference external" href="https://gist.github.com/402500"&gt;here&lt;/a&gt;)&lt;/p&gt;
 &lt;div class="figure"&gt;
-&lt;img alt="images/world_map.png" src="images/world_map.png" style="width: 90%;" /&gt;
+&lt;img alt="" src="images/world_map.png" style="width: 90%;" /&gt;
 &lt;p class="caption"&gt;The map, in all its glory.&lt;/p&gt;
 &lt;/div&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
 </summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>EOLDAS talk at VU Amsterdam</title><link href="/eoldas-talk-at-vu-amsterdam.html" rel="alternate"></link><updated>2012-08-01T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-08-01:eoldas-talk-at-vu-amsterdam.html</id><summary type="html">&lt;p&gt;So I have just spent a week visiting at the &lt;a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp"&gt;VU Amsterdam&lt;/a&gt;.
 During this visit, I have also given a talk on EOLDAS. The slides are
 availabe from &lt;a class="reference external" href="http://jgomezdans.github.com/eoldas_release/EOLDAS_VUA.pdf"&gt;here&lt;/a&gt;.&lt;/p&gt;
@@ -1459,6 +1684,36 @@ Belgium, etc!) for what the MODIS landcover products claims to be
 &amp;quot;Croplands&amp;quot; )&lt;/p&gt;
 &lt;/div&gt;
 &lt;p&gt;Cool, hey? ;-)&lt;/p&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
 </summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category><category term="python"></category></entry><entry><title>Stitching together MODIS data</title><link href="/stitching-together-modis-data.html" rel="alternate"></link><updated>2012-07-20T15:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-20:stitching-together-modis-data.html</id><summary type="html">&lt;p&gt;MODIS has been around for some 12 years. There are many products that
 have large time series over the whole globe which one can use to study
 things. So I might want to produce a a timeseries of the &lt;a class="reference external" href="https://lpdaac.usgs.gov/products/modis_products_table/gross_primary_productivity/8_day_l4_global_1km/mod17a2"&gt;8-day Gross Primary Productivity (GPP) product&lt;/a&gt;
@@ -1638,7 +1893,7 @@ Python (who can read the VRT files just fine!):&lt;/p&gt;
 &lt;span class="n"&gt;plt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;colorbar&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;orientation&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;horizontal&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;div class="figure"&gt;
-&lt;img alt="images/GPP_sinusoidal.png" src="images/GPP_sinusoidal.png" style="width: 90%;" /&gt;
+&lt;img alt="" src="images/GPP_sinusoidal.png" style="width: 90%;" /&gt;
 &lt;/div&gt;
 &lt;p&gt;Let's say we want to use the Ordnance Survey Projection for the UK. In
 &lt;a class="reference external" href="http://jgomezdans.github.com/gdal_notes/reprojection.html"&gt;this webpage&lt;/a&gt;,
@@ -1667,7 +1922,7 @@ echo 5 50 | gdaltransform -s_srs &amp;quot;EPSG:4326&amp;quot; -t_srs &amp;quot;
 gdal_translate -of VRT -projwin -246410.748854375 1294822.36205397 901561.991813587 34610.1630877961 mosaic.vrt mosaic_cropped.vrt
 &lt;/pre&gt;
 &lt;div class="figure"&gt;
-&lt;img alt="images/GPP_OSNG_cropped.png" src="images/GPP_OSNG_cropped.png" style="width: 90%;" /&gt;
+&lt;img alt="" src="images/GPP_OSNG_cropped.png" style="width: 90%;" /&gt;
 &lt;/div&gt;
 &lt;p&gt;At this stage, we have the output that we want for a given date. Let's
 put this together for a whole year.&lt;/p&gt;
@@ -1724,6 +1979,36 @@ gdal_translate -of GTiff -co &amp;quot;COMPRESS=LZW&amp;quot; -co &amp;quot;TILE
 &lt;p&gt;At this stage, we can have a look at &lt;tt class="docutils literal"&gt;MOD17A2.2004.tif&lt;/tt&gt; with e.g.
 &lt;tt class="docutils literal"&gt;gdalinfo&lt;/tt&gt; or something.&lt;/p&gt;
 &lt;/div&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
 </summary><category term="GDAL"></category><category term="remote sensing"></category><category term="tips"></category></entry><entry><title>Linearly scaling raster data with GDAL</title><link href="/linearly-scaling-raster-data-with-gdal.html" rel="alternate"></link><updated>2012-07-20T13:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2012-07-20:linearly-scaling-raster-data-with-gdal.html</id><summary type="html">&lt;p&gt;So, it's quite tricky to play around with these geospatial datasets: they
 have a myriad formats, these keep changing, and you can never know what
 metadata will be available in them. A clever way around this situation

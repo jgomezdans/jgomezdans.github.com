@@ -1,1007 +1,510 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Using MathJax, with the delimiters $ -->
-<!-- Conflict with pygments for the .mo and .mi -->
-        <title>EO & DA ramblings - Blog</title>
         <meta charset="utf-8" />
-        <link rel="stylesheet" href=".././theme/css/main.css" type="text/css" />
-        
+        <title>EO & DA ramblings - Blog</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
         <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
-        
-        
 
         <!--[if IE]>
-                <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-
-        <!--[if lte IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie.css"/>
-                <script src=".././js/IE8.js" type="text/javascript"></script><![endif]-->
-
-        <!--[if lt IE 7]>
-                <link rel="stylesheet" type="text/css" media="all" href=".././css/ie6.css"/><![endif]-->
-
-
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
 </head>
 
 <body id="index" class="home">
-
 <a href="http://github.com/jgomezdans">
-
 <img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" />
-
 </a>
-
         <header id="banner" class="body">
-                <h1><a href="../.">EO & DA ramblings </a></h1>
+                <h1><a href="/">EO & DA ramblings </a></h1>
                 <nav><ul>
-                
-                
-                
-                
-                
-                    <li class="active"><a href=".././category/blog.html">Blog</a></li>
-                
+                    <li class="active"><a href="/category/blog.html">Blog</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
-                
 
-            
-
-        
-        
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href=".././brdf-modelling-of-modis-land-surface-data.html">BRDF modelling of MODIS land surface data</a></h1> 
-                    <footer class="post-info">
-        <abbr class="published" title="2013-09-03T17:00:00">
-                Tue 03 September 2013
+                    <h1 class="entry-title"><a href="/ogr2ogr-geoprocessing.html">ogr2ogr geoprocessing</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2014-03-13T13:00:00">
+                Thu 13 March 2014
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/modis.html">MODIS</a><a href=".././tag/python.html">python</a><a href=".././tag/remote-sensing.html">remote-sensing</a></p>
-
-
-</footer><!-- /.post-info --><p>This post introduces simple BRDF modelling (i.e. how can we account
-for the variation in surface reflectance due to acquisition geometry?)
-using some MODIS data. You can find the whole post in <a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling">wakari</a>. If you
-accept to not escape the HTML &amp; JS, you will find a link to the data file
-there too.</p>
-<p>A particularly simple way of dealing with BRDF effects is by using
-linear kernel models. These models are reduced physics versions of more
-complex radiative tranfer models with some empirical considerations to
-further simplify things. Since we are only interested in the shape of
-the BRDF, we can lump the parameters into some constants of limited
-physical explanatory value, and do a few simplifications so that we can
-write the the observed reflectance at band <span class="formula"><i>λ</i><sub><i>i</i></sub></span>
- as:</p>
-<div class="formula">
-<i>ρ</i><sup><i>λ</i><sub><i>i</i></sub></sup>(Ω, <i>Omega</i>’) = <span class="limits"><sup class="limit"><i>N</i><sub><i>kern</i></sub></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>i</i> = 1</sub></span><i>f</i><sub><i>i</i></sub><i>K</i><sub><i>i</i></sub>(Ω, Ω’), 
-</div>
-<p>where we have <span class="formula"><i>N</i><sub><i>kern</i></sub></span>
-kernels, typically 3, and the
-acquisition geometry is given by <span class="formula">(Ω, <i>Omega</i>’)</span>
-. The three
-kernels that are typically used are those that have been popularised by
-the MODIS albedo product (MCD43):</p>
-<ul class="simple">
-<li>An isotropic kernel, (<span class="formula"><i>K</i><sub><i>iso</i></sub> = 1</span>
-), accounting for isotropic
-BRDF effects</li>
-<li>A volumetric scattering kernel (<span class="formula"><i>K</i><sub><i>vol</i></sub></span>
-), a simplified
-version of volume scattering as seen in Ross (1981)</li>
-<li>A geometric scattering that aims to mimick surface scattering and
-shadowing.</li>
-</ul>
-<p>While different families of these kernels are used, we use the
-Ross-ThickLiSparse-Reciprocal kernels (these have been evaluated and
-found to be quite good).</p>
-<p>The problem stated above cannot be solved on a daily basis (or whenever
-an observation becomes available): there are 3 parameters per band, and
-only one observation, so the system is underdetermined. If we assume
-that the parameters can be related to land surface parameters, and we
-assume that change is slow, a way around this is temporal compositing,
-where all the observations within a given period are inverted together.
-It is important to take uncertainty in the observations into account, as
-we don't measure <span class="formula"><i>ρ</i><sup><i>λ</i><sub><i>i</i></sub></sup></span>
-, but rather
-<span class="formula"><i>ρ̂</i><sup><i>λ</i><sub><i>i</i></sub></sup> = <i>ρ</i><sup><i>λ</i><sub><i>i</i></sub></sup> + <i>ϵ</i><sup><i>λ</i><sub><i>i</i></sub></sup></span>
-,
-where <span class="formula"><i>ϵ</i><sup><i>λ</i><sub><i>i</i></sub></sup></span>
- is additive noise, typically modelled
-as zero mean and with a known variance (see Roy et al for a table with
-typical values for MODIS).</p>
-<div class="section" id="ill-posedness">
-<h2>Ill-posedness</h2>
-<p>The problem of inverting RT models (be they linear or not) is typically
-<em>ill-posed</em>. By contrast, a well-posed problem (in the Hadamard sense)
-is one where:</p>
-<ol class="arabic simple">
-<li>A solution exists</li>
-<li>The solution is unique</li>
-<li>The solution's behavior hardly changes when there's a slight change
-in the initial condition</li>
-</ol>
-<p>In this case, due to the uncertainty introduced by the noise (and
-limited angular sampling), point 2 is not typically met, resulting in
-many configurations of kernel weights that provide an adequate
-representation of the observations. Compositing is a good way of
-increasing the angular sampling and reducing the noise, but it can only
-be taken that far: too long a compositing window, and the assumption of
-static land surface properties weakens.</p>
-</div>
-<div class="section" id="reading-the-data">
-<h2>Reading the data</h2>
-<p>Let's look at some data. The data is stored in a text file, and belongs
-to a pixel somewhere in Angola. We only have band 2 data here. The first
-ten lines of the file show the format. The first line is a header,
-telling us that there are 92 observations, with 7 bands, as well as
-their centre wavelengths. After the first line, we have individual
-records with the following format:</p>
-<ul class="simple">
-<li>day of year (DoY)</li>
-<li>QA flag (1=use, 2=don't use)</li>
-<li><tt class="docutils literal">vza</tt>, the view zenith angle (in degrees)</li>
-<li><tt class="docutils literal">vaa</tt>, the view azimuth angle (in degrees)</li>
-<li><tt class="docutils literal">sza</tt>, the solar/illumiation zenith angle (in degrees)</li>
-<li><tt class="docutils literal">saa</tt>, the solar/illumiation azimuth angle (in degrees)</li>
-<li>the reflectance</li>
-</ul>
-<p>Typically, we will use <tt class="docutils literal">sza</tt>, <tt class="docutils literal">vza</tt> and <tt class="docutils literal">raa</tt>. <tt class="docutils literal"><span class="pre">raa``=``vaa</span></tt> -
-<tt class="docutils literal">saa</tt>.</p>
-<p>First, we need to get the data. The next code snippet will provide you
-with a link to the datafile that you can download (hopefully) from <a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling">wakari</a></p>
-<div class="highlight"><pre><span class="err">!</span><span class="n">head</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10</span> <span class="n">data</span><span class="o">.</span><span class="n">r2023</span><span class="o">.</span><span class="n">c87</span><span class="o">.</span><span class="n">dat</span>
-</pre></div>
-<pre class="literal-block">
-BRDF 92 7 648 858 470 555 1240 1640 2130
-181 1 65.419998 -84.470001 44.130001 20.090000 0.114600 0.243200 0.052800 0.087100 0.328300 0.302300 0.213400
-182 1 23.410000 98.290001 50.220001 35.310001 0.113900 0.218100 0.051100 0.084500 0.315900 0.339000 0.205500
-184 1 44.049999 100.730003 51.910000 38.360001 0.142900 0.269100 0.063400 0.107500 0.359300 0.375000 0.246500
-185 1 40.400002 -82.199997 46.310001 27.700001 0.107000 0.212100 0.051600 0.079900 0.310400 0.310400 0.214100
-186 1 57.720001 101.300003 53.700001 41.259998 0.152700 0.291400 0.064600 0.114800 0.395000 0.382700 0.258700
-187 1 17.770000 -81.010002 47.630001 31.260000 0.111000 0.217700 0.050500 0.081600 0.307600 0.318500 0.205500
-188 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
-189 1 10.470000 96.879997 49.090000 34.650002 0.117500 0.225000 0.054200 0.087700 0.334600 0.334300 0.231400
-190 1 60.889999 -83.790001 44.070000 22.910000 0.100200 0.212100 0.045900 0.074100 0.296100 0.302100 0.188200
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">gdal</a><a href="/tag/ogr.html">ogr</a><a href="/tag/geoprocessing.html">geoprocessing</a></p>
+</footer><!-- /.post-info --><p>Sometimes, one wants to do some really simple geoprocessing on a large numbers of shapefiles. While you could definitely use <a class="reference external" href="www.gaia-gis.it/gaia-sins/‎">Spatialite</a> for that, I would rather avoid this. <tt class="docutils literal">ogr2ogr</tt>, on the other hand, provides handy access to Spatialite-like functionality. Let's say you wanted to produce a text file which contained the X and Y coordinates of your many shapefiles as well as any other attributes that might have been there first. We can invoke the spatialite SQL dialect to do this simple geoprocessing and to stuff the output in a CSV file:</p>
+<pre class="code bash literal-block">
+ <span class="k">for </span>location in loc1 loc2
+ <span class="k">do
+   for </span>i in <span class="sb">`</span>find <span class="k">${</span><span class="nv">ROOT</span><span class="k">}</span>/<span class="k">${</span><span class="nv">location</span><span class="k">}</span> -iname <span class="s2">&quot;*shp&quot;</span><span class="sb">`</span>
+   <span class="k">do
+     </span><span class="nv">fname</span><span class="o">=</span><span class="sb">`</span>basename <span class="nv">$i</span> .shp<span class="sb">`</span>
+     touch /tmp/<span class="k">${</span><span class="nv">location</span><span class="k">}</span>.csv
+     ogr2ogr -f <span class="s2">&quot;CSV&quot;</span>  -append -dialect <span class="s2">&quot;sqlite&quot;</span> <span class="se">\
+</span>         -sql <span class="s2">&quot;SELECT id, month, doy_min, doy_max, n_pixels, ST_X(ST_Centroid(GEOMETRY)), ST_Y(ST_Centroid(GEOMETRY)) from $fname&quot;</span> <span class="se">\
+</span>         /tmp/<span class="k">${</span><span class="nv">location</span><span class="k">}</span>.csv <span class="nv">$i</span>
+   <span class="k">done
+done</span>
 </pre>
-<p>Let's read the data in and do some plots!</p>
-<div class="highlight"><pre><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span> <span class="p">(</span> <span class="s">&quot;data.r2023.c87.dat&quot;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="c"># Read data in, but skip first line</span>
-<span class="n">doys</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
-<span class="n">qa</span> <span class="o">=</span> <span class="n">data</span> <span class="p">[</span> <span class="p">:,</span> <span class="mi">1</span> <span class="p">]</span>
-<span class="n">vza</span> <span class="o">=</span> <span class="n">data</span> <span class="p">[</span> <span class="p">:,</span> <span class="mi">2</span> <span class="p">]</span>
-<span class="n">sza</span> <span class="o">=</span> <span class="n">data</span> <span class="p">[</span> <span class="p">:,</span> <span class="mi">4</span> <span class="p">]</span>
-<span class="n">raa</span> <span class="o">=</span> <span class="n">data</span> <span class="p">[</span> <span class="p">:,</span> <span class="mi">3</span> <span class="p">]</span> <span class="o">-</span> <span class="n">data</span> <span class="p">[</span> <span class="p">:,</span> <span class="mi">5</span> <span class="p">]</span>
-<span class="n">rho</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">7</span><span class="p">]</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span> <span class="p">(</span> <span class="n">doys</span><span class="p">[</span><span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">],</span> <span class="n">rho</span><span class="p">[</span><span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">],</span> <span class="s">&#39;o-&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;DoY&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">r&#39;$\hat{\rho}^{NIR}$&#39;</span><span class="p">)</span>
-</pre></div>
-<img alt="images/BRDF_modelling_12_1.png" src="../static/images/BRDF_modelling_12_1.png" />
-<p>The high frequency variation is quite high, and over a fairly short
-period, where we only expect a smooth variability of reflectance, we
-interpret it as BRDF effects. There's a big dip on DoY 228, due to a
-fire (there's a hotspot there too), and then we see recovery due to char
-&amp; ash dissipation processes. Let's look at the angular signal up to DoY
-228:</p>
-<div class="highlight"><pre><span class="n">passer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span> <span class="p">(</span> <span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">,</span> <span class="n">doys</span> <span class="o">&lt;</span> <span class="mi">228</span> <span class="p">)</span> <span class="c"># Select obs before the fire</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span> <span class="p">(</span> <span class="n">vza</span><span class="p">[</span><span class="n">passer</span><span class="p">],</span> <span class="n">rho</span><span class="p">[</span><span class="n">passer</span><span class="p">],</span> <span class="s">&#39;o&#39;</span> <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;VZA [deg]&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">r&#39;$\hat{\rho}^{NIR}$&#39;</span><span class="p">)</span>
-</pre></div>
-<img alt="images/BRDF_modelling_14_1.png" src="../static/images/BRDF_modelling_14_1.png" />
-<p>We see a large scatter in reflectance for larger values of VZA. Now,
-let's try to model this. We need to calculate the kernel weights for the
-Ross and Li-Thick kernels for each individual observation. We have a
-Python class that does that, <tt class="docutils literal">kernels.py</tt>, which can be imported and
-used for this:</p>
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">kernels</span> <span class="kn">import</span> <span class="n">Kernels</span> <span class="c"># Import ther kernels</span>
-<span class="c"># Generate the kernels, only bother for obs where the QA is OK</span>
-<span class="n">K_obs</span> <span class="o">=</span>  <span class="n">Kernels</span><span class="p">(</span> <span class="n">vza</span><span class="p">[</span><span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">],</span> <span class="n">sza</span><span class="p">[</span><span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">],</span> <span class="n">raa</span><span class="p">[</span><span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">],</span> \
-        <span class="n">LiType</span><span class="o">=</span><span class="s">&#39;Sparse&#39;</span><span class="p">,</span> <span class="n">doIntegrals</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> \
-        <span class="n">normalise</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">RecipFlag</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">RossHS</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">MODISSPARSE</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> \
-        <span class="n">RossType</span><span class="o">=</span><span class="s">&#39;Thick&#39;</span> <span class="p">)</span>
-<span class="n">kern</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span> <span class="p">((</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">),</span> <span class="mi">3</span> <span class="p">))</span> <span class="c"># Store the kernels in an array</span>
-<span class="n">kern</span><span class="p">[</span> <span class="p">:,</span> <span class="mi">1</span> <span class="p">]</span> <span class="o">=</span> <span class="n">K_obs</span><span class="o">.</span><span class="n">Ross</span>
-<span class="n">kern</span><span class="p">[</span> <span class="p">:,</span> <span class="mi">2</span> <span class="p">]</span> <span class="o">=</span> <span class="n">K_obs</span><span class="o">.</span><span class="n">Li</span>
-</pre></div>
-<p>Now we can just solve our system. First with brute force: let's take 8
-days worth of data, and invert the kernel weights to see what we get.
-This is a straightforward least linear squares problem, and we can use <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html">lstsq</a> to
-solve it.</p>
-<div class="highlight"><pre><span class="n">passer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span> <span class="p">(</span> <span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span> <span class="n">doys</span> <span class="o">&gt;</span> <span class="mi">200</span><span class="p">,</span> <span class="n">doys</span> <span class="o">&lt;=</span><span class="mi">209</span><span class="p">))</span>
-<span class="n">obs</span> <span class="o">=</span> <span class="n">rho</span><span class="p">[</span><span class="n">passer</span><span class="p">]</span>
-<span class="n">K</span> <span class="o">=</span> <span class="n">kern</span><span class="p">[</span> <span class="n">passer</span><span class="p">,</span> <span class="p">:]</span>
-<span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">rmse</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">svals</span> <span class="p">)</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span> <span class="n">K</span><span class="p">,</span> <span class="n">obs</span> <span class="p">)</span>
-<span class="k">print</span> <span class="s">&quot;</span><span class="si">%-20s</span><span class="se">\t</span><span class="si">%20s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span> <span class="s">&quot;Kernel&quot;</span><span class="p">,</span> <span class="s">&quot;Value&quot;</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span> <span class="p">[</span><span class="s">&quot;Isotropic&quot;</span><span class="p">,</span> <span class="s">&quot;Ross&quot;</span><span class="p">,</span> <span class="s">&quot;LiThick&quot;</span><span class="p">]</span> <span class="p">):</span>
-    <span class="k">print</span> <span class="s">&quot;</span><span class="si">%-20s</span><span class="se">\t</span><span class="si">%20f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">k</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span>
-</pre></div>
-<pre class="literal-block">
-Kernel                                 Value
-Isotropic                           0.242057
-Ross                               -0.065568
-LiThick                             0.075140
-</pre>
-<p>So we have a solution. How good is it? Let's try to forward model the
-observations:</p>
-<div class="highlight"><pre><span class="n">fwd</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-<span class="k">print</span> <span class="s">&quot;R2: </span><span class="si">%g</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span> <span class="p">(</span> <span class="n">obs</span><span class="p">,</span> <span class="n">fwd</span><span class="p">)[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span> <span class="p">(</span> <span class="n">obs</span><span class="p">,</span> <span class="n">fwd</span><span class="p">,</span> <span class="s">&#39;sk&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span> <span class="p">(</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">],</span> <span class="s">&#39;k--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">)</span>
-</pre></div>
-<pre class="literal-block">
-R2: 0.445343
-</pre>
-<img alt="images/BRDF_modelling_20_2.png" src="../static/images/BRDF_modelling_20_2.png" />
-<p>So, not a great fit! Maybe if we use a larger window? Let's create a
-function to the the above conveniently:</p>
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">invert_composite</span> <span class="p">(</span> <span class="n">qa</span><span class="p">,</span> <span class="n">doys</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">kern</span><span class="p">,</span> <span class="n">doy_min</span><span class="p">,</span> <span class="n">doy_max</span> <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A function to invert reflectance assuming the kernels in `kern`,</span>
-<span class="sd">    `qa` holds the QA data, `doys` the dates, and `rho` the actual</span>
-<span class="sd">    observations. Will composite all observations between `doy_min` and</span>
-<span class="sd">    `doy_max`.&quot;&quot;&quot;</span>
-    <span class="n">passer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span> <span class="p">(</span> <span class="n">qa</span><span class="o">==</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span> \
-        <span class="n">doys</span> <span class="o">&gt;</span> <span class="n">doy_min</span><span class="p">,</span> <span class="n">doys</span> <span class="o">&lt;=</span> <span class="n">doy_max</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">passer</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinAlgError</span>
-    <span class="n">obs</span> <span class="o">=</span> <span class="n">rho</span><span class="p">[</span><span class="n">passer</span><span class="p">]</span>
-    <span class="n">K</span> <span class="o">=</span> <span class="n">kern</span><span class="p">[</span> <span class="n">passer</span><span class="p">,</span> <span class="p">:]</span>
-    <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">rmse</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">svals</span> <span class="p">)</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span> <span class="n">K</span><span class="p">,</span> <span class="n">obs</span> <span class="p">)</span>
-    <span class="k">print</span> <span class="s">&quot;N. Obs: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span> <span class="p">(</span> <span class="n">passer</span> <span class="p">)</span>
-    <span class="k">print</span> <span class="s">&quot;</span><span class="si">%-20s</span><span class="se">\t</span><span class="si">%20s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span> <span class="s">&quot;Kernel&quot;</span><span class="p">,</span> <span class="s">&quot;Value&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span> <span class="p">[</span><span class="s">&quot;Isotropic&quot;</span><span class="p">,</span> <span class="s">&quot;Ross&quot;</span><span class="p">,</span> <span class="s">&quot;LiThick&quot;</span><span class="p">]</span> <span class="p">):</span>
-        <span class="k">print</span> <span class="s">&quot;</span><span class="si">%-20s</span><span class="se">\t</span><span class="si">%20f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">k</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span>
-    <span class="n">fwd</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-    <span class="k">print</span> <span class="s">&quot;R2: </span><span class="si">%g</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span> <span class="p">(</span> <span class="n">obs</span><span class="p">,</span> <span class="n">fwd</span><span class="p">)[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span> <span class="p">(</span> <span class="n">obs</span><span class="p">,</span> <span class="n">fwd</span><span class="p">,</span> <span class="s">&#39;sk&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span> <span class="p">(</span> <span class="p">[</span><span class="mf">0.18</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.18</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span> <span class="s">&#39;k--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">0.18</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mf">0.18</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">obs</span><span class="p">,</span> <span class="n">fwd</span><span class="p">,</span> <span class="n">passer</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">rmse</span>
-</pre></div>
-<div class="highlight"><pre><span class="n">retval</span> <span class="o">=</span> <span class="n">invert_composite</span> <span class="p">(</span> <span class="n">qa</span><span class="p">,</span> <span class="n">doys</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">kern</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">210</span> <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;Compositing between DoYs 200-210&quot;</span><span class="p">)</span>
-</pre></div>
-<pre class="literal-block">
-N. Obs: 9
-Kernel                                 Value
-Isotropic                           0.235238
-Ross                               -0.033419
-LiThick                             0.054909
-R2: 0.386086
-</pre>
-<img alt="images/BRDF_modelling_23_2.png" src="../static/images/BRDF_modelling_23_2.png" />
-<div class="highlight"><pre><span class="n">retval</span> <span class="o">=</span> <span class="n">invert_composite</span> <span class="p">(</span> <span class="n">qa</span><span class="p">,</span> <span class="n">doys</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">kern</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">227</span> <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;Compositing between DoYs 200-227&quot;</span><span class="p">)</span>
-</pre></div>
-<pre class="literal-block">
-N. Obs: 41
-Kernel                                 Value
-Isotropic                           0.231309
-Ross                                0.009338
-LiThick                             0.000748
-R2: 0.05195
-</pre>
-<img alt="images/BRDF_modelling_24_2.png" src="../static/images/BRDF_modelling_24_2.png" />
-<p>Clearly, this window is too big: changes <strong>are</strong> happening. Also note
-the difference of adding just 1 observation to the 10 day period: the
-parameters change perceivably, the sign of ill-posedness. Let's see how
-the compositing period affects the estimate: we'll try to invert the
-pre-fire observations using a 16 and an 8 day compositing period:</p>
-<div class="highlight"><pre><span class="n">retvals</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">period</span> <span class="ow">in</span> <span class="nb">xrange</span> <span class="p">(</span> <span class="p">(</span><span class="mi">227</span><span class="o">-</span><span class="mi">180</span><span class="p">)</span><span class="o">/</span><span class="mi">16</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">):</span>
-    <span class="n">doy_min</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">+</span> <span class="mi">16</span><span class="o">*</span><span class="n">period</span>
-    <span class="n">doy_max</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">+</span> <span class="mi">16</span><span class="o">*</span><span class="p">(</span><span class="n">period</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">doy_max</span> <span class="o">&gt;</span> <span class="mi">227</span><span class="p">:</span>
-        <span class="n">doy_max</span> <span class="o">=</span> <span class="mi">227</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span> <span class="p">(</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">period</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">)</span>
-    <span class="k">print</span> <span class="s">&quot;==============================================================&quot;</span>
-    <span class="k">print</span> <span class="s">&quot;DoY Min: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">doy_min</span>
-    <span class="k">print</span> <span class="s">&quot;DoY Max: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">doy_max</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">retvals</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span> <span class="n">invert_composite</span> <span class="p">(</span> <span class="n">qa</span><span class="p">,</span> <span class="n">doys</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">kern</span><span class="p">,</span> \
-            <span class="n">doy_min</span><span class="p">,</span> <span class="n">doy_max</span><span class="p">)</span> <span class="p">)</span>
-    <span class="k">except</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinAlgError</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Not enough obs!&quot;</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;Compositing </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> \
-        <span class="p">(</span> <span class="n">doy_min</span><span class="p">,</span> <span class="n">doy_max</span><span class="p">)</span> <span class="p">)</span>
-</pre></div>
-<pre class="literal-block">
-==============================================================
-DoY Min: 180
-DoY Max: 196
-N. Obs: 14
-Kernel                                 Value
-Isotropic                           0.238851
-Ross                               -0.006477
-LiThick                             0.009853
-R2: 0.100897
-==============================================================
-DoY Min: 196
-DoY Max: 212
-N. Obs: 15
-Kernel                                 Value
-Isotropic                           0.216249
-Ross                                0.066691
-LiThick                            -0.059062
-R2: 0.521575
-==============================================================
-DoY Min: 212
-DoY Max: 227
-N. Obs: 12
-Kernel                                 Value
-Isotropic                           0.243611
-Ross                               -0.062851
-LiThick                             0.063866
-R2: 0.646983
-</pre>
-<img alt="images/BRDF_modelling_26_1.png" src="../static/images/BRDF_modelling_26_1.png" />
-<div class="highlight"><pre><span class="n">retvals</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">period</span> <span class="ow">in</span> <span class="nb">xrange</span> <span class="p">(</span> <span class="p">(</span><span class="mi">227</span><span class="o">-</span><span class="mi">180</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">):</span>
-    <span class="n">doy_min</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">+</span> <span class="mi">8</span><span class="o">*</span><span class="n">period</span>
-    <span class="n">doy_max</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">+</span> <span class="mi">8</span><span class="o">*</span><span class="p">(</span><span class="n">period</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">doy_max</span> <span class="o">&gt;</span> <span class="mi">227</span><span class="p">:</span>
-        <span class="n">doy_max</span> <span class="o">=</span> <span class="mi">227</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span> <span class="p">(</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">period</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">)</span>
-    <span class="k">print</span> <span class="s">&quot;==============================================================&quot;</span>
-    <span class="k">print</span> <span class="s">&quot;DoY Min: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">doy_min</span>
-    <span class="k">print</span> <span class="s">&quot;DoY Max: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">doy_max</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">retvals</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span> <span class="n">invert_composite</span> <span class="p">(</span> <span class="n">qa</span><span class="p">,</span> <span class="n">doys</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">kern</span><span class="p">,</span> \
-            <span class="n">doy_min</span><span class="p">,</span> <span class="n">doy_max</span><span class="p">)</span> <span class="p">)</span>
-    <span class="k">except</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinAlgError</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Not enough obs!&quot;</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;Compositing </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> \
-        <span class="p">(</span> <span class="n">doy_min</span><span class="p">,</span> <span class="n">doy_max</span><span class="p">)</span> <span class="p">)</span>
-</pre></div>
-<pre class="literal-block">
-==============================================================
-DoY Min: 180
-DoY Max: 188
-N. Obs: 6
-Kernel                                 Value
-Isotropic                           0.215737
-Ross                                0.217461
-LiThick                             0.004699
-R2: 0.960286
-==============================================================
-DoY Min: 188
-DoY Max: 196
-N. Obs: 8
-Kernel                                 Value
-Isotropic                           0.256502
-Ross                               -0.148200
-LiThick                             0.022454
-R2: 0.641367
-==============================================================
-DoY Min: 196
-DoY Max: 204
-N. Obs: 7
-Kernel                                 Value
-Isotropic                           0.222352
-Ross                               -0.073762
-LiThick                            -0.074442
-R2: 0.825704
-==============================================================
-DoY Min: 204
-DoY Max: 212
-N. Obs: 8
-Kernel                                 Value
-Isotropic                           0.211300
-Ross                                0.154030
-LiThick                            -0.051295
-R2: 0.833228
-==============================================================
-DoY Min: 212
-DoY Max: 220
-N. Obs: 7
-Kernel                                 Value
-Isotropic                           0.241598
-Ross                                0.021193
-LiThick                             0.066551
-R2: 0.838989
-==============================================================
-DoY Min: 220
-DoY Max: 227
-N. Obs: 5
-Kernel                                 Value
-Isotropic                           0.247820
-Ross                               -0.146072
-LiThick                             0.076207
-R2: 0.74752
-</pre>
-<img alt="images/BRDF_modelling_27_1.png" src="../static/images/BRDF_modelling_27_1.png" />
-<p>We see that the kernel weights change substantially from one period to
-the next. The 16 day window seems quite poor, whereas the 8 day one is
-remarkably better. This means that fast changes are occurring in the
-ground, and the 8 day window is more appropriate.We can see how this
-works in time</p>
-<div class="highlight"><pre><span class="k">for</span> <span class="n">period</span> <span class="ow">in</span> <span class="nb">xrange</span> <span class="p">(</span> <span class="p">(</span><span class="mi">227</span><span class="o">-</span><span class="mi">180</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">):</span>
-
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">doys</span><span class="p">[</span><span class="n">retvals</span><span class="p">[</span><span class="n">period</span><span class="p">][</span><span class="mi">2</span><span class="p">]],</span> <span class="n">retvals</span><span class="p">[</span><span class="n">period</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="s">&#39;sk&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">doys</span><span class="p">[</span><span class="n">retvals</span><span class="p">[</span><span class="n">period</span><span class="p">][</span><span class="mi">2</span><span class="p">]],</span> <span class="n">retvals</span><span class="p">[</span><span class="n">period</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.8</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">0.18</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
-</pre></div>
-<img alt="images/BRDF_modelling_29_0.png" src="../static/images/BRDF_modelling_29_0.png" />
-</div>
-<div class="section" id="stuff-missing">
-<h2>Stuff missing</h2>
-<ul class="simple">
-<li>Uncertainty</li>
-</ul>
-</div>
-<div class="section" id="refs">
-<h2>Refs</h2>
-<p>Schaaf, C. B., F. Gao, A. H. Strahler, W. Lucht, X. Li, T. Tsang, N. C.
-Strugnell, X. Zhang, Y. Jin, J.-P. Muller, P. Lewis, M. Barnsley, P.
-Hobson, M. Disney, G. Roberts, M. Dunderdale, C. Doll, R. d Entremont,
-B. Hu, S. Liang, and J. L. Privette, First Operational BRDF, Albedo and
-Nadir Reflectance Products from MODIS, Remote Sens. Environ., 83,
-135-148, 2002.</p>
-<p>Lucht, W., C.B. Schaaf, and A.H. Strahler. An Algorithm for the
-retrieval of albedo from space using semiempirical BRDF models, IEEE
-Trans. Geosci. Remote Sens., 38, 977-998, 2000.</p>
-<p>Wanner, W., A.H. Strahler, B. Hu, P. Lewis, J.-P Muller, X. Li, C.
-Schaaf, and M.J. Barnsley, Global retrieval of bidirectional reflectance
-and albedo over land from EOS MODIS and MISR data: Theory and algorithm,
-J. Geophys. Res., 102, 17143-17161, 1997.</p>
-</div>
-
+<p>Note that you can do many things like this. In this particular case, you could subset a particular extent, transform coordinates etc etc using <tt class="docutils literal">ogr2ogr</tt> command line parameters. The process is fast and painless, and provided that you can come up with a suitable <tt class="docutils literal">find</tt> command, very flexible and easy!</p>
+<script type= "text/javascript">
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+</script>
                 </article>
-                
             </aside><!-- /#featured -->
-            
                 <section id="content" class="body">
                     <h1>Other articles</h1>
                     <hr />
                     <ol id="posts-list" class="hfeed">
-            
-        
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././ridelondon-data-download.html" rel="bookmark"
+                    <h1><a href="/brdf-modelling-of-modis-land-surface-data.html" rel="bookmark"
+                           title="Permalink to BRDF modelling of MODIS land surface data">BRDF modelling of MODIS land surface data</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2013-09-03T17:00:00">
+                Tue 03 September 2013
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/modis.html">MODIS</a><a href="/tag/python.html">python</a><a href="/tag/remote-sensing.html">remote-sensing</a></p>
+</footer><!-- /.post-info -->                <p>This post introduces simple BRDF modelling (i.e. how can we account
+for the variation in surface reflectance due to acquisition geometry?)
+using some MODIS data. You can find the whole post in <a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling">wakari</a>. If you
+accept to not escape the HTML &amp; JS, you will find a link to the ...</p>
+                <a class="readmore" href="/brdf-modelling-of-modis-land-surface-data.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="/ridelondon-data-download.html" rel="bookmark"
                            title="Permalink to RideLondon data download">RideLondon data download</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-08-05T17:00:00">
                 Mon 05 August 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>So a quick post on how to get access the web-based data on rider timings for the <a class="reference external" href="http://www.prudentialridelondon.co.uk/">RideLondon event</a>. The idea is that you can access the cyclist timings, and then
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a></p>
+</footer><!-- /.post-info -->                <p>So a quick post on how to get access the web-based data on rider timings for the <a class="reference external" href="http://www.prudentialridelondon.co.uk/">RideLondon event</a>. The idea is that you can access the cyclist timings, and then
 maybe do some statistics (or boost/depress your morale by looking at how your time compares to the wider ...</p>
-                <a class="readmore" href=".././ridelondon-data-download.html">read more</a>
-                
+                <a class="readmore" href="/ridelondon-data-download.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././stitching-modis-burned-area-datasets.html" rel="bookmark"
+                    <h1><a href="/stitching-modis-burned-area-datasets.html" rel="bookmark"
                            title="Permalink to Stitching MODIS burned area datasets">Stitching MODIS burned area datasets</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-06-27T17:00:00">
                 Thu 27 June 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/modis.html">MODIS</a><a href=".././tag/gdal.html">GDAL</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>MODIS products are usually provided as data granules, representing the magnitude of interest
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/modis.html">MODIS</a><a href="/tag/gdal.html">GDAL</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>MODIS products are usually provided as data granules, representing the magnitude of interest
 (plus a number of different extra layers of metadata, quality assurance flags, etc) over a
 given temporal period for an area typically extending 1200 by 1200 km in the MODIS sinusoidal
 projection, around 10x10 degrees. Typically, your ...</p>
-                <a class="readmore" href=".././stitching-modis-burned-area-datasets.html">read more</a>
-                
+                <a class="readmore" href="/stitching-modis-burned-area-datasets.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././getting-a-box.html" rel="bookmark"
+                    <h1><a href="/getting-a-box.html" rel="bookmark"
                            title="Permalink to Getting a box">Getting a box</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-06-23T17:00:00">
                 Sun 23 June 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Let's say one wants to find out a box around a given latitude/longitude point. How to do this
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>Let's say one wants to find out a box around a given latitude/longitude point. How to do this
 without GIS software using an artisan UNIX approach? Hell, if it works for coffee! The steps
 are as follows:</p>
 <ol class="arabic simple">
 <li>Convert the centre point into UTM so we have meters rather ...</li></ol>
-                <a class="readmore" href=".././getting-a-box.html">read more</a>
-                
+                <a class="readmore" href="/getting-a-box.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././downloading-modis-data-with-python.html" rel="bookmark"
+                    <h1><a href="/downloading-modis-data-with-python.html" rel="bookmark"
                            title="Permalink to Downloading MODIS data with Python">Downloading MODIS data with Python</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-06-17T17:00:00">
                 Mon 17 June 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/modis.html">modis</a><a href=".././tag/web.html">web</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Recently, the USGS has closed their FTP download service for MODIS
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/modis.html">modis</a><a href="/tag/web.html">web</a></p>
+</footer><!-- /.post-info -->                <p>Recently, the USGS has closed their FTP download service for MODIS
 products, such as LAI, surface reflectance, etc. This is quite annoying,
 because I had a nice <tt class="docutils literal">wget</tt> script that no longer works... So I decided
 to code a simple downloader in python that woud supersede my previous
 hacked together ...</p>
-                <a class="readmore" href=".././downloading-modis-data-with-python.html">read more</a>
-                
+                <a class="readmore" href="/downloading-modis-data-with-python.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././smp-processing-with-multiprocessing.html" rel="bookmark"
+                    <h1><a href="/smp-processing-with-multiprocessing.html" rel="bookmark"
                            title="Permalink to SMP processing with multiprocessing">SMP processing with multiprocessing</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-05-23T17:00:00">
                 Thu 23 May 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/gdal.html">gdal</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>This note details how to use parallel processing in python accessing
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/gdal.html">gdal</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>This note details how to use parallel processing in python accessing
 shared memory. The usage case is when you have a process that reads in a
 lot of data, and where the data can be processed in parallel, such as
 when reading and processing images/stacks of images in a ...</p>
-                <a class="readmore" href=".././smp-processing-with-multiprocessing.html">read more</a>
-                
+                <a class="readmore" href="/smp-processing-with-multiprocessing.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././fast-copying-of-files-over-the-network.html" rel="bookmark"
+                    <h1><a href="/fast-copying-of-files-over-the-network.html" rel="bookmark"
                            title="Permalink to Fast copying of files over the network">Fast copying of files over the network</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2013-05-08T13:00:00">
                 Wed 08 May 2013
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/unix.html">unix</a><a href=".././tag/tips.html">tips</a><a href=".././tag/meteo.html">meteo</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>A common requirement when dealing with processing large datasets over
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/unix.html">unix</a><a href="/tag/tips.html">tips</a><a href="/tag/meteo.html">meteo</a></p>
+</footer><!-- /.post-info -->                <p>A common requirement when dealing with processing large datasets over
 multiple networked machines is to have a local staging space: copy the
 data on the local disk to improve access speed and not to bog down a
 NFS server when all different processes start accessing different files
 all at once ...</p>
-                <a class="readmore" href=".././fast-copying-of-files-over-the-network.html">read more</a>
-                
+                <a class="readmore" href="/fast-copying-of-files-over-the-network.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././downloading-andalusian-meteo-data.html" rel="bookmark"
+                    <h1><a href="/downloading-andalusian-meteo-data.html" rel="bookmark"
                            title="Permalink to Downloading Andalusian meteo data">Downloading Andalusian meteo data</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-12-11T13:00:00">
                 Tue 11 December 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/tips.html">tips</a><a href=".././tag/meteo.html">meteo</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Many networks of automated meteo stations are around. In some places,
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/tips.html">tips</a><a href="/tag/meteo.html">meteo</a></p>
+</footer><!-- /.post-info -->                <p>Many networks of automated meteo stations are around. In some places,
 the data are easy to access and therefore use. In some others, you have
 to go through a number of hoops. In Andalusia, it's a mixed bag: a number
 of independent networks are available for agricultural and environmental ...</p>
-                <a class="readmore" href=".././downloading-andalusian-meteo-data.html">read more</a>
-                
+                <a class="readmore" href="/downloading-andalusian-meteo-data.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././downsampling-with-gdal-in-python.html" rel="bookmark"
+                    <h1><a href="/downsampling-with-gdal-in-python.html" rel="bookmark"
                            title="Permalink to Downsampling with GDAL in python">Downsampling with GDAL in python</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-10-04T13:00:00">
                 Thu 04 October 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/python.html">python</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Quite often, one wants to generate some data at high resolution (say
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/python.html">python</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>Quite often, one wants to generate some data at high resolution (say
 process some image or images) and then calculate some relevant spatial
 statistics at some other resolution. For example, you might want to
 process Landsat TM data at 30m resolution, and might want to aggregate
 it to a resolution ...</p>
-                <a class="readmore" href=".././downsampling-with-gdal-in-python.html">read more</a>
-                
+                <a class="readmore" href="/downsampling-with-gdal-in-python.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html" rel="bookmark"
+                    <h1><a href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html" rel="bookmark"
                            title="Permalink to How to extract spectra from image data using ground truth vector data">How to extract spectra from image data using ground truth vector data</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-08-15T16:00:00">
                 Wed 15 August 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/python.html">python</a><a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Supervised classification of EO data uses a set of samples from known
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>Supervised classification of EO data uses a set of samples from known
 patterns (usually reflectance spectra) to decide whether a given pattern
 belongs to one class or another. In landcover applications, one goes to
 the field, and observes that a given location is indeed class $\omega_c$.
-These ground observations usually ...</p>
-                <a class="readmore" href=".././how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html">read more</a>
-                
+These ground observations usually ...</p><script type= "text/javascript">
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+</script>
+
+                <a class="readmore" href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././creating-a-country-raster-mask-using-gdal.html" rel="bookmark"
+                    <h1><a href="/creating-a-country-raster-mask-using-gdal.html" rel="bookmark"
                            title="Permalink to Creating a country raster mask using GDAL">Creating a country raster mask using GDAL</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-08-02T10:00:00">
                 Thu 02 August 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>Usually, we remote sensing types ignore country boundaries: they don't really
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>Usually, we remote sensing types ignore country boundaries: they don't really
 make much sense, as they are not aligned with MODIS pixels ;-) However, I was
 asked what's the easiest way to produce a global mask of countries, so that all
 th grid cells (say at 0.5 degree ...</p>
-                <a class="readmore" href=".././creating-a-country-raster-mask-using-gdal.html">read more</a>
-                
+                <a class="readmore" href="/creating-a-country-raster-mask-using-gdal.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././eoldas-talk-at-vu-amsterdam.html" rel="bookmark"
+                    <h1><a href="/eoldas-talk-at-vu-amsterdam.html" rel="bookmark"
                            title="Permalink to EOLDAS talk at VU Amsterdam">EOLDAS talk at VU Amsterdam</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-08-01T13:00:00">
                 Wed 01 August 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/eoldas.html">EOLDAS</a><a href=".././tag/data-assimilation.html">data assimilation</a><a href=".././tag/python.html">python</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>So I have just spent a week visiting at the <a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp">VU Amsterdam</a>.
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/eoldas.html">EOLDAS</a><a href="/tag/data-assimilation.html">data assimilation</a><a href="/tag/python.html">python</a></p>
+</footer><!-- /.post-info -->                <p>So I have just spent a week visiting at the <a class="reference external" href="http://www.falw.vu.nl/nl/onderzoek/earth-sciences/geo-environmental-science-and-hydrology/index.asp">VU Amsterdam</a>.
 During this visit, I have also given a talk on EOLDAS. The slides are
 availabe from <a class="reference external" href="http://jgomezdans.github.com/eoldas_release/EOLDAS_VUA.pdf">here</a>.</p>
 
-                <a class="readmore" href=".././eoldas-talk-at-vu-amsterdam.html">read more</a>
-                
+                <a class="readmore" href="/eoldas-talk-at-vu-amsterdam.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././simple-time-series-modis-data-analysis.html" rel="bookmark"
+                    <h1><a href="/simple-time-series-modis-data-analysis.html" rel="bookmark"
                            title="Permalink to Simple time series MODIS data analysis">Simple time series MODIS data analysis</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-07-23T15:00:00">
                 Mon 23 July 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a><a href=".././tag/python.html">python</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>In a <a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html">previous post</a>,
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a><a href="/tag/python.html">python</a></p>
+</footer><!-- /.post-info -->                <p>In a <a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html">previous post</a>,
 I demonstrated how to stitch and put together a number of MODIS data
 files. This is useful and interesting, but in the end, we are interested
 in analysing the data we get out of the satellite. One first way around
 this might be to extract time ...</p>
-                <a class="readmore" href=".././simple-time-series-modis-data-analysis.html">read more</a>
-                
+                <a class="readmore" href="/simple-time-series-modis-data-analysis.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././stitching-together-modis-data.html" rel="bookmark"
+                    <h1><a href="/stitching-together-modis-data.html" rel="bookmark"
                            title="Permalink to Stitching together MODIS data">Stitching together MODIS data</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-07-20T15:00:00">
                 Fri 20 July 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>MODIS has been around for some 12 years. There are many products that
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>MODIS has been around for some 12 years. There are many products that
 have large time series over the whole globe which one can use to study
 things. So I might want to produce a a timeseries of the <a class="reference external" href="https://lpdaac.usgs.gov/products/modis_products_table/gross_primary_productivity/8_day_l4_global_1km/mod17a2">8-day Gross Primary Productivity (GPP) product</a>
 over say the UK. Moreover ...</p>
-                <a class="readmore" href=".././stitching-together-modis-data.html">read more</a>
-                
+                <a class="readmore" href="/stitching-together-modis-data.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
-            
 
-        
-         
-            
-            <li><article class="hentry">    
+            <li><article class="hentry">
                 <header>
-                    <h1><a href=".././linearly-scaling-raster-data-with-gdal.html" rel="bookmark"
+                    <h1><a href="/linearly-scaling-raster-data-with-gdal.html" rel="bookmark"
                            title="Permalink to Linearly scaling raster data with GDAL">Linearly scaling raster data with GDAL</a></h1>
                 </header>
-                
+
                 <div class="entry-content">
-                <footer class="post-info">
+<footer class="post-info">
         <abbr class="published" title="2012-07-20T13:00:00">
                 Fri 20 July 2012
         </abbr>
 
-        
         <address class="vcard author">
-                By <a class="url fn" href=".././author/j-gomez-dans.html">J Gómez-Dans</a>
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
         </address>
-        
-<p>In <a href=".././category/blog.html">Blog</a>. </p>
-<p>tags: <a href=".././tag/gdal.html">GDAL</a><a href=".././tag/remote-sensing.html">remote sensing</a><a href=".././tag/tips.html">tips</a></p>
-
-
-</footer><!-- /.post-info -->
-                <p>So, it's quite tricky to play around with these geospatial datasets: they
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a></p>
+</footer><!-- /.post-info -->                <p>So, it's quite tricky to play around with these geospatial datasets: they
 have a myriad formats, these keep changing, and you can never know what
 metadata will be available in them. A clever way around this situation
 is to use tools that allow you to read most of the ...</p>
-                <a class="readmore" href=".././linearly-scaling-raster-data-with-gdal.html">read more</a>
-                
+                <a class="readmore" href="/linearly-scaling-raster-data-with-gdal.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
-        
-        
             </ol><!-- /#posts-list -->
-            
-                
-            
             </section><!-- /#content -->
-        
-    
-
-
         <section id="extras" class="body">
-        
-        
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                        </ul>
+                </div><!-- /.social -->
         </section><!-- /#extras -->
 
         <footer id="contentinfo" class="body">
@@ -1012,18 +515,15 @@ is to use tools that allow you to read most of the ...</p>
                 <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
         </footer><!-- /#contentinfo -->
 
-
     <script type="text/javascript">
-    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-25702318-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
     </script>
-    <script type="text/javascript">
-    try {
-        var pageTracker = _gat._getTracker("UA-25702318-1");
-    pageTracker._trackPageview();
-    } catch(err) {}</script>
-
-
-
 </body>
 </html>

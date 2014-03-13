@@ -3,15 +3,16 @@
 	Date: July 2009
 	Description: Sample layout for HTML5 and CSS3 goodness.
 	Version: 1.0
-	Author: Enrique Ramírez
-	Autor URI: http://enrique-ramirez.com
+	License: MIT <http://opensource.org/licenses/MIT>
+	Licensed by: Smashing Media GmbH <http://www.smashingmagazine.com/>
+	Original author: Enrique Ramírez <http://enrique-ramirez.com/>
 */
 
 /* Imports */
 @import url("reset.css");
 @import url("pygment.css");
 @import url("typogrify.css");
-@import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz&subset=latin);
+@import url(//fonts.googleapis.com/css?family=Yanone+Kaffeesatz&subset=latin);
 
 /***** Global *****/
 /* Body */
@@ -65,7 +66,9 @@ h1 a:hover {
 }
 	
 /* Paragraphs */
-p {margin-bottom: 1.143em;}
+div.line-block,
+p { margin-top: 1em;
+    margin-bottom: 1em;}
 
 strong, b {font-weight: bold;}
 em, i {font-style: italic;}
@@ -73,13 +76,15 @@ em, i {font-style: italic;}
 /* Lists */
 ul {
 	list-style: outside disc;
-	margin: 1em 0 1.5em 1.5em;
+	margin: 0em 0 0 1.5em;
 }
 
 ol {
 	list-style: outside decimal;
-	margin: 1em 0 1.5em 1.5em;
+	margin: 0em 0 0 1.5em;
 }
+
+li { margin-top: 0.5em;}
 
 .post-info {
     float:right;
@@ -88,6 +93,7 @@ ol {
 }
 
 .post-info p{
+    margin-top: 1px;
     margin-bottom: 1px;
 }
 
@@ -97,7 +103,7 @@ dl {margin: 0 0 1.5em 0;}
 dt {font-weight: bold;}
 dd {margin-left: 1.5em;}
 
-pre{background-color: #000; padding: 10px; color: #fff; margin: 10px; overflow: auto;}
+pre{background-color:  rgb(238, 238, 238); padding: 10px; margin: 10px; overflow: auto;}
 
 /* Quotes */
 blockquote {
@@ -301,14 +307,29 @@ img.left, figure.left {float: left; margin: 0 2em 2em 0;}
 	}
 	
 		/* Icons */
+		.social a[href*='about.me'] {background-image: url('../images/icons/aboutme.png');}
+		.social a[href*='bitbucket.org'] {background-image: url('../images/icons/bitbucket.png');}
 		.social a[href*='delicious.com'] {background-image: url('../images/icons/delicious.png');}
 		.social a[href*='digg.com'] {background-image: url('../images/icons/digg.png');}
 		.social a[href*='facebook.com'] {background-image: url('../images/icons/facebook.png');}
+		.social a[href*='gitorious.org'] {background-image: url('../images/icons/gitorious.png');}
+		.social a[href*='github.com'],
+		.social a[href*='git.io'] {background-image: url('../images/icons/github.png');}
+		.social a[href*='gittip.com'] {background-image: url('../images/icons/gittip.png');}
+		.social a[href*='plus.google.com'] {background-image: url('../images/icons/google-plus.png');}
+		.social a[href*='groups.google.com'] {background-image: url('../images/icons/google-groups.png');}
+		.social a[href*='news.ycombinator.com'],
+		.social a[href*='hackernewsers.com'] {background-image: url('../images/icons/hackernews.png');}
 		.social a[href*='last.fm'], .social a[href*='lastfm.'] {background-image: url('../images/icons/lastfm.png');}
-		.social a[type$='atom+xml'], .social a[type$='rss+xml'] {background-image: url('../images/icons/rss.png');}
-		.social a[href*='twitter.com'] {background-image: url('../images/icons/twitter.png');}
 		.social a[href*='linkedin.com'] {background-image: url('../images/icons/linkedin.png');}
-		.social a[href*='gitorious.org'] {background-image: url('../images/icons/gitorious.org');}
+		.social a[href*='reddit.com'] {background-image: url('../images/icons/reddit.png');}
+		.social a[type$='atom+xml'], .social a[type$='rss+xml'] {background-image: url('../images/icons/rss.png');}
+		.social a[href*='slideshare.net'] {background-image: url('../images/icons/slideshare.png');}
+		.social a[href*='speakerdeck.com'] {background-image: url('../images/icons/speakerdeck.png');}
+		.social a[href*='stackoverflow.com'] {background-image: url('../images/icons/stackoverflow.png');}
+		.social a[href*='twitter.com'] {background-image: url('../images/icons/twitter.png');}
+		.social a[href*='vimeo.com'] {background-image: url('../images/icons/vimeo.png');}
+		.social a[href*='youtube.com'] {background-image: url('../images/icons/youtube.png');}
 
 /*
 	About

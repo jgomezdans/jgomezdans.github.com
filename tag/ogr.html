@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>EO & DA ramblings - ogr</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
+
+        <!--[if IE]>
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+<a href="http://github.com/jgomezdans">
+<img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" />
+</a>
+        <header id="banner" class="body">
+                <h1><a href="/">EO & DA ramblings </a></h1>
+                <nav><ul>
+                    <li><a href="/category/blog.html">Blog</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+
+            <aside id="featured" class="body">
+                <article>
+                    <h1 class="entry-title"><a href="/ogr2ogr-geoprocessing.html">ogr2ogr geoprocessing</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2014-03-13T13:00:00">
+                Thu 13 March 2014
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/gdal.html">gdal</a><a href="/tag/ogr.html">ogr</a><a href="/tag/geoprocessing.html">geoprocessing</a></p>
+</footer><!-- /.post-info --><p>Sometimes, one wants to do some really simple geoprocessing on a large numbers of shapefiles. While you could definitely use <a class="reference external" href="www.gaia-gis.it/gaia-sins/‎">Spatialite</a> for that, I would rather avoid this. <tt class="docutils literal">ogr2ogr</tt>, on the other hand, provides handy access to Spatialite-like functionality. Let's say you wanted to produce a text file which contained the X and Y coordinates of your many shapefiles as well as any other attributes that might have been there first. We can invoke the spatialite SQL dialect to do this simple geoprocessing and to stuff the output in a CSV file:</p>
+<pre class="code bash literal-block">
+ <span class="k">for </span>location in loc1 loc2
+ <span class="k">do
+   for </span>i in <span class="sb">`</span>find <span class="k">${</span><span class="nv">ROOT</span><span class="k">}</span>/<span class="k">${</span><span class="nv">location</span><span class="k">}</span> -iname <span class="s2">&quot;*shp&quot;</span><span class="sb">`</span>
+   <span class="k">do
+     </span><span class="nv">fname</span><span class="o">=</span><span class="sb">`</span>basename <span class="nv">$i</span> .shp<span class="sb">`</span>
+     touch /tmp/<span class="k">${</span><span class="nv">location</span><span class="k">}</span>.csv
+     ogr2ogr -f <span class="s2">&quot;CSV&quot;</span>  -append -dialect <span class="s2">&quot;sqlite&quot;</span> <span class="se">\
+</span>         -sql <span class="s2">&quot;SELECT id, month, doy_min, doy_max, n_pixels, ST_X(ST_Centroid(GEOMETRY)), ST_Y(ST_Centroid(GEOMETRY)) from $fname&quot;</span> <span class="se">\
+</span>         /tmp/<span class="k">${</span><span class="nv">location</span><span class="k">}</span>.csv <span class="nv">$i</span>
+   <span class="k">done
+done</span>
+</pre>
+<p>Note that you can do many things like this. In this particular case, you could subset a particular extent, transform coordinates etc etc using <tt class="docutils literal">ogr2ogr</tt> command line parameters. The process is fast and painless, and provided that you can come up with a suitable <tt class="docutils literal">find</tt> command, very flexible and easy!</p>
+<script type= "text/javascript">
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+</script>
+                </article>
+            </aside><!-- /#featured -->
+            </ol><!-- /#posts-list -->
+            </section><!-- /#content -->
+        <section id="extras" class="body">
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-25702318-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+</body>
+</html>
