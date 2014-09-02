@@ -24,7 +24,49 @@
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="/ogr2ogr-geoprocessing.html">ogr2ogr geoprocessing</a></h1>
+                    <h1 class="entry-title"><a href="/installing-gdal-on-linux-easily.html">Installing GDAL on Linux easily</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2014-09-02T17:00:00">
+                Tue 02 September 2014
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/gdal.html">gdal</a><a href="/tag/linux.html">linux</a></p>
+</footer><!-- /.post-info --><p>Installing GDAL and its Python bindings on Linux is typically quite easy, provided you are using <a class="reference external" href="http://www.debian.org">Debian</a> or <a class="reference external" href="http://kubuntu.org">Ubuntu</a>, as they already have packages compiled for them. The packages are compiled so as to support a large number of different file formats. However, if you are using other Linux distributions, or if you don't have root access, installing GDAL (or compiling it locally) is fraught with difficulties. After a lot of pain on this, I think the best way to do this is to install the Anaconda Python distribution, and then install suitable <em>conda packages</em> with GDAL and dependencies linked in. This is easy and straightforward, and can be extended to MacOSX and to Windows (if someone figures out how to do it!).</p>
+<p>For Linux, the process goes like this:</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">Download the anaconda installer for your system <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">from here</a></p>
+</li>
+<li><p class="first">Install somewhere (typically <tt class="docutils literal">/opt/anaconda/</tt>, but up to you!)</p>
+</li>
+<li><p class="first">Add the Anaconda bin directory to your <tt class="docutils literal">$PATH</tt></p>
+</li>
+<li><p class="first">Install my Linux GDAL packages with</p>
+<pre class="literal-block">
+conda install --yes -c https://conda.binstar.org/jgomezdans gdal=1.11.0
+</pre>
+</li>
+</ol>
+</blockquote>
+<p>You should now be able to use the Python GDAL bindings, but also all the GDAL executables will be installed!</p>
+                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="/ogr2ogr-geoprocessing.html" rel="bookmark"
+                           title="Permalink to ogr2ogr geoprocessing">ogr2ogr geoprocessing</a></h1>
+                </header>
+
+                <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2014-03-13T13:00:00">
                 Thu 13 March 2014
@@ -35,57 +77,10 @@
         </address>
 <p>In <a href="/category/blog.html">Blog</a>. </p>
 <p>tags: <a href="/tag/gdal.html">gdal</a><a href="/tag/ogr.html">ogr</a><a href="/tag/geoprocessing.html">geoprocessing</a></p>
-</footer><!-- /.post-info --><p>Sometimes, one wants to do some really simple geoprocessing on a large numbers of shapefiles. While you could definitely use <a class="reference external" href="www.gaia-gis.it/gaia-sins/‎">Spatialite</a> for that, I would rather avoid this. <tt class="docutils literal">ogr2ogr</tt>, on the other hand, provides handy access to Spatialite-like functionality. Let's say you wanted to produce a text file which contained the X and Y coordinates of your many shapefiles as well as any other attributes that might have been there first. We can invoke the spatialite SQL dialect to do this simple geoprocessing and to stuff the output in a CSV file:</p>
-<pre class="code bash literal-block">
- <span class="k">for </span>location in loc1 loc2
- <span class="k">do
-   for </span>i in <span class="sb">`</span>find <span class="k">${</span><span class="nv">ROOT</span><span class="k">}</span>/<span class="k">${</span><span class="nv">location</span><span class="k">}</span> -iname <span class="s2">&quot;*shp&quot;</span><span class="sb">`</span>
-   <span class="k">do
-     </span><span class="nv">fname</span><span class="o">=</span><span class="sb">`</span>basename <span class="nv">$i</span> .shp<span class="sb">`</span>
-     touch /tmp/<span class="k">${</span><span class="nv">location</span><span class="k">}</span>.csv
-     ogr2ogr -f <span class="s2">&quot;CSV&quot;</span>  -append -dialect <span class="s2">&quot;sqlite&quot;</span> <span class="se">\
-</span>         -sql <span class="s2">&quot;SELECT id, month, doy_min, doy_max, n_pixels, ST_X(ST_Centroid(GEOMETRY)), ST_Y(ST_Centroid(GEOMETRY)) from $fname&quot;</span> <span class="se">\
-</span>         /tmp/<span class="k">${</span><span class="nv">location</span><span class="k">}</span>.csv <span class="nv">$i</span>
-   <span class="k">done
-done</span>
-</pre>
-<p>Note that you can do many things like this. In this particular case, you could subset a particular extent, transform coordinates etc etc using <tt class="docutils literal">ogr2ogr</tt> command line parameters. The process is fast and painless, and provided that you can come up with a suitable <tt class="docutils literal">find</tt> command, very flexible and easy!</p>
-<script type= "text/javascript">
-    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
-        var mathjaxscript = document.createElement('script');
-        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
-        mathjaxscript.type = 'text/javascript';
-        mathjaxscript.src = 'https:' == document.location.protocol
-                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
-                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
-        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
-            "MathJax.Hub.Config({" +
-            "    config: ['MMLorHTML.js']," +
-            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
-            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
-            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
-            "    displayAlign: 'center'," +
-            "    displayIndent: '0em'," +
-            "    showMathMenu: true," +
-            "    tex2jax: { " +
-            "        inlineMath: [ ['$','$'] ], " +
-            "        displayMath: [ ['$$','$$'] ]," +
-            "        processEscapes: true," +
-            "        preview: 'TeX'," +
-            "    }, " +
-            "    'HTML-CSS': { " +
-            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
-            "    } " +
-            "}); ";
-        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
-    }
-</script>
-                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+</footer><!-- /.post-info -->                <p>Sometimes, one wants to do some really simple geoprocessing on a large numbers of shapefiles. While you could definitely use <a class="reference external" href="www.gaia-gis.it/gaia-sins/‎">Spatialite</a> for that, I would rather avoid this. <tt class="docutils literal">ogr2ogr</tt>, on the other hand, provides handy access to Spatialite-like functionality. Let's say you wanted to produce a text file which ...</p>
+                <a class="readmore" href="/ogr2ogr-geoprocessing.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
 
             <li><article class="hentry">
                 <header>

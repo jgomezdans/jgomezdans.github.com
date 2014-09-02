@@ -1,5 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/blog.atom.xml" rel="self"></link><id>/</id><updated>2014-03-13T13:00:00+00:00</updated><entry><title>ogr2ogr geoprocessing</title><link href="/ogr2ogr-geoprocessing.html" rel="alternate"></link><updated>2014-03-13T13:00:00+00:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2014-03-13:ogr2ogr-geoprocessing.html</id><summary type="html">&lt;p&gt;Sometimes, one wants to do some really simple geoprocessing on a large numbers of shapefiles. While you could definitely use &lt;a class="reference external" href="www.gaia-gis.it/gaia-sins/‎"&gt;Spatialite&lt;/a&gt; for that, I would rather avoid this. &lt;tt class="docutils literal"&gt;ogr2ogr&lt;/tt&gt;, on the other hand, provides handy access to Spatialite-like functionality. Let's say you wanted to produce a text file which contained the X and Y coordinates of your many shapefiles as well as any other attributes that might have been there first. We can invoke the spatialite SQL dialect to do this simple geoprocessing and to stuff the output in a CSV file:&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/blog.atom.xml" rel="self"></link><id>/</id><updated>2014-09-02T17:00:00+01:00</updated><entry><title>Installing GDAL on Linux easily</title><link href="/installing-gdal-on-linux-easily.html" rel="alternate"></link><updated>2014-09-02T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2014-09-02:installing-gdal-on-linux-easily.html</id><summary type="html">&lt;p&gt;Installing GDAL and its Python bindings on Linux is typically quite easy, provided you are using &lt;a class="reference external" href="http://www.debian.org"&gt;Debian&lt;/a&gt; or &lt;a class="reference external" href="http://kubuntu.org"&gt;Ubuntu&lt;/a&gt;, as they already have packages compiled for them. The packages are compiled so as to support a large number of different file formats. However, if you are using other Linux distributions, or if you don't have root access, installing GDAL (or compiling it locally) is fraught with difficulties. After a lot of pain on this, I think the best way to do this is to install the Anaconda Python distribution, and then install suitable &lt;em&gt;conda packages&lt;/em&gt; with GDAL and dependencies linked in. This is easy and straightforward, and can be extended to MacOSX and to Windows (if someone figures out how to do it!).&lt;/p&gt;
+&lt;p&gt;For Linux, the process goes like this:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ol class="arabic"&gt;
+&lt;li&gt;&lt;p class="first"&gt;Download the anaconda installer for your system &lt;a class="reference external" href="https://store.continuum.io/cshop/anaconda/"&gt;from here&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p class="first"&gt;Install somewhere (typically &lt;tt class="docutils literal"&gt;/opt/anaconda/&lt;/tt&gt;, but up to you!)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p class="first"&gt;Add the Anaconda bin directory to your &lt;tt class="docutils literal"&gt;$PATH&lt;/tt&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p class="first"&gt;Install my Linux GDAL packages with&lt;/p&gt;
+&lt;pre class="literal-block"&gt;
+conda install --yes -c https://conda.binstar.org/jgomezdans gdal=1.11.0
+&lt;/pre&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;You should now be able to use the Python GDAL bindings, but also all the GDAL executables will be installed!&lt;/p&gt;
+</summary><category term="python"></category><category term="gdal"></category><category term="linux"></category></entry><entry><title>Radiative transfer model Python wrappers</title><link href="/radiative-transfer-model-python-wrappers.html" rel="alternate"></link><updated>2014-03-23T13:00:00+00:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2014-03-23:radiative-transfer-model-python-wrappers.html</id><summary type="html">&lt;p&gt;I use radiative transfer (RT) models quite extensively. While most of the ones you might want to use practically are not very complicated to get your head around, they are numerically expensive (what with all these numerical integration going on). So while you could code them up in Python, it's typically much simpler to just grab the original code (tradiationally written in Fortran), and create wrappers for them. This is quite simple using &lt;a class="reference external" href="http://docs.scipy.org/doc/numpy-dev/f2py/usage.html"&gt;f2py&lt;/a&gt;. So I have put together some easy-to use wrappers for some RT models that you can easily install using &lt;a class="reference external" href="http://www.pip-installer.org/‎"&gt;pip&lt;/a&gt; or easy_install.&lt;/p&gt;
+&lt;div class="section" id="prospect-sailh-prosail"&gt;
+&lt;h2&gt;Prospect+Sailh (PROSAIL)&lt;/h2&gt;
+&lt;p&gt;The SAIL model from Verhoef is a turbid medium canopy model. It has a basic description of the canopy in terms of leaf area index, leaf angle distribution, a hotspot parameterisation, and requires leaf transmittance, relflectance, as well as a soil reflectance term. Leaf spectral parameters typically come from a leaf level radiative transfer model, typically PROSPECT (Jacquemoud). The soil spectrum can be itself a model like SOILSPECT or something like that, but since the main assumption is that it's lambertian, a simple spectrum will do. Price functions are a reasonable soil spectral model.&lt;/p&gt;
+&lt;pre class="code bash literal-block"&gt;
+ &lt;span class="k"&gt;for &lt;/span&gt;location in loc1 loc2
+ &lt;span class="k"&gt;do
+   for &lt;/span&gt;i in &lt;span class="sb"&gt;`&lt;/span&gt;find &lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;ROOT&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;/&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;location&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt; -iname &lt;span class="s2"&gt;&amp;quot;*shp&amp;quot;&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;
+   &lt;span class="k"&gt;do
+     &lt;/span&gt;&lt;span class="nv"&gt;fname&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="sb"&gt;`&lt;/span&gt;basename &lt;span class="nv"&gt;$i&lt;/span&gt; .shp&lt;span class="sb"&gt;`&lt;/span&gt;
+     touch /tmp/&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;location&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;.csv
+     ogr2ogr -f &lt;span class="s2"&gt;&amp;quot;CSV&amp;quot;&lt;/span&gt;  -append -dialect &lt;span class="s2"&gt;&amp;quot;sqlite&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\
+&lt;/span&gt;         -sql &lt;span class="s2"&gt;&amp;quot;SELECT id, month, doy_min, doy_max, n_pixels, ST_X(ST_Centroid(GEOMETRY)), ST_Y(ST_Centroid(GEOMETRY)) from $fname&amp;quot;&lt;/span&gt; &lt;span class="se"&gt;\
+&lt;/span&gt;         /tmp/&lt;span class="k"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;location&lt;/span&gt;&lt;span class="k"&gt;}&lt;/span&gt;.csv &lt;span class="nv"&gt;$i&lt;/span&gt;
+   &lt;span class="k"&gt;done
+done&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;Note that you can do many things like this. In this particular case, you could subset a particular extent, transform coordinates etc etc using &lt;tt class="docutils literal"&gt;ogr2ogr&lt;/tt&gt; command line parameters. The process is fast and painless, and provided that you can come up with a suitable &lt;tt class="docutils literal"&gt;find&lt;/tt&gt; command, very flexible and easy!&lt;/p&gt;
+&lt;/div&gt;
+&lt;script type= "text/javascript"&gt;
+    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+        var mathjaxscript = document.createElement('script');
+        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+        mathjaxscript.type = 'text/javascript';
+        mathjaxscript.src = 'https:' == document.location.protocol
+                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+            "MathJax.Hub.Config({" +
+            "    config: ['MMLorHTML.js']," +
+            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+            "    displayAlign: 'center'," +
+            "    displayIndent: '0em'," +
+            "    showMathMenu: true," +
+            "    tex2jax: { " +
+            "        inlineMath: [ ['$','$'] ], " +
+            "        displayMath: [ ['$$','$$'] ]," +
+            "        processEscapes: true," +
+            "        preview: 'TeX'," +
+            "    }, " +
+            "    'HTML-CSS': { " +
+            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
+            "    } " +
+            "}); ";
+        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+    }
+&lt;/script&gt;
+</summary><category term="python"></category><category term="radiative transfer"></category></entry><entry><title>ogr2ogr geoprocessing</title><link href="/ogr2ogr-geoprocessing.html" rel="alternate"></link><updated>2014-03-13T13:00:00+00:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2014-03-13:ogr2ogr-geoprocessing.html</id><summary type="html">&lt;p&gt;Sometimes, one wants to do some really simple geoprocessing on a large numbers of shapefiles. While you could definitely use &lt;a class="reference external" href="www.gaia-gis.it/gaia-sins/‎"&gt;Spatialite&lt;/a&gt; for that, I would rather avoid this. &lt;tt class="docutils literal"&gt;ogr2ogr&lt;/tt&gt;, on the other hand, provides handy access to Spatialite-like functionality. Let's say you wanted to produce a text file which contained the X and Y coordinates of your many shapefiles as well as any other attributes that might have been there first. We can invoke the spatialite SQL dialect to do this simple geoprocessing and to stuff the output in a CSV file:&lt;/p&gt;
 &lt;pre class="code bash literal-block"&gt;
  &lt;span class="k"&gt;for &lt;/span&gt;location in loc1 loc2
  &lt;span class="k"&gt;do
