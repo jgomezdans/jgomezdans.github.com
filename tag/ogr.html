@@ -24,7 +24,118 @@
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="/ogr2ogr-geoprocessing.html">ogr2ogr geoprocessing</a></h1>
+                    <h1 class="entry-title"><a href="/stitching-shapefiles-efficiently-using-ogr.html">Stitching shapefiles efficiently using OGR</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2015-01-29T17:00:00">
+                Thu 29 January 2015
+        </abbr>
+
+        <address class="vcard author">
+                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
+        </address>
+<p>In <a href="/category/blog.html">Blog</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/ogr.html">ogr</a><a href="/tag/gdal.html">gdal</a></p>
+</footer><!-- /.post-info --><p>Today I had the unenviable task of stitching together and reprojecting a large number of Shapefiles (yes, shapefiles are still used. Nothing has changed since 1992, I guess). The process is greatly simplified by using OGR's virtual datasets for vectors in a way that is reminiscent of how you about doing this with GDAL and raster data (see <a class="reference external" href="http://jgomezdans.github.io/stitching-modis-burned-area-datasets.html">here</a>).</p>
+<p>The process is extemely simple, and it is done by creating a VRT XML file. The definition of the format given <a class="reference external" href="http://www.gdal.org/drv_vrt.html">in this page</a>, but in essence if you want to have a union of different layers, you just need to come up with the following XML:</p>
+<pre class="code xml literal-block">
+<span class="nt">&lt;OGRVRTDataSource&gt;</span>
+    <span class="nt">&lt;OGRVRTUnionLayer</span> <span class="na">name=</span><span class="s">&quot;TheLayerUnited&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;OGRVRTLayer</span> <span class="na">name=</span><span class="s">&quot;layer1&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;SrcDataSource&gt;</span>layer1.shp<span class="nt">&lt;/SrcDataSource&gt;</span>
+        <span class="nt">&lt;/OGRVRTLayer&gt;</span>
+        <span class="nt">&lt;OGRVRTLayer</span> <span class="na">name=</span><span class="s">&quot;layer2&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;SrcDataSource&gt;</span>layer2.shp<span class="nt">&lt;/SrcDataSource&gt;</span>
+        <span class="nt">&lt;/OGRVRTLayer&gt;</span>
+    <span class="nt">&lt;/OGRVRTUnionLayer&gt;</span>
+<span class="nt">&lt;/OGRVRTDataSource&gt;</span>
+</pre>
+<p>This is really easy: you can sandwich in as many layers as you want with extra <tt class="docutils literal">&lt;OGRVRTUnionLayer&gt;</tt> elements. You can also transform them by wrapping this in a <tt class="docutils literal">&lt;OGRVRTWarpedLayer&gt;</tt> object, but it turns out that in my particular case, <tt class="docutils literal">ogr2ogr</tt> seems to be slightly easier. At any rate, this would be the code to convert the two datasets to a new projection:</p>
+<pre class="code xml literal-block">
+<span class="nt">&lt;OGRVRTDataSource&gt;</span>
+    <span class="nt">&lt;OGRVRTWarpedLayer&gt;</span>
+        <span class="nt">&lt;OGRVRTUnionLayer</span> <span class="na">name=</span><span class="s">&quot;TheLayerUnited&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;OGRVRTLayer</span> <span class="na">name=</span><span class="s">&quot;layer1&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;SrcDataSource&gt;</span>layer1.shp<span class="nt">&lt;/SrcDataSource&gt;</span>
+            <span class="nt">&lt;/OGRVRTLayer&gt;</span>
+            <span class="nt">&lt;OGRVRTLayer</span> <span class="na">name=</span><span class="s">&quot;layer2&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;SrcDataSource&gt;</span>layer2.shp<span class="nt">&lt;/SrcDataSource&gt;</span>
+            <span class="nt">&lt;/OGRVRTLayer&gt;</span>
+        <span class="nt">&lt;/OGRVRTUnionLayer&gt;</span>
+    <span class="nt">&lt;TargetSRS&gt;</span>EPSG:29030<span class="nt">&lt;/TargetSRS&gt;</span>
+    <span class="nt">&lt;/OGRVRTWarpedLayer&gt;</span>
+<span class="nt">&lt;/OGRVRTDataSource&gt;</span>
+</pre>
+<p>You can do all sorts of other things easily, like spatial filtering and things like that. To me, it is a useful way to be able to extract areas of complex and large multi-shapefile datasets.</p>
+<p>Eventually, this is the code I ended up using from Python.</p>
+<pre class="code python literal-block">
+<span class="c">#!/usr/bin/env python</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span> <span class="c"># Not really needed, but I'm happy using numpy...</span>
+<span class="c"># These MODIS tiles (H/V) cover the US (CONUS)</span>
+<span class="n">tiles</span><span class="o">=</span><span class="s">&quot;&quot;&quot;8   6
+9   6
+10  6
+8   5
+9   5
+10  5
+11  5
+12  5
+8   4
+9   4
+10  4
+11  4
+12  4
+13  4&quot;&quot;&quot;</span>
+
+<span class="c"># Put the tiles in an array</span>
+<span class="n">tile_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&quot; &quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">14</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+<span class="c"># Main loop over the years</span>
+<span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">2013</span><span class="p">):</span>
+    <span class="c"># Now months...</span>
+    <span class="k">for</span> <span class="n">month</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;Jan&quot;</span><span class="p">,</span> <span class="s">&quot;Feb&quot;</span><span class="p">,</span> <span class="s">&quot;Mar&quot;</span><span class="p">,</span> <span class="s">&quot;Apr&quot;</span><span class="p">,</span> <span class="s">&quot;May&quot;</span><span class="p">,</span> <span class="s">&quot;Jun&quot;</span><span class="p">,</span> <span class="s">&quot;Jul&quot;</span><span class="p">,</span> <span class="s">&quot;Aug&quot;</span><span class="p">,</span> <span class="s">&quot;Sep&quot;</span><span class="p">,</span> <span class="s">&quot;Oct&quot;</span><span class="p">,</span> <span class="s">&quot;Nov&quot;</span><span class="p">,</span> <span class="s">&quot;Dec&quot;</span><span class="p">]:</span>
+        <span class="c"># Some user feedback</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="si">%04d</span><span class="s">/</span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">),</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="c"># ``vrt_text`` holds the context of the VRT file</span>
+        <span class="n">vrt_text</span><span class="o">=</span><span class="s">'&lt;OGRVRTDataSource&gt;</span><span class="se">\n\t</span><span class="s">&lt;OGRVRTUnionLayer name=&quot;JoinedUp&quot;&gt;</span><span class="se">\n</span><span class="s">'</span>
+        <span class="k">for</span> <span class="n">htile</span><span class="p">,</span> <span class="n">vtile</span> <span class="ow">in</span> <span class="n">tile_list</span><span class="p">:</span>
+            <span class="c"># We add the different shapefiles, in this case, indexed by h-tile, v-tile, year and month</span>
+            <span class="n">vrt_text</span> <span class="o">+=</span> <span class="s">'''        &lt;OGRVRTLayer name=&quot;MCD64A1_fires_h</span><span class="si">%02d</span><span class="s">v</span><span class="si">%02d</span><span class="s">_</span><span class="si">%04d</span><span class="s">_</span><span class="si">%s</span><span class="s">&quot;&gt;
+                    &lt;SrcDataSource&gt;shapes/MCD64A1_fires_h</span><span class="si">%02d</span><span class="s">v</span><span class="si">%02d</span><span class="s">_</span><span class="si">%04d</span><span class="s">_</span><span class="si">%s</span><span class="s">.shp&lt;/SrcDataSource&gt;
+            &lt;/OGRVRTLayer&gt;</span><span class="se">\n</span><span class="s">'''</span> <span class="o">%</span> <span class="p">(</span> <span class="n">htile</span><span class="p">,</span> <span class="n">vtile</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span><span class="n">htile</span><span class="p">,</span> <span class="n">vtile</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">)</span>
+        <span class="n">vrt_text</span> <span class="o">+=</span><span class="s">'''</span><span class="se">\t</span><span class="s">&lt;/OGRVRTUnionLayer&gt;</span><span class="se">\n</span><span class="s">&lt;/OGRVRTDataSource&gt;'''</span>
+        <span class="c"># This is the ouptut file with VRT extension...</span>
+        <span class="n">input_file</span><span class="o">=</span><span class="s">&quot;/tmp/CONUS_MCD64A1_</span><span class="si">%04d</span><span class="s">_</span><span class="si">%s</span><span class="s">.vrt&quot;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">)</span>
+        <span class="c"># This is the output file, but in Shapefile format</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">input_file</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&quot;.vrt&quot;</span><span class="p">,</span> <span class="s">&quot;.shp&quot;</span> <span class="p">)</span>
+        <span class="c"># We save the VRT text to the VRT file</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span> <span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s">'w'</span> <span class="p">)</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span> <span class="n">vrt_text</span> <span class="p">)</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c"># We use ``ogr2ogr`` to convert from VRT to shapefile, and in this case, reproject from</span>
+        <span class="c"># MODIS sinuosoidal projection to Lon/Lat</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span>  <span class="p">(</span> <span class="s">'ogr2ogr -f &quot;ESRI Shapefile&quot; -s_srs &quot;+proj=sinu +R=6371007.181 +nadgrids=&#64;null +wktext&quot; -t_srs &quot;+proj=longlat +ellps=GRS80 +no_defs&quot; </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">'</span> <span class="o">%</span> <span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">input_file</span> <span class="p">),</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span> <span class="p">)</span>
+        <span class="c"># Get rid of the VRT file</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span> <span class="p">(</span> <span class="n">input_file</span> <span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">Done!&quot;</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</pre>
+                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="/ogr2ogr-geoprocessing.html" rel="bookmark"
+                           title="Permalink to ogr2ogr geoprocessing">ogr2ogr geoprocessing</a></h1>
+                </header>
+
+                <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2014-03-13T13:00:00">
                 Thu 13 March 2014
@@ -35,77 +146,8 @@
         </address>
 <p>In <a href="/category/blog.html">Blog</a>. </p>
 <p>tags: <a href="/tag/gdal.html">gdal</a><a href="/tag/ogr.html">ogr</a><a href="/tag/geoprocessing.html">geoprocessing</a></p>
-</footer><!-- /.post-info --><p>Sometimes, one wants to do some really simple geoprocessing on a large numbers of shapefiles. While you could definitely use <a class="reference external" href="www.gaia-gis.it/gaia-sins/‎">Spatialite</a> for that, I would rather avoid this. <tt class="docutils literal">ogr2ogr</tt>, on the other hand, provides handy access to Spatialite-like functionality. Let's say you wanted to produce a text file which contained the X and Y coordinates of your many shapefiles as well as any other attributes that might have been there first. We can invoke the spatialite SQL dialect to do this simple geoprocessing and to stuff the output in a CSV file:</p>
-<pre class="code bash literal-block">
- <span class="k">for </span>location in loc1 loc2
- <span class="k">do
-   for </span>i in <span class="sb">`</span>find <span class="k">${</span><span class="nv">ROOT</span><span class="k">}</span>/<span class="k">${</span><span class="nv">location</span><span class="k">}</span> -iname <span class="s2">&quot;*shp&quot;</span><span class="sb">`</span>
-   <span class="k">do
-     </span><span class="nv">fname</span><span class="o">=</span><span class="sb">`</span>basename <span class="nv">$i</span> .shp<span class="sb">`</span>
-     touch /tmp/<span class="k">${</span><span class="nv">location</span><span class="k">}</span>.csv
-     ogr2ogr -f <span class="s2">&quot;CSV&quot;</span>  -append -dialect <span class="s2">&quot;sqlite&quot;</span> <span class="se">\
-</span>         -sql <span class="s2">&quot;SELECT id, month, doy_min, doy_max, n_pixels, ST_X(ST_Centroid(GEOMETRY)), ST_Y(ST_Centroid(GEOMETRY)) from $fname&quot;</span> <span class="se">\
-</span>         /tmp/<span class="k">${</span><span class="nv">location</span><span class="k">}</span>.csv <span class="nv">$i</span>
-   <span class="k">done
-done</span>
-</pre>
-<p>Note that you can do many things like this. In this particular case, you could subset a particular extent, transform coordinates etc etc using <tt class="docutils literal">ogr2ogr</tt> command line parameters. The process is fast and painless, and provided that you can come up with a suitable <tt class="docutils literal">find</tt> command, very flexible and easy!</p>
-<script type= "text/javascript">
-    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
-        var mathjaxscript = document.createElement('script');
-        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
-        mathjaxscript.type = 'text/javascript';
-        mathjaxscript.src = 'https:' == document.location.protocol
-                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
-                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
-        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
-            "MathJax.Hub.Config({" +
-            "    config: ['MMLorHTML.js']," +
-            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
-            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
-            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
-            "    displayAlign: 'center'," +
-            "    displayIndent: '0em'," +
-            "    showMathMenu: true," +
-            "    tex2jax: { " +
-            "        inlineMath: [ ['$','$'] ], " +
-            "        displayMath: [ ['$$','$$'] ]," +
-            "        processEscapes: true," +
-            "        preview: 'TeX'," +
-            "    }, " +
-            "    'HTML-CSS': { " +
-            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
-            "    } " +
-            "}); ";
-        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
-    }
-</script>
-                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/stitching-shapefiles-efficiently-using-ogr.html" rel="bookmark"
-                           title="Permalink to Stitching shapefiles efficiently using OGR">Stitching shapefiles efficiently using OGR</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2014-01-29T17:00:00">
-                Wed 29 January 2014
-        </abbr>
-
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/python.html">python</a><a href="/tag/ogr.html">ogr</a><a href="/tag/gdal.html">gdal</a></p>
-</footer><!-- /.post-info -->                <p>Today I had the unenviable task of stitching together and reprojecting a large number of Shapefiles (yes, shapefiles are still used. Nothing has changed since 1992, I guess). The process is greatly simplified by using OGR's virtual datasets for vectors in a way that is reminiscent of how you ...</p>
-                <a class="readmore" href="/stitching-shapefiles-efficiently-using-ogr.html">read more</a>
+</footer><!-- /.post-info -->                <p>Sometimes, one wants to do some really simple geoprocessing on a large numbers of shapefiles. While you could definitely use <a class="reference external" href="www.gaia-gis.it/gaia-sins/‎">Spatialite</a> for that, I would rather avoid this. <tt class="docutils literal">ogr2ogr</tt>, on the other hand, provides handy access to Spatialite-like functionality. Let's say you wanted to produce a text file which ...</p>
+                <a class="readmore" href="/ogr2ogr-geoprocessing.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
             </ol><!-- /#posts-list -->

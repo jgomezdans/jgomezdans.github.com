@@ -1,5 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2014-09-02T17:00:00+01:00</updated><entry><title>Installing GDAL on Linux easily</title><link href="/installing-gdal-on-linux-easily.html" rel="alternate"></link><updated>2014-09-02T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2014-09-02:installing-gdal-on-linux-easily.html</id><summary type="html">&lt;p&gt;Installing GDAL and its Python bindings on Linux is typically quite easy, provided you are using &lt;a class="reference external" href="http://www.debian.org"&gt;Debian&lt;/a&gt; or &lt;a class="reference external" href="http://kubuntu.org"&gt;Ubuntu&lt;/a&gt;, as they already have packages compiled for them. The packages are compiled so as to support a large number of different file formats. However, if you are using other Linux distributions, or if you don't have root access, installing GDAL (or compiling it locally) is fraught with difficulties. After a lot of pain on this, I think the best way to do this is to install the Anaconda Python distribution, and then install suitable &lt;em&gt;conda packages&lt;/em&gt; with GDAL and dependencies linked in. This is easy and straightforward, and can be extended to MacOSX and to Windows (if someone figures out how to do it!).&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>EO &amp; DA ramblings</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2015-01-29T17:00:00+00:00</updated><entry><title>Stitching shapefiles efficiently using OGR</title><link href="/stitching-shapefiles-efficiently-using-ogr.html" rel="alternate"></link><updated>2015-01-29T17:00:00+00:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2015-01-29:stitching-shapefiles-efficiently-using-ogr.html</id><summary type="html">&lt;p&gt;Today I had the unenviable task of stitching together and reprojecting a large number of Shapefiles (yes, shapefiles are still used. Nothing has changed since 1992, I guess). The process is greatly simplified by using OGR's virtual datasets for vectors in a way that is reminiscent of how you about doing this with GDAL and raster data (see &lt;a class="reference external" href="http://jgomezdans.github.io/stitching-modis-burned-area-datasets.html"&gt;here&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;The process is extemely simple, and it is done by creating a VRT XML file. The definition of the format given &lt;a class="reference external" href="http://www.gdal.org/drv_vrt.html"&gt;in this page&lt;/a&gt;, but in essence if you want to have a union of different layers, you just need to come up with the following XML:&lt;/p&gt;
+&lt;pre class="code xml literal-block"&gt;
+&lt;span class="nt"&gt;&amp;lt;OGRVRTDataSource&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;OGRVRTUnionLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;TheLayerUnited&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+        &lt;span class="nt"&gt;&amp;lt;OGRVRTLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;layer1&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="nt"&gt;&amp;lt;SrcDataSource&amp;gt;&lt;/span&gt;layer1.shp&lt;span class="nt"&gt;&amp;lt;/SrcDataSource&amp;gt;&lt;/span&gt;
+        &lt;span class="nt"&gt;&amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;
+        &lt;span class="nt"&gt;&amp;lt;OGRVRTLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;layer2&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="nt"&gt;&amp;lt;SrcDataSource&amp;gt;&lt;/span&gt;layer2.shp&lt;span class="nt"&gt;&amp;lt;/SrcDataSource&amp;gt;&lt;/span&gt;
+        &lt;span class="nt"&gt;&amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;/OGRVRTUnionLayer&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/OGRVRTDataSource&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;This is really easy: you can sandwich in as many layers as you want with extra &lt;tt class="docutils literal"&gt;&amp;lt;OGRVRTUnionLayer&amp;gt;&lt;/tt&gt; elements. You can also transform them by wrapping this in a &lt;tt class="docutils literal"&gt;&amp;lt;OGRVRTWarpedLayer&amp;gt;&lt;/tt&gt; object, but it turns out that in my particular case, &lt;tt class="docutils literal"&gt;ogr2ogr&lt;/tt&gt; seems to be slightly easier. At any rate, this would be the code to convert the two datasets to a new projection:&lt;/p&gt;
+&lt;pre class="code xml literal-block"&gt;
+&lt;span class="nt"&gt;&amp;lt;OGRVRTDataSource&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;OGRVRTWarpedLayer&amp;gt;&lt;/span&gt;
+        &lt;span class="nt"&gt;&amp;lt;OGRVRTUnionLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;TheLayerUnited&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="nt"&gt;&amp;lt;OGRVRTLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;layer1&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+                &lt;span class="nt"&gt;&amp;lt;SrcDataSource&amp;gt;&lt;/span&gt;layer1.shp&lt;span class="nt"&gt;&amp;lt;/SrcDataSource&amp;gt;&lt;/span&gt;
+            &lt;span class="nt"&gt;&amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;
+            &lt;span class="nt"&gt;&amp;lt;OGRVRTLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;layer2&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+                &lt;span class="nt"&gt;&amp;lt;SrcDataSource&amp;gt;&lt;/span&gt;layer2.shp&lt;span class="nt"&gt;&amp;lt;/SrcDataSource&amp;gt;&lt;/span&gt;
+            &lt;span class="nt"&gt;&amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;
+        &lt;span class="nt"&gt;&amp;lt;/OGRVRTUnionLayer&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;TargetSRS&amp;gt;&lt;/span&gt;EPSG:29030&lt;span class="nt"&gt;&amp;lt;/TargetSRS&amp;gt;&lt;/span&gt;
+    &lt;span class="nt"&gt;&amp;lt;/OGRVRTWarpedLayer&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/OGRVRTDataSource&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;You can do all sorts of other things easily, like spatial filtering and things like that. To me, it is a useful way to be able to extract areas of complex and large multi-shapefile datasets.&lt;/p&gt;
+&lt;p&gt;Eventually, this is the code I ended up using from Python.&lt;/p&gt;
+&lt;pre class="code python literal-block"&gt;
+&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;subprocess&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt; &lt;span class="c"&gt;# Not really needed, but I'm happy using numpy...&lt;/span&gt;
+&lt;span class="c"&gt;# These MODIS tiles (H/V) cover the US (CONUS)&lt;/span&gt;
+&lt;span class="n"&gt;tiles&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&amp;quot;&amp;quot;8   6
+9   6
+10  6
+8   5
+9   5
+10  5
+11  5
+12  5
+8   4
+9   4
+10  4
+11  4
+12  4
+13  4&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+&lt;span class="c"&gt;# Put the tiles in an array&lt;/span&gt;
+&lt;span class="n"&gt;tile_list&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fromstring&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tiles&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sep&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot; &amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;reshape&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;astype&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;int&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="c"&gt;# Main loop over the years&lt;/span&gt;
+&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="c"&gt;# Now months...&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Jan&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Feb&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Mar&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Apr&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;May&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Jun&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Jul&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Aug&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Sep&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Oct&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Nov&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Dec&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;]:&lt;/span&gt;
+        &lt;span class="c"&gt;# Some user feedback&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;...&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+        &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;stdout&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;flush&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="c"&gt;# ``vrt_text`` holds the context of the VRT file&lt;/span&gt;
+        &lt;span class="n"&gt;vrt_text&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;'&amp;lt;OGRVRTDataSource&amp;gt;&lt;/span&gt;&lt;span class="se"&gt;\n\t&lt;/span&gt;&lt;span class="s"&gt;&amp;lt;OGRVRTUnionLayer name=&amp;quot;JoinedUp&amp;quot;&amp;gt;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;'&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;htile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vtile&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;tile_list&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="c"&gt;# We add the different shapefiles, in this case, indexed by h-tile, v-tile, year and month&lt;/span&gt;
+            &lt;span class="n"&gt;vrt_text&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="s"&gt;'''        &amp;lt;OGRVRTLayer name=&amp;quot;MCD64A1_fires_h&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;v&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&amp;gt;
+                    &amp;lt;SrcDataSource&amp;gt;shapes/MCD64A1_fires_h&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;v&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;.shp&amp;lt;/SrcDataSource&amp;gt;
+            &amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;'''&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;htile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vtile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;htile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vtile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;vrt_text&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt;&lt;span class="s"&gt;'''&lt;/span&gt;&lt;span class="se"&gt;\t&lt;/span&gt;&lt;span class="s"&gt;&amp;lt;/OGRVRTUnionLayer&amp;gt;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;lt;/OGRVRTDataSource&amp;gt;'''&lt;/span&gt;
+        &lt;span class="c"&gt;# This is the ouptut file with VRT extension...&lt;/span&gt;
+        &lt;span class="n"&gt;input_file&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;/tmp/CONUS_MCD64A1_&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;.vrt&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c"&gt;# This is the output file, but in Shapefile format&lt;/span&gt;
+        &lt;span class="n"&gt;output_file&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;input_file&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;replace&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;.vrt&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;.shp&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c"&gt;# We save the VRT text to the VRT file&lt;/span&gt;
+        &lt;span class="n"&gt;fp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;open&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;input_file&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;'w'&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;fp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;write&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;vrt_text&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;fp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="c"&gt;# We use ``ogr2ogr`` to convert from VRT to shapefile, and in this case, reproject from&lt;/span&gt;
+        &lt;span class="c"&gt;# MODIS sinuosoidal projection to Lon/Lat&lt;/span&gt;
+        &lt;span class="n"&gt;subprocess&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;call&lt;/span&gt;  &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;'ogr2ogr -f &amp;quot;ESRI Shapefile&amp;quot; -s_srs &amp;quot;+proj=sinu +R=6371007.181 +nadgrids=&amp;#64;null +wktext&amp;quot; -t_srs &amp;quot;+proj=longlat +ellps=GRS80 +no_defs&amp;quot; &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt; &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;'&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;output_file&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;input_file&lt;/span&gt; &lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;shell&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c"&gt;# Get rid of the VRT file&lt;/span&gt;
+        &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;remove&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;input_file&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\t&lt;/span&gt;&lt;span class="s"&gt;Done!&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;stdout&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;flush&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;
+</summary><category term="python"></category><category term="ogr"></category><category term="gdal"></category></entry><entry><title>Installing GDAL on Linux easily</title><link href="/installing-gdal-on-linux-easily.html" rel="alternate"></link><updated>2014-09-02T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2014-09-02:installing-gdal-on-linux-easily.html</id><summary type="html">&lt;p&gt;Installing GDAL and its Python bindings on Linux is typically quite easy, provided you are using &lt;a class="reference external" href="http://www.debian.org"&gt;Debian&lt;/a&gt; or &lt;a class="reference external" href="http://kubuntu.org"&gt;Ubuntu&lt;/a&gt;, as they already have packages compiled for them. The packages are compiled so as to support a large number of different file formats. However, if you are using other Linux distributions, or if you don't have root access, installing GDAL (or compiling it locally) is fraught with difficulties. After a lot of pain on this, I think the best way to do this is to install the Anaconda Python distribution, and then install suitable &lt;em&gt;conda packages&lt;/em&gt; with GDAL and dependencies linked in. This is easy and straightforward, and can be extended to MacOSX and to Windows (if someone figures out how to do it!).&lt;/p&gt;
 &lt;p&gt;For Linux, the process goes like this:&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;ol class="arabic"&gt;
@@ -111,94 +198,7 @@ done&lt;/span&gt;
         (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
     }
 &lt;/script&gt;
-</summary><category term="gdal"></category><category term="ogr"></category><category term="geoprocessing"></category></entry><entry><title>Stitching shapefiles efficiently using OGR</title><link href="/stitching-shapefiles-efficiently-using-ogr.html" rel="alternate"></link><updated>2014-01-29T17:00:00+00:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2014-01-29:stitching-shapefiles-efficiently-using-ogr.html</id><summary type="html">&lt;p&gt;Today I had the unenviable task of stitching together and reprojecting a large number of Shapefiles (yes, shapefiles are still used. Nothing has changed since 1992, I guess). The process is greatly simplified by using OGR's virtual datasets for vectors in a way that is reminiscent of how you about doing this with GDAL and raster data (see &lt;a class="reference external" href="http://jgomezdans.github.io/stitching-modis-burned-area-datasets.html"&gt;here&lt;/a&gt;).&lt;/p&gt;
-&lt;p&gt;The process is extemely simple, and it is done by creating a VRT XML file. The definition of the format given &lt;a class="reference external" href="http://www.gdal.org/drv_vrt.html"&gt;in this page&lt;/a&gt;, but in essence if you want to have a union of different layers, you just need to come up with the following XML:&lt;/p&gt;
-&lt;pre class="code xml literal-block"&gt;
-&lt;span class="nt"&gt;&amp;lt;OGRVRTDataSource&amp;gt;&lt;/span&gt;
-    &lt;span class="nt"&gt;&amp;lt;OGRVRTUnionLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;TheLayerUnited&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
-        &lt;span class="nt"&gt;&amp;lt;OGRVRTLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;layer1&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
-            &lt;span class="nt"&gt;&amp;lt;SrcDataSource&amp;gt;&lt;/span&gt;layer1.shp&lt;span class="nt"&gt;&amp;lt;/SrcDataSource&amp;gt;&lt;/span&gt;
-        &lt;span class="nt"&gt;&amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;
-        &lt;span class="nt"&gt;&amp;lt;OGRVRTLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;layer2&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
-            &lt;span class="nt"&gt;&amp;lt;SrcDataSource&amp;gt;&lt;/span&gt;layer2.shp&lt;span class="nt"&gt;&amp;lt;/SrcDataSource&amp;gt;&lt;/span&gt;
-        &lt;span class="nt"&gt;&amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;
-    &lt;span class="nt"&gt;&amp;lt;/OGRVRTUnionLayer&amp;gt;&lt;/span&gt;
-&lt;span class="nt"&gt;&amp;lt;/OGRVRTDataSource&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;
-&lt;p&gt;This is really easy: you can sandwich in as many layers as you want with extra &lt;tt class="docutils literal"&gt;&amp;lt;OGRVRTUnionLayer&amp;gt;&lt;/tt&gt; elements. You can also transform them by wrapping this in a &lt;tt class="docutils literal"&gt;&amp;lt;OGRVRTWarpedLayer&amp;gt;&lt;/tt&gt; object, but it turns out that in my particular case, &lt;tt class="docutils literal"&gt;ogr2ogr&lt;/tt&gt; seems to be slightly easier. At any rate, this would be the code to convert the two datasets to a new projection:&lt;/p&gt;
-&lt;pre class="code xml literal-block"&gt;
-&lt;span class="nt"&gt;&amp;lt;OGRVRTDataSource&amp;gt;&lt;/span&gt;
-    &lt;span class="nt"&gt;&amp;lt;OGRVRTWarpedLayer&amp;gt;&lt;/span&gt;
-        &lt;span class="nt"&gt;&amp;lt;OGRVRTUnionLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;TheLayerUnited&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
-            &lt;span class="nt"&gt;&amp;lt;OGRVRTLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;layer1&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
-                &lt;span class="nt"&gt;&amp;lt;SrcDataSource&amp;gt;&lt;/span&gt;layer1.shp&lt;span class="nt"&gt;&amp;lt;/SrcDataSource&amp;gt;&lt;/span&gt;
-            &lt;span class="nt"&gt;&amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;
-            &lt;span class="nt"&gt;&amp;lt;OGRVRTLayer&lt;/span&gt; &lt;span class="na"&gt;name=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;layer2&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
-                &lt;span class="nt"&gt;&amp;lt;SrcDataSource&amp;gt;&lt;/span&gt;layer2.shp&lt;span class="nt"&gt;&amp;lt;/SrcDataSource&amp;gt;&lt;/span&gt;
-            &lt;span class="nt"&gt;&amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;
-        &lt;span class="nt"&gt;&amp;lt;/OGRVRTUnionLayer&amp;gt;&lt;/span&gt;
-    &lt;span class="nt"&gt;&amp;lt;TargetSRS&amp;gt;&lt;/span&gt;EPSG:29030&lt;span class="nt"&gt;&amp;lt;/TargetSRS&amp;gt;&lt;/span&gt;
-    &lt;span class="nt"&gt;&amp;lt;/OGRVRTWarpedLayer&amp;gt;&lt;/span&gt;
-&lt;span class="nt"&gt;&amp;lt;/OGRVRTDataSource&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;
-&lt;p&gt;You can do all sorts of other things easily, like spatial filtering and things like that. To me, it is a useful way to be able to extract areas of complex and large multi-shapefile datasets.&lt;/p&gt;
-&lt;p&gt;Eventually, this is the code I ended up using from Python.&lt;/p&gt;
-&lt;pre class="code python literal-block"&gt;
-&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
-&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
-&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;subprocess&lt;/span&gt;
-&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
-&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;numpy&lt;/span&gt; &lt;span class="kn"&gt;as&lt;/span&gt; &lt;span class="nn"&gt;np&lt;/span&gt; &lt;span class="c"&gt;# Not really needed, but I'm happy using numpy...&lt;/span&gt;
-&lt;span class="c"&gt;# These MODIS tiles (H/V) cover the US (CONUS)&lt;/span&gt;
-&lt;span class="n"&gt;tiles&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&amp;quot;&amp;quot;8   6
-9   6
-10  6
-8   5
-9   5
-10  5
-11  5
-12  5
-8   4
-9   4
-10  4
-11  4
-12  4
-13  4&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
-
-&lt;span class="c"&gt;# Put the tiles in an array&lt;/span&gt;
-&lt;span class="n"&gt;tile_list&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fromstring&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tiles&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sep&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot; &amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;reshape&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;astype&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;np&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;int&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="c"&gt;# Main loop over the years&lt;/span&gt;
-&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;xrange&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2013&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
-    &lt;span class="c"&gt;# Now months...&lt;/span&gt;
-    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Jan&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Feb&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Mar&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Apr&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;May&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Jun&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Jul&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Aug&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Sep&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Oct&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Nov&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Dec&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;]:&lt;/span&gt;
-        &lt;span class="c"&gt;# Some user feedback&lt;/span&gt;
-        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;...&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
-        &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;stdout&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;flush&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-        &lt;span class="c"&gt;# ``vrt_text`` holds the context of the VRT file&lt;/span&gt;
-        &lt;span class="n"&gt;vrt_text&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;'&amp;lt;OGRVRTDataSource&amp;gt;&lt;/span&gt;&lt;span class="se"&gt;\n\t&lt;/span&gt;&lt;span class="s"&gt;&amp;lt;OGRVRTUnionLayer name=&amp;quot;JoinedUp&amp;quot;&amp;gt;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;'&lt;/span&gt;
-        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;htile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vtile&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;tile_list&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
-            &lt;span class="c"&gt;# We add the different shapefiles, in this case, indexed by h-tile, v-tile, year and month&lt;/span&gt;
-            &lt;span class="n"&gt;vrt_text&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="s"&gt;'''        &amp;lt;OGRVRTLayer name=&amp;quot;MCD64A1_fires_h&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;v&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&amp;gt;
-                    &amp;lt;SrcDataSource&amp;gt;shapes/MCD64A1_fires_h&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;v&lt;/span&gt;&lt;span class="si"&gt;%02d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;.shp&amp;lt;/SrcDataSource&amp;gt;
-            &amp;lt;/OGRVRTLayer&amp;gt;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;'''&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;htile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vtile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;htile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vtile&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-        &lt;span class="n"&gt;vrt_text&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt;&lt;span class="s"&gt;'''&lt;/span&gt;&lt;span class="se"&gt;\t&lt;/span&gt;&lt;span class="s"&gt;&amp;lt;/OGRVRTUnionLayer&amp;gt;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;lt;/OGRVRTDataSource&amp;gt;'''&lt;/span&gt;
-        &lt;span class="c"&gt;# This is the ouptut file with VRT extension...&lt;/span&gt;
-        &lt;span class="n"&gt;input_file&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;/tmp/CONUS_MCD64A1_&lt;/span&gt;&lt;span class="si"&gt;%04d&lt;/span&gt;&lt;span class="s"&gt;_&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;.vrt&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;month&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-        &lt;span class="c"&gt;# This is the output file, but in Shapefile format&lt;/span&gt;
-        &lt;span class="n"&gt;output_file&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;input_file&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;replace&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;.vrt&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;.shp&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
-        &lt;span class="c"&gt;# We save the VRT text to the VRT file&lt;/span&gt;
-        &lt;span class="n"&gt;fp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;open&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;input_file&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;'w'&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
-        &lt;span class="n"&gt;fp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;write&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;vrt_text&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
-        &lt;span class="n"&gt;fp&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-        &lt;span class="c"&gt;# We use ``ogr2ogr`` to convert from VRT to shapefile, and in this case, reproject from&lt;/span&gt;
-        &lt;span class="c"&gt;# MODIS sinuosoidal projection to Lon/Lat&lt;/span&gt;
-        &lt;span class="n"&gt;subprocess&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;call&lt;/span&gt;  &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;'ogr2ogr -f &amp;quot;ESRI Shapefile&amp;quot; -s_srs &amp;quot;+proj=sinu +R=6371007.181 +nadgrids=&amp;#64;null +wktext&amp;quot; -t_srs &amp;quot;+proj=longlat +ellps=GRS80 +no_defs&amp;quot; &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt; &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;'&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;output_file&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;input_file&lt;/span&gt; &lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;shell&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
-        &lt;span class="c"&gt;# Get rid of the VRT file&lt;/span&gt;
-        &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;remove&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;input_file&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
-        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\t&lt;/span&gt;&lt;span class="s"&gt;Done!&amp;quot;&lt;/span&gt;
-        &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;stdout&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;flush&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
-&lt;/pre&gt;
-</summary><category term="python"></category><category term="ogr"></category><category term="gdal"></category></entry><entry><title>BRDF modelling of MODIS land surface data</title><link href="/brdf-modelling-of-modis-land-surface-data.html" rel="alternate"></link><updated>2013-09-03T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-09-03:brdf-modelling-of-modis-land-surface-data.html</id><summary type="html">&lt;p&gt;This post introduces simple BRDF modelling (i.e. how can we account
+</summary><category term="gdal"></category><category term="ogr"></category><category term="geoprocessing"></category></entry><entry><title>BRDF modelling of MODIS land surface data</title><link href="/brdf-modelling-of-modis-land-surface-data.html" rel="alternate"></link><updated>2013-09-03T17:00:00+01:00</updated><author><name>J Gómez-Dans</name></author><id>tag:,2013-09-03:brdf-modelling-of-modis-land-surface-data.html</id><summary type="html">&lt;p&gt;This post introduces simple BRDF modelling (i.e. how can we account
 for the variation in surface reflectance due to acquisition geometry?)
 using some MODIS data. You can find the whole post in &lt;a class="reference external" href="https://www.wakari.io/sharing/bundle/jgomezdans/BRDF_modelling"&gt;wakari&lt;/a&gt;. If you
 accept to not escape the HTML &amp;amp; JS, you will find a link to the data file
