@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="utf-8">
+    <title>New version of GDAL packages (with HDF!) for Anaconda - EO & DA Ramblings</title>
+    <meta name="description" content="">
+    <meta name="author" content="J Gomez-Dans">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+    <script src="/theme/html5.js"></script>
+    <![endif]-->
+
+
+    <!-- Le styles -->
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.1.1/css/bootstrap.no-icons.min.css" rel="stylesheet">
+    <link href="/theme/local.css" rel="stylesheet">
+    <link href="/theme/pygments.css" rel="stylesheet">
+    <link href="/theme/font-awesome.css" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Gudea:400,400italic|Alegreya+SC' rel='stylesheet' type='text/css'>
+
+</head>
+
+<body>
+<header class="blog-header">
+  <div class="container">
+    <div class="row-fluid">
+      <div class="span9">
+	<a href="" class="brand">EO & DA Ramblings</a>
+      </div>
+
+      <div class="span3" id="blog-nav">
+	<ul class="nav nav-pills pull-right">
+	    <li  class="active" >
+	      <a href="/category/blog.html ">Blog</a>
+	</ul>
+      </div>
+    </div> <!-- End of fluid row-->
+  </div>   <!-- End of Container-->
+</header>
+    
+<div class="container">
+    <div class="content">
+    <div class="row-fluid">
+
+        <div class="span10">
+    <div class='article'>
+      <div class="row-fluid">
+           <div class="content-title span9">
+             <h1>New version of GDAL packages (with HDF!) for Anaconda</h1>
+           </div>
+      </div>
+    <div class="row-fluid">
+      <div class="span2">
+<p>Wed 11 March 2015 </p>
+
+<p style="text-align: left;">
+Filed under <a href="/category/blog.html">Blog</a>
+</p>
+<p style="text-align: left;">
+ 
+    Tags <a href="/tag/python.html">python</a> <a href="/tag/ogr.html">ogr</a> <a href="/tag/gdal.html">gdal</a> </p>
+<p>
+</p>
+      </div>
+      
+      <div class="span8">
+	<p>So I re-compiled the Python GDAL packages to bump the version to 1.11.2, compile in the HDF4 tweak that we required to open more than 32 HDF files simultaneously, and make sure that GDAL works with MODIS data. There's still a glitch, which means that I have compiled the library against GEOS v3.3.3 rather than v3.4.2, but since this isn't a major issue for me at the moment, I won't bother with it at the moment.</p>
+<p>Here's how to get things going using the Miniconda Python installation (you can also install all the other packages in Continuum's repositories, but these are the ones that we mostly use):</p>
+<pre class="code bash literal-block">
+wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
+bash ./Miniconda-latest-Linux-x86_64.sh
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/opt/anaconda/bin:<span class="nv">$PATH</span>
+conda install numpy scipy matplotlib ipython ipython-notebook conda-build
+conda install scikit-learn pandas spyder numba numexpr cython binstar
+conda install -c https://conda.binstar.org/jgomezdans proj4
+conda install -c https://conda.binstar.org/jgomezdans hdf4
+conda install -c https://conda.binstar.org/jgomezdans gdal
+conda install geos
+</pre>
+<p>As you can see, the last line install geos again (v3.3.3), otherwise, GDAL complains. This is a minor niggle, and I can open both netcdf and HDF files, as well as GeoTIFFs and so on.</p>
+
+	<hr />
+      </div>
+    </div>
+    <div class="span10">
+      <h3>Comments</h3>
+    
+    </div>  
+    </div>
+        </div>
+        
+        
+    </div>     </div> </div>
+
+<!--footer-->
+<div class="container">
+  <div class="well" style="background-color: #E9EFF6">
+    <div id="blog-footer">
+      <div class="row-fluid">
+	<div class="social span2" align="center" id="socialist">
+	  <ul class="nav nav-list">
+	    <li class="nav-header">
+	      Social
+	    </li>
+	    <li><a href="http://twitter.com/pepucho666"><i class="icon-twitter" style="color: #1f334b"></i>twitter</a></li>
+	    <li><a href="http://github.com/jgomezdans"><i class="icon-github" style="color: #1f334b"></i>github</a></li>
+
+	  </ul>
+	</div>
+	<div class="site-nav span2" align="center">
+          <ul class="nav nav-list" id="site-links">
+            <li class="nav-header"> 
+              Site
+            </li>
+            <li><a href=""><i class="icon-home" style="color: #1f334b">
+                </i>Home</a></li>
+            <li><a href="/archives.html"><i class="icon-list" style="color: #1f334b">
+                </i>Archives</a></li>
+	    <li><a href="/tags.html"><i class="icon-tags" style="color: #1f334b">
+                </i>Tags</a></li>
+	    
+	  </ul>
+
+        </div>
+
+      </div> <!--end of fluid row-->
+    </div> <!--end of blog-footer-->
+    <hr />
+    <p align="center"><a href="">EO & DA Ramblings</a>
+      &copy; J Gomez-Dans
+    Powered by <a href="https://github.com/getpelican/pelican">Pelican</a> and
+        <a href="https://twitter.github.com/bootstrap">Twitter Bootstrap</a>. 
+        Icons by <a href="https://fortawesome.github.com/Font-Awesome">Font Awesome</a> and 
+        <a href="https://gregoryloucas.github.com/Font-Awesome-More">Font Awesome More</a></p>
+
+  </div> <!--end of well -->
+</div> <!--end of container -->
+
+<!--/footer-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
+
+
+<script>var _gaq=[['_setAccount','UA-25702318-1'],['_trackPageview']];(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.src='//www.google-analytics.com/ga.js';s.parentNode.insertBefore(g,s)}(document,'script'))</script>
+
+</body>
+</html>

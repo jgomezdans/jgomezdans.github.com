@@ -1,41 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-        <meta charset="utf-8" />
-        <title>EO & DA ramblings - tips</title>
-        <link rel="stylesheet" href="/theme/css/main.css" />
-        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="EO & DA ramblings Atom Feed" />
 
-        <!--[if IE]>
-            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-        <![endif]-->
+    <meta charset="utf-8">
+    <title>EO & DA Ramblings <small>tips</small></title>
+    <meta name="description" content="">
+    <meta name="author" content="J Gomez-Dans">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+    <script src="/theme/html5.js"></script>
+    <![endif]-->
+
+
+    <!-- Le styles -->
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.1.1/css/bootstrap.no-icons.min.css" rel="stylesheet">
+    <link href="/theme/local.css" rel="stylesheet">
+    <link href="/theme/pygments.css" rel="stylesheet">
+    <link href="/theme/font-awesome.css" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Gudea:400,400italic|Alegreya+SC' rel='stylesheet' type='text/css'>
+
 </head>
 
-<body id="index" class="home">
-<a href="http://github.com/jgomezdans">
-<img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" />
-</a>
-        <header id="banner" class="body">
-                <h1><a href="/">EO & DA ramblings </a></h1>
-                <nav><ul>
-                    <li><a href="/category/blog.html">Blog</a></li>
-                </ul></nav>
-        </header><!-- /#banner -->
+<body>
+<header class="blog-header">
+  <div class="container">
+    <div class="row-fluid">
+      <div class="span9">
+	<a href="" class="brand">EO & DA Ramblings</a>
+      </div>
 
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href="/stitching-modis-burned-area-datasets.html">Stitching MODIS burned area datasets</a></h1>
-<footer class="post-info">
-        <abbr class="published" title="2013-06-27T17:00:00">
-                Thu 27 June 2013
-        </abbr>
+      <div class="span3" id="blog-nav">
+	<ul class="nav nav-pills pull-right">
+	    <li >
+	      <a href="/category/blog.html ">Blog</a>
+	</ul>
+      </div>
+    </div> <!-- End of fluid row-->
+  </div>   <!-- End of Container-->
+</header>
+    
+<div class="container">
+    <div class="content">
+    <div class="row-fluid">
 
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/modis.html">MODIS</a><a href="/tag/gdal.html">GDAL</a><a href="/tag/tips.html">tips</a></p>
-</footer><!-- /.post-info --><p>MODIS products are usually provided as data granules, representing the magnitude of interest
+        <div class="span10">
+        
+
+        
+
+    <div class='row-fluid''>
+        <div class="article-title span9">
+            <a href="/stitching-modis-burned-area-datasets.html"><h1>Stitching MODIS burned area datasets</h1></a>
+        </div>
+    </div>
+    <div class="row-fluid">
+      <div class="span2">
+<p>Thu 27 June 2013 </p>
+
+<p style="text-align: left;">
+Filed under <a href="/category/blog.html">Blog</a>
+</p>
+<p style="text-align: left;">
+ 
+    Tags <a href="/tag/modis.html">MODIS</a> <a href="/tag/gdal.html">GDAL</a> <a href="/tag/tips.html">tips</a> </p>
+<p>
+</p>
+      </div>
+      <div class="article-content span8">
+	<p>MODIS products are usually provided as data granules, representing the magnitude of interest
 (plus a number of different extra layers of metadata, quality assurance flags, etc) over a
 given temporal period for an area typically extending 1200 by 1200 km in the MODIS sinusoidal
 projection, around 10x10 degrees. Typically, your study site might extend over several tiles,
@@ -176,358 +209,229 @@ for completenes, we shall also produce data for Spain.</p>
 <span class="k">done</span>
 </pre></div>
 </div>
-<script type= "text/javascript">
-    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
-        var mathjaxscript = document.createElement('script');
-        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
-        mathjaxscript.type = 'text/javascript';
-        mathjaxscript.src = 'https:' == document.location.protocol
-                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
-                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
-        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
-            "MathJax.Hub.Config({" +
-            "    config: ['MMLorHTML.js']," +
-            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
-            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
-            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
-            "    displayAlign: 'center'," +
-            "    displayIndent: '0em'," +
-            "    showMathMenu: true," +
-            "    tex2jax: { " +
-            "        inlineMath: [ ['$','$'] ], " +
-            "        displayMath: [ ['$$','$$'] ]," +
-            "        processEscapes: true," +
-            "        preview: 'TeX'," +
-            "    }, " +
-            "    'HTML-CSS': { " +
-            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
-            "    } " +
-            "}); ";
-        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
-    }
-</script>
-                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+ 
+	<a class="btn btn-mini xsmall" href="/stitching-modis-burned-area-datasets.html">
+          <i class="icon-comment"></i> Comment </a>
+	<hr />
+      </div>
+      
+    </div>
+    
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/getting-a-box.html" rel="bookmark"
-                           title="Permalink to Getting a box">Getting a box</a></h1>
-                </header>
+ 
+        
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2013-06-23T17:00:00">
-                Sun 23 June 2013
-        </abbr>
 
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/tips.html">tips</a></p>
-</footer><!-- /.post-info -->                <p>Let's say one wants to find out a box around a given latitude/longitude point. How to do this
+
+    <div class='row-fluid'>
+      <div class='article-title span9'> 
+        <a href="/getting-a-box.html"><h1>Getting a box</h1></a>
+      </div>
+    </div>
+    <div class="row-fluid">
+      <div class="span2">
+<p>Sun 23 June 2013 </p>
+
+<p style="text-align: left;">
+Filed under <a href="/category/blog.html">Blog</a>
+</p>
+<p style="text-align: left;">
+ 
+    Tags <a href="/tag/gdal.html">GDAL</a> <a href="/tag/tips.html">tips</a> </p>
+<p>
+</p>
+      </div>
+      <div class="summary span8">
+	<p>Let's say one wants to find out a box around a given latitude/longitude point. How to do this
 without GIS software using an artisan UNIX approach? Hell, if it works for coffee! The steps
 are as follows:</p>
 <ol class="arabic simple">
-<li>Convert the centre point into UTM so we have meters rather ...</li></ol>
-                <a class="readmore" href="/getting-a-box.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
+<li>Convert the centre point into UTM so we have meters rather ...</li></ol> 
+	<a class="btn btn-mini xsmall" href="/getting-a-box.html">
+          <i class="icon-plus-sign"></i> Read More </a>
+	<hr />
+      </div>
+      
+    </div>
+      
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/smp-processing-with-multiprocessing.html" rel="bookmark"
-                           title="Permalink to SMP processing with multiprocessing">SMP processing with multiprocessing</a></h1>
-                </header>
+ 
+        
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2013-05-23T17:00:00">
-                Thu 23 May 2013
-        </abbr>
 
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/python.html">python</a><a href="/tag/gdal.html">gdal</a><a href="/tag/tips.html">tips</a></p>
-</footer><!-- /.post-info -->                <p>This note details how to use parallel processing in python accessing
+
+    <div class='row-fluid'>
+      <div class='article-title span9'> 
+        <a href="/smp-processing-with-multiprocessing.html"><h1>SMP processing with multiprocessing</h1></a>
+      </div>
+    </div>
+    <div class="row-fluid">
+      <div class="span2">
+<p>Thu 23 May 2013 </p>
+
+<p style="text-align: left;">
+Filed under <a href="/category/blog.html">Blog</a>
+</p>
+<p style="text-align: left;">
+ 
+    Tags <a href="/tag/python.html">python</a> <a href="/tag/gdal.html">gdal</a> <a href="/tag/tips.html">tips</a> </p>
+<p>
+</p>
+      </div>
+      <div class="summary span8">
+	<p>This note details how to use parallel processing in python accessing
 shared memory. The usage case is when you have a process that reads in a
 lot of data, and where the data can be processed in parallel, such as
-when reading and processing images/stacks of images in a ...</p>
-                <a class="readmore" href="/smp-processing-with-multiprocessing.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
+when reading and processing images/stacks of images in a ...</p> 
+	<a class="btn btn-mini xsmall" href="/smp-processing-with-multiprocessing.html">
+          <i class="icon-plus-sign"></i> Read More </a>
+	<hr />
+      </div>
+      
+    </div>
+      
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/fast-copying-of-files-over-the-network.html" rel="bookmark"
-                           title="Permalink to Fast copying of files over the network">Fast copying of files over the network</a></h1>
-                </header>
+ 
+        
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2013-05-08T13:00:00">
-                Wed 08 May 2013
-        </abbr>
 
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/unix.html">unix</a><a href="/tag/tips.html">tips</a><a href="/tag/meteo.html">meteo</a></p>
-</footer><!-- /.post-info -->                <p>A common requirement when dealing with processing large datasets over
+
+    <div class='row-fluid'>
+      <div class='article-title span9'> 
+        <a href="/fast-copying-of-files-over-the-network.html"><h1>Fast copying of files over the network</h1></a>
+      </div>
+    </div>
+    <div class="row-fluid">
+      <div class="span2">
+<p>Wed 08 May 2013 </p>
+
+<p style="text-align: left;">
+Filed under <a href="/category/blog.html">Blog</a>
+</p>
+<p style="text-align: left;">
+ 
+    Tags <a href="/tag/unix.html">unix</a> <a href="/tag/tips.html">tips</a> <a href="/tag/meteo.html">meteo</a> </p>
+<p>
+</p>
+      </div>
+      <div class="summary span8">
+	<p>A common requirement when dealing with processing large datasets over
 multiple networked machines is to have a local staging space: copy the
 data on the local disk to improve access speed and not to bog down a
 NFS server when all different processes start accessing different files
-all at once ...</p>
-                <a class="readmore" href="/fast-copying-of-files-over-the-network.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
+all at once ...</p> 
+	<a class="btn btn-mini xsmall" href="/fast-copying-of-files-over-the-network.html">
+          <i class="icon-plus-sign"></i> Read More </a>
+	<hr />
+      </div>
+      
+    </div>
+      
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/downloading-andalusian-meteo-data.html" rel="bookmark"
-                           title="Permalink to Downloading Andalusian meteo data">Downloading Andalusian meteo data</a></h1>
-                </header>
+ 
+        
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2012-12-11T13:00:00">
-                Tue 11 December 2012
-        </abbr>
 
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/python.html">python</a><a href="/tag/tips.html">tips</a><a href="/tag/meteo.html">meteo</a></p>
-</footer><!-- /.post-info -->                <p>Many networks of automated meteo stations are around. In some places,
+
+    <div class='row-fluid'>
+      <div class='article-title span9'> 
+        <a href="/downloading-andalusian-meteo-data.html"><h1>Downloading Andalusian meteo data</h1></a>
+      </div>
+    </div>
+    <div class="row-fluid">
+      <div class="span2">
+<p>Tue 11 December 2012 </p>
+
+<p style="text-align: left;">
+Filed under <a href="/category/blog.html">Blog</a>
+</p>
+<p style="text-align: left;">
+ 
+    Tags <a href="/tag/python.html">python</a> <a href="/tag/tips.html">tips</a> <a href="/tag/meteo.html">meteo</a> </p>
+<p>
+</p>
+      </div>
+      <div class="summary span8">
+	<p>Many networks of automated meteo stations are around. In some places,
 the data are easy to access and therefore use. In some others, you have
 to go through a number of hoops. In Andalusia, it's a mixed bag: a number
-of independent networks are available for agricultural and environmental ...</p>
-                <a class="readmore" href="/downloading-andalusian-meteo-data.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
+of independent networks are available for agricultural and environmental ...</p> 
+	<a class="btn btn-mini xsmall" href="/downloading-andalusian-meteo-data.html">
+          <i class="icon-plus-sign"></i> Read More </a>
+	<hr />
+      </div>
+      
+    </div>
+      
+<div class="pagination">
+<ul>
+    <li class="prev disabled"><a href="#">&larr; Previous</a></li>
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/downsampling-with-gdal-in-python.html" rel="bookmark"
-                           title="Permalink to Downsampling with GDAL in python">Downsampling with GDAL in python</a></h1>
-                </header>
+    <li class="active"><a href="/tag/tips.html">1</a></li>
+    <li class=""><a href="/tag/tips2.html">2</a></li>
+    <li class=""><a href="/tag/tips3.html">3</a></li>
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2012-10-04T13:00:00">
-                Thu 04 October 2012
-        </abbr>
+    <li class="next"><a href="/tag/tips2.html">Next &rarr;</a></li>
 
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/python.html">python</a><a href="/tag/tips.html">tips</a></p>
-</footer><!-- /.post-info -->                <p>Quite often, one wants to generate some data at high resolution (say
-process some image or images) and then calculate some relevant spatial
-statistics at some other resolution. For example, you might want to
-process Landsat TM data at 30m resolution, and might want to aggregate
-it to a resolution ...</p>
-                <a class="readmore" href="/downsampling-with-gdal-in-python.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
+</ul>
+</div>
+ 
+  
+        </div>
+        
+        
+    </div>     </div> </div>
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html" rel="bookmark"
-                           title="Permalink to How to extract spectra from image data using ground truth vector data">How to extract spectra from image data using ground truth vector data</a></h1>
-                </header>
+<!--footer-->
+<div class="container">
+  <div class="well" style="background-color: #E9EFF6">
+    <div id="blog-footer">
+      <div class="row-fluid">
+	<div class="social span2" align="center" id="socialist">
+	  <ul class="nav nav-list">
+	    <li class="nav-header">
+	      Social
+	    </li>
+	    <li><a href="http://twitter.com/pepucho666"><i class="icon-twitter" style="color: #1f334b"></i>twitter</a></li>
+	    <li><a href="http://github.com/jgomezdans"><i class="icon-github" style="color: #1f334b"></i>github</a></li>
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2012-08-15T16:00:00">
-                Wed 15 August 2012
-        </abbr>
+	  </ul>
+	</div>
+	<div class="site-nav span2" align="center">
+          <ul class="nav nav-list" id="site-links">
+            <li class="nav-header"> 
+              Site
+            </li>
+            <li><a href=""><i class="icon-home" style="color: #1f334b">
+                </i>Home</a></li>
+            <li><a href="/archives.html"><i class="icon-list" style="color: #1f334b">
+                </i>Archives</a></li>
+	    <li><a href="/tags.html"><i class="icon-tags" style="color: #1f334b">
+                </i>Tags</a></li>
+	    
+	  </ul>
 
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/python.html">python</a><a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a></p>
-</footer><!-- /.post-info -->                <p>Supervised classification of EO data uses a set of samples from known
-patterns (usually reflectance spectra) to decide whether a given pattern
-belongs to one class or another. In landcover applications, one goes to
-the field, and observes that a given location is indeed class $\omega_c$.
-These ground observations usually ...</p><script type= "text/javascript">
-    if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
-        var mathjaxscript = document.createElement('script');
-        mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
-        mathjaxscript.type = 'text/javascript';
-        mathjaxscript.src = 'https:' == document.location.protocol
-                ? 'https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
-                : 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
-        mathjaxscript[(window.opera ? "innerHTML" : "text")] =
-            "MathJax.Hub.Config({" +
-            "    config: ['MMLorHTML.js']," +
-            "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
-            "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
-            "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
-            "    displayAlign: 'center'," +
-            "    displayIndent: '0em'," +
-            "    showMathMenu: true," +
-            "    tex2jax: { " +
-            "        inlineMath: [ ['$','$'] ], " +
-            "        displayMath: [ ['$$','$$'] ]," +
-            "        processEscapes: true," +
-            "        preview: 'TeX'," +
-            "    }, " +
-            "    'HTML-CSS': { " +
-            "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'black ! important'} }" +
-            "    } " +
-            "}); ";
-        (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
-    }
-</script>
+        </div>
 
-                <a class="readmore" href="/how-to-extract-spectra-from-image-data-using-ground-truth-vector-data.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
+      </div> <!--end of fluid row-->
+    </div> <!--end of blog-footer-->
+    <hr />
+    <p align="center"><a href="">EO & DA Ramblings</a>
+      &copy; J Gomez-Dans
+    Powered by <a href="https://github.com/getpelican/pelican">Pelican</a> and
+        <a href="https://twitter.github.com/bootstrap">Twitter Bootstrap</a>. 
+        Icons by <a href="https://fortawesome.github.com/Font-Awesome">Font Awesome</a> and 
+        <a href="https://gregoryloucas.github.com/Font-Awesome-More">Font Awesome More</a></p>
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/creating-a-country-raster-mask-using-gdal.html" rel="bookmark"
-                           title="Permalink to Creating a country raster mask using GDAL">Creating a country raster mask using GDAL</a></h1>
-                </header>
+  </div> <!--end of well -->
+</div> <!--end of container -->
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2012-08-02T10:00:00">
-                Thu 02 August 2012
-        </abbr>
+<!--/footer-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
 
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a></p>
-</footer><!-- /.post-info -->                <p>Usually, we remote sensing types ignore country boundaries: they don't really
-make much sense, as they are not aligned with MODIS pixels ;-) However, I was
-asked what's the easiest way to produce a global mask of countries, so that all
-th grid cells (say at 0.5 degree ...</p>
-                <a class="readmore" href="/creating-a-country-raster-mask-using-gdal.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/simple-time-series-modis-data-analysis.html" rel="bookmark"
-                           title="Permalink to Simple time series MODIS data analysis">Simple time series MODIS data analysis</a></h1>
-                </header>
+<script>var _gaq=[['_setAccount','UA-25702318-1'],['_trackPageview']];(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.src='//www.google-analytics.com/ga.js';s.parentNode.insertBefore(g,s)}(document,'script'))</script>
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2012-07-23T15:00:00">
-                Mon 23 July 2012
-        </abbr>
-
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a><a href="/tag/python.html">python</a></p>
-</footer><!-- /.post-info -->                <p>In a <a class="reference external" href="http://jgomezdans.github.com/stitching-together-modis-data.html">previous post</a>,
-I demonstrated how to stitch and put together a number of MODIS data
-files. This is useful and interesting, but in the end, we are interested
-in analysing the data we get out of the satellite. One first way around
-this might be to extract time ...</p>
-                <a class="readmore" href="/simple-time-series-modis-data-analysis.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/stitching-together-modis-data.html" rel="bookmark"
-                           title="Permalink to Stitching together MODIS data">Stitching together MODIS data</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2012-07-20T15:00:00">
-                Fri 20 July 2012
-        </abbr>
-
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a></p>
-</footer><!-- /.post-info -->                <p>MODIS has been around for some 12 years. There are many products that
-have large time series over the whole globe which one can use to study
-things. So I might want to produce a a timeseries of the <a class="reference external" href="https://lpdaac.usgs.gov/products/modis_products_table/gross_primary_productivity/8_day_l4_global_1km/mod17a2">8-day Gross Primary Productivity (GPP) product</a>
-over say the UK. Moreover ...</p>
-                <a class="readmore" href="/stitching-together-modis-data.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/linearly-scaling-raster-data-with-gdal.html" rel="bookmark"
-                           title="Permalink to Linearly scaling raster data with GDAL">Linearly scaling raster data with GDAL</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2012-07-20T13:00:00">
-                Fri 20 July 2012
-        </abbr>
-
-        <address class="vcard author">
-                By <a class="url fn" href="/author/j-gomez-dans.html">J Gómez-Dans</a>
-        </address>
-<p>In <a href="/category/blog.html">Blog</a>. </p>
-<p>tags: <a href="/tag/gdal.html">GDAL</a><a href="/tag/remote-sensing.html">remote sensing</a><a href="/tag/tips.html">tips</a></p>
-</footer><!-- /.post-info -->                <p>So, it's quite tricky to play around with these geospatial datasets: they
-have a myriad formats, these keep changing, and you can never know what
-metadata will be available in them. A clever way around this situation
-is to use tools that allow you to read most of the ...</p>
-                <a class="readmore" href="/linearly-scaling-raster-data-with-gdal.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-            </ol><!-- /#posts-list -->
-            </section><!-- /#content -->
-        <section id="extras" class="body">
-                <div class="social">
-                        <h2>social</h2>
-                        <ul>
-                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
-
-                            <li><a href="http://twitter.com/pepucho666">twitter</a></li>
-                            <li><a href="http://github.com/jgomezdans">github</a></li>
-                        </ul>
-                </div><!-- /.social -->
-        </section><!-- /#extras -->
-
-        <footer id="contentinfo" class="body">
-                <address id="about" class="vcard body">
-                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
-                </address><!-- /#about -->
-
-                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
-        </footer><!-- /#contentinfo -->
-
-    <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount', 'UA-25702318-1']);
-    _gaq.push(['_trackPageview']);
-    (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
-    </script>
 </body>
 </html>
